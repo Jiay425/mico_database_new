@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  # 只保留 Redis
+  redis:
+    image: redis:latest
+    container_name: redis-service
+    restart: always
+    ports:
+      - "6379:6379"
+
+  # 只保留 RabbitMQ
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: rabbitmq-service
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"

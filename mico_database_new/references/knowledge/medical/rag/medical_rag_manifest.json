@@ -1,0 +1,35 @@
+{
+  "createdAt": "2026-04-13T16:16:16",
+  "input": {
+    "fulltextDir": "E:\\DeskTop\\java_code\\mico_database_new\\references\\knowledge\\medical\\papers-fulltext",
+    "fulltextIndex": "E:\\DeskTop\\java_code\\mico_database_new\\references\\knowledge\\medical\\papers-fulltext\\fulltext-index.jsonl"
+  },
+  "output": {
+    "chunks": "E:\\DeskTop\\java_code\\mico_database_new\\references\\knowledge\\medical\\rag\\medical_chunks.jsonl",
+    "bm25": "E:\\DeskTop\\java_code\\mico_database_new\\references\\knowledge\\medical\\rag\\medical_bm25_stats.json"
+  },
+  "params": {
+    "maxChars": 1800,
+    "overlap": 250,
+    "minChars": 240
+  },
+  "summary": {
+    "chunkCount": 3617,
+    "paperCount": 65,
+    "topicPaperCount": {
+      "cirrhosis": 5,
+      "healthy_baseline": 6,
+      "cad": 9,
+      "early_ad": 8,
+      "t2d": 9,
+      "crc": 7,
+      "ad": 4,
+      "ms": 6,
+      "fatty_liver": 5,
+      "ibd": 4,
+      "obesity": 2
+    },
+    "bm25Docs": 3617,
+    "bm25Avgdl": 120.778822
+  }
+}

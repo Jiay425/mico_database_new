@@ -1,0 +1,4 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Fri Mar 20 20:58:49 CST 2026
+3a518f72bb8fd958cb7586bd624a7e23dee1645b@default-central-http\://artifactory.hundsun.com\:80/artifactory/kyp-mvn-virtual/.lastUpdated=1774011529893
+http\://artifactory.hundsun.com\:80/artifactory/kyp-mvn-virtual/.error=Could not transfer artifact org.springframework.boot\:spring-boot-starter-parent\:pom\:2.7.18 from/to central (http\://artifactory.hundsun.com\:80/artifactory/kyp-mvn-virtual)\: artifactory.hundsun.com

@@ -1,0 +1,173 @@
+server:
+  port: 8088
+
+spring:
+  application:
+    name: ai-orchestrator
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+app:
+  upstream:
+    business-base-url: http://localhost:5000/api
+  ai:
+    provider-enabled: true
+    summary-enabled: true
+    openai:
+      api-key: ${AI_OPENAI_API_KEY:}
+      base-url: ${AI_OPENAI_BASE_URL:https://yinli.one/v1}
+      model-name: ${AI_OPENAI_MODEL:gpt-4o}
+      temperature: ${AI_OPENAI_TEMPERATURE:0.2}
+      log-requests: false
+      log-responses: false
+  knowledge:
+    enabled: true
+    root-dir: ${AI_KNOWLEDGE_ROOT:E:/DeskTop/java_code/mico_database_new/references/knowledge}
+    max-results: 3
+  web-search:
+    enabled: ${AI_WEB_SEARCH_ENABLED:false}
+    provider: ${AI_WEB_SEARCH_PROVIDER:tavily}
+    api-key: ${AI_WEB_SEARCH_API_KEY:}
+    base-url: ${AI_WEB_SEARCH_BASE_URL:https://api.tavily.com}
+    search-path: ${AI_WEB_SEARCH_PATH:/search}
+    max-results: ${AI_WEB_SEARCH_MAX_RESULTS:3}
+    search-depth: ${AI_WEB_SEARCH_DEPTH:basic}
+    topic: ${AI_WEB_SEARCH_TOPIC:general}
+    include-answer: false
+  harness:
+    flow:
+      enabled: true
+      override-summary: true
+      max-iterations: 1
+      definitions:
+        - id: patient-default-flow
+          intent: PATIENT_ANALYSIS
+          description: 患者页多阶段执行流（分析-执行-质检-总结）
+          steps:
+            - key: analyzer
+              role: analyzer
+              sequence: 1
+              completion-signal: ANALYSIS_READY
+              prompt-template: |
+                你是数据分析节点。基于患者上下文和已有结果，输出结构化分析要点。
+                用户问题：{{message}}
+                页面：{{page}}，患者：{{patient_id}}，样本：{{sample_id}}
+                若信息足够，请在末尾附加：ANALYSIS_READY
+            - key: precision_executor
+              role: precision_executor
+              sequence: 2
+              completion-signal: EXECUTION_READY
+              prompt-template: |
+                你是精确执行节点。将分析结果转为可执行解释，强调与健康组偏离和关键特征。
+                上一步输出：{{rolling_input}}
+                若信息足够，请在末尾附加：EXECUTION_READY
+            - key: quality_supervisor
+              role: quality_supervisor
+              sequence: 3
+              completion-signal: QUALITY_PASS
+              prompt-template: |
+                你是质量监督节点。检查回答是否包含：
+                1) 内部数据依据 2) 模型边界提示 3) 结论可执行建议。
+                如通过请包含 QUALITY_PASS；如需优化包含 OPTIMIZE；严重问题包含 FAIL。
+                待评审文本：{{rolling_input}}
+            - key: response_assistant
+              role: response_assistant
+              sequence: 4
+              prompt-template: |
+                你是总结节点。把可通过质检的内容整理成简洁专业中文结论，避免重复和空话。
+                质检后输入：{{rolling_input}}
+        - id: prediction-default-flow
+          intent: PREDICTION_ASSISTANT
+          description: 预测页多阶段执行流（分析-执行-质检-总结）
+          steps:
+            - key: analyzer
+              role: analyzer
+              sequence: 1
+              completion-signal: ANALYSIS_READY
+              prompt-template: |
+                你是预测分析节点。解释当前预测输入与结果的关键驱动因子。
+                用户问题：{{message}}
+                上下文：页面={{page}}，患者={{patient_id}}，样本={{sample_id}}
+                若信息足够，请附加 ANALYSIS_READY
+            - key: precision_executor
+              role: precision_executor
+              sequence: 2
+              completion-signal: EXECUTION_READY
+              prompt-template: |
+                你是预测执行节点。输出“为什么不是Top2”的因果解释，并给出可验证建议。
+                上一步输出：{{rolling_input}}
+                若信息足够，请附加 EXECUTION_READY
+            - key: quality_supervisor
+              role: quality_supervisor
+              sequence: 3
+              completion-signal: QUALITY_PASS
+              prompt-template: |
+                你是预测质检节点。检查是否明确区分：
+                - 内部数据
+                - 模型判断
+                - 内部知识
+                - 外部证据
+                通过请包含 QUALITY_PASS；否则 OPTIMIZE 或 FAIL。
+            - key: response_assistant
+              role: response_assistant
+              sequence: 4
+              prompt-template: |
+                你是预测总结节点。用医疗场景可落地的中文话术输出最终结论和建议。
+        - id: dashboard-default-flow
+          intent: DASHBOARD_QA
+          description: 首页多阶段执行流（分析-执行-质检-总结）
+          steps:
+            - key: analyzer
+              role: analyzer
+              sequence: 1
+              completion-signal: ANALYSIS_READY
+              prompt-template: |
+                你是首页分析节点。总结当前看板最值得关注的异常与趋势。
+                用户问题：{{message}}
+                页面：{{page}}
+                若信息足够，请附加 ANALYSIS_READY
+            - key: precision_executor
+              role: precision_executor
+              sequence: 2
+              completion-signal: EXECUTION_READY
+              prompt-template: |
+                你是首页执行节点。给出优先级排序后的行动项，避免泛泛描述。
+                上一步输出：{{rolling_input}}
+                若信息足够，请附加 EXECUTION_READY
+            - key: quality_supervisor
+              role: quality_supervisor
+              sequence: 3
+              completion-signal: QUALITY_PASS
+              prompt-template: |
+                你是首页质检节点。检查结论是否有明确指标依据和执行建议。
+                通过请包含 QUALITY_PASS；否则 OPTIMIZE 或 FAIL。
+            - key: response_assistant
+              role: response_assistant
+              sequence: 4
+              prompt-template: |
+                你是首页总结节点。输出简洁、专业、可执行的中文结论。
+    mcp-registry:
+      enabled: true
+      clients:
+        - mcp-id: local-harness-mcp
+          mcp-name: Local Harness MCP
+          transport-type: http
+          endpoint: http://localhost:8088/mcp
+          request-timeout: 30
+          status: ACTIVE
+        - mcp-id: tavily-remote-mcp
+          mcp-name: Tavily Remote MCP
+          transport-type: http
+          endpoint: ${AI_TAVILY_MCP_ENDPOINT:https://mcp.tavily.com/mcp}
+          request-timeout: 30
+          status: ACTIVE
+        - mcp-id: business-api
+          mcp-name: Business API Connector
+          transport-type: http
+          endpoint: ${AI_BUSINESS_API_ENDPOINT:http://localhost:5000/api}
+          request-timeout: 20
+          status: ACTIVE

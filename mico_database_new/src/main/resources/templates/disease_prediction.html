@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>预测分析 - Mico 医疗分析平台</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" th:href="@{/css/comon0.css}">
+    <script type="text/javascript" th:src="@{/js/jquery.js}"></script>
+    <script type="text/javascript" th:src="@{/js/echarts.min.js}"></script>
+    <script type="text/javascript" th:src="@{/js/mico-theme.js}"></script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-custom sticky-top">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand navbar-brand-custom" th:href="@{/}">
+                <i class="bi bi-activity"></i> Mico 医疗分析平台
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarContent">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link nav-link-custom" th:href="@{/}">数据总览</a></li>
+                    <li class="nav-item"><a class="nav-link nav-link-custom" th:href="@{/search_patient}">患者检索</a></li>
+                    <li class="nav-item"><a class="nav-link nav-link-custom active" th:href="@{/disease_prediction}">预测分析</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="page-shell compact">
+        <section class="page-hero fade-in-up">
+            <div class="hero-grid">
+                <div class="hero-copy">
+                    <span class="eyebrow">预测工作台</span>
+                    <h1 class="hero-title">疾病风险预测 <span class="muted">样本接入、校验与结果判读</span></h1>
+                    <p class="hero-description">面向高维微生物丰度样本的预测工作台，支持库内样本带入、文件上传和高级调试输入。</p>
+                    <div class="pill-row">
+                        <span class="hero-chip"><i class="bi bi-database-check"></i>库内样本带入</span>
+                        <span class="hero-chip"><i class="bi bi-file-earmark-arrow-up"></i>支持文件上传</span>
+                        <span class="hero-chip"><i class="bi bi-bezier2"></i>结果与可视化联动</span>
+                        <button type="button" class="hero-chip ai-assistant-open" data-ai-message="请解读当前预测工作台状态">
+                            <i class="bi bi-stars"></i>AI 助手
+                        </button>
+                    </div>
+                </div>
+                <aside class="hero-panel">
+                    <span class="status-pill primary" id="hero-source-status"><i class="bi bi-cpu"></i>等待载入样本</span>
+                    <div class="summary-grid">
+                        <div class="summary-tile">
+                            <small class="text-secondary">推荐流程</small>
+                            <strong>先载入样本，再进行预测与对照分析。</strong>
+                        </div>
+                        <div class="summary-tile">
+                            <small class="text-secondary">当前模式</small>
+                            <strong id="hero-source-mode">等待选择数据来源。</strong>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </section>
+
+        <section class="workspace-grid fade-in-up" style="animation-delay: 0.08s;">
+            <div class="card-box h-100">
+                <div class="d-flex align-items-center mb-4">
+                    <div class="metric-icon me-3"><i class="bi bi-sliders"></i></div>
+                    <div>
+                        <h5 class="fw-bold mb-0">数据接入</h5>
+                        <small class="text-secondary">样本接入、摘要预览与高级输入</small>
+                    </div>
+                </div>
+
+                <div class="data-source-grid mb-4">
+                    <button type="button" class="source-card active" id="source-library-btn">
+                        <i class="bi bi-database-add"></i><strong>库内样本</strong><span>从患者详情一键带入</span>
+                    </button>
+                    <button type="button" class="source-card" id="source-upload-btn">
+                        <i class="bi bi-file-earmark-arrow-up"></i><strong>上传文件</strong><span>支持 CSV、TSV、JSON</span>
+                    </button>
+                    <button type="button" class="source-card" id="source-manual-btn">
+                        <i class="bi bi-braces-asterisk"></i><strong>高级输入</strong><span>仅用于调试与手工粘贴</span>
+                    </button>
+                </div>
+
+                <input type="file" id="sample-file-input" class="d-none" accept=".csv,.tsv,.txt,.json,.jsn">
+
+                <div class="data-ingest-card mb-4">
+                    <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                        <div>
+                            <span class="section-kicker mb-2">输入概览</span>
+                            <h6 class="fw-bold mb-1">样本数据摘要</h6>
+                            <p class="text-secondary mb-0" id="ingest-summary-text">当前未载入样本，请先选择数据来源。</p>
+                        </div>
+                        <span class="status-pill" id="ingest-status-pill"><i class="bi bi-circle"></i>未载入</span>
+                    </div>
+                    <div class="data-summary-grid mt-4">
+                        <div class="data-summary-card"><span>样本编号</span><strong id="summary-sample-id">-</strong><small>当前接入样本</small></div>
+                        <div class="data-summary-card"><span>特征总数</span><strong id="summary-feature-count">0</strong><small>微生物特征数</small></div>
+                        <div class="data-summary-card"><span>非零特征</span><strong id="summary-nonzero-count">0</strong><small>可读有效值</small></div>
+                        <div class="data-summary-card"><span>校验状态</span><strong id="summary-validation-state">待校验</strong><small id="summary-validation-note">预测前将进行后端格式校验</small></div>
+                    </div>
+                </div>
+
+                <div class="data-ingest-card mb-4">
+                    <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
+                        <div>
+                            <span class="section-kicker mb-2">特征预览</span>
+                            <h6 class="fw-bold mb-1">高丰度微生物预览</h6>
+                            <p class="text-secondary mb-0">默认展示前 20 项高丰度特征，完整向量保留在后台预测链路中处理。</p>
+                        </div>
+                        <span class="metric-chip" id="preview-source-label">未载入</span>
+                    </div>
+                    <div class="preview-table-shell">
+                        <div class="preview-table-head"><span>特征</span><span>数值</span><span>占比提示</span></div>
+                        <div class="preview-table-body" id="feature-preview-list">
+                            <div class="preview-empty"><i class="bi bi-bar-chart-line"></i><span>载入样本后显示预览</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion mb-4" id="advancedInput">
+                    <div class="accordion-item border-0">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed fw-medium" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
+                                <i class="bi bi-plus-circle me-2 text-primary"></i>高级输入与调试
+                            </button>
+                        </h2>
+                        <div id="collapseOne" class="accordion-collapse collapse" data-bs-parent="#advancedInput">
+                            <div class="accordion-body px-0 pb-0">
+                                <div class="card-box soft mb-0">
+                                    <div class="mb-3">
+                                        <label for="microbe-data" class="form-label text-secondary small fw-bold">微生物丰度向量</label>
+                                        <textarea class="form-control data-input-area compact" id="microbe-data" rows="8" placeholder="请在此粘贴 CSV 或 JSON 格式的向量数据..." spellcheck="false"></textarea>
+                                    </div>
+                                    <div class="advanced-note"><i class="bi bi-info-circle"></i><span>建议仅在调试场景下使用手工输入。真实样本优先使用库内带入或文件上传。</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2 workbench-actions">
+                    <button type="button" class="btn btn-light py-2" id="load-example-btn">加载示例数据</button>
+                    <button type="button" class="btn btn-light py-2" id="clear-workbench-btn">清空当前样本</button>
+                    <button type="button" class="btn btn-primary py-3" id="predict-btn"><i class="bi bi-lightning-charge-fill me-2"></i>开始分析</button>
+                </div>
+            </div>
+
+            <div class="card-box h-100 p-0 text-start">
+                <div class="surface-header">
+                    <div>
+                        <span class="section-kicker">分析报告</span>
+                        <h2 class="surface-title">预测结果与可视化分析</h2>
+                        <p class="surface-subtitle">预测结果、丰度曲线与 PCoA 对照</p>
+                    </div>
+                    <span id="status-badge" class="status-pill"><i class="bi bi-circle-fill" style="font-size: 6px;"></i>待执行</span>
+                </div>
+                <div class="p-4" style="min-height: 540px;">
+                    <div id="initial-placeholder" class="empty-state">
+                        <div class="empty-state-icon"><i class="bi bi-cpu"></i></div>
+                        <div>
+                            <h4 class="fw-bold text-secondary mb-2">等待分析</h4>
+                            <p class="text-muted mb-0">请先载入样本数据，再生成预测报告。</p>
+                        </div>
+                    </div>
+                    <div id="results-section" style="display: none;">
+                        <div class="mb-4">
+                            <h6 class="text-uppercase text-secondary fw-bold small mb-3" style="letter-spacing: 0.12em;">预测结果</h6>
+                            <div id="prediction-result"></div>
+                        </div>
+                        <h6 class="text-uppercase text-secondary fw-bold small mb-3 mt-5" style="letter-spacing: 0.12em;">辅助可视化</h6>
+                        <div class="row g-4">
+                            <div class="col-lg-6"><div class="card-box soft h-100 mb-0 p-3"><div id="curve-comparison-chart" class="chart-container"></div></div></div>
+                            <div class="col-lg-6"><div class="card-box soft h-100 mb-0 p-3"><div id="pcoa-chart" class="chart-container"></div></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function(){
+            var curveChart = null, pcoaChart = null;
+            var resultsSection = $('#results-section'), initialPlaceholder = $('#initial-placeholder'), statusBadge = $('#status-badge');
+            const COLOR_PRIMARY = '#0071E3', COLOR_SUCCESS = '#34C759', COLOR_TEXT_LIGHT = '#6e6e73', COLOR_GRID = '#ececf0', FONT_FAMILY = '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+            const featurePreviewList = $('#feature-preview-list');
+            const advancedInputEl = document.getElementById('collapseOne');
+            const advancedInput = advancedInputEl ? new bootstrap.Collapse(advancedInputEl, { toggle: false }) : null;
+            const state = { source: 'library', sourceLabel: '库内样本', patientId: null, sampleId: '-', featureCount: 0, nonZeroCount: 0, rawData: '', previewItems: [], featureItems: [] };
+            window.__predictionAssistantState = state;
+
+            function formatCount(v){ return Number(v || 0).toLocaleString('zh-CN'); }
+            function setSourceCard(id){ $('.source-card').removeClass('active'); $('#' + id).addClass('active'); }
+            function setHero(text, mode, cls){ $('#hero-source-status').removeClass('primary warning positive').addClass(cls || 'primary').html('<i class="bi bi-cpu"></i>' + text); $('#hero-source-mode').text(mode); }
+            function setIngest(label, cls, icon){ $('#ingest-status-pill').removeClass('primary warning positive').addClass(cls || '').html((icon || '<i class="bi bi-circle"></i>') + label); }
+            function escapeHtml(text){ return String(text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+
+            function prettifyTaxonomy(rawName){
+                var source = String(rawName || '').trim();
+                if (!source) return { primary: '未命名特征', secondary: '标准丰度特征' };
+
+                var parts = source.split('.').map(function(part){ return part.trim(); }).filter(Boolean);
+                var cleaned = parts.map(function(part){
+                    return part.replace(/^[a-z]__+/i, '').replace(/^_+|_+$/g, '');
+                }).filter(function(part){ return !!part; });
+
+                if (!cleaned.length) {
+                    return { primary: source, secondary: '标准丰度特征' };
+                }
+
+                var primary = cleaned[cleaned.length - 1];
+                var lineage = cleaned.slice(Math.max(0, cleaned.length - 4), cleaned.length - 1);
+                var secondary = lineage.length ? lineage.join(' / ') : '标准丰度特征';
+                return { primary: primary, secondary: secondary };
+            }
+
+            function renderPreview(items){
+                featurePreviewList.empty();
+                if (!items.length) {
+                    featurePreviewList.html('<div class="preview-empty"><i class="bi bi-bar-chart-line"></i><span>载入样本后显示预览</span></div>');
+                    return;
+                }
+                var maxValue = Math.max.apply(null, items.map(function(item){ return item.value; })) || 1;
+                items.forEach(function(item, index){
+                    var width = Math.max(8, Math.round((item.value / maxValue) * 100));
+                    var display = prettifyTaxonomy(item.name);
+                    var metaText = item.meta ? (item.meta + ' · ' + display.secondary) : display.secondary;
+                    featurePreviewList.append(
+                        '<div class="preview-row">'
+                        + '<div class="preview-name">'
+                        + '<span class="preview-rank">' + (index + 1) + '</span>'
+                        + '<div class="preview-name-copy">'
+                        + '<strong title="' + escapeHtml(item.name) + '">' + escapeHtml(display.primary) + '</strong>'
+                        + '<small title="' + escapeHtml(item.name) + '">' + escapeHtml(metaText) + '</small>'
+                        + '</div>'
+                        + '</div>'
+                        + '<div class="preview-value">' + item.displayValue + '</div>'
+                        + '<div class="preview-bar-track"><div class="preview-bar-fill" style="width:' + width + '%"></div></div>'
+                        + '</div>'
+                    );
+                });
+            }
+
+            function updateSummary(){
+                $('#summary-sample-id').text(state.sampleId || '-');
+                $('#summary-feature-count').text(formatCount(state.featureCount));
+                $('#summary-nonzero-count').text(formatCount(state.nonZeroCount));
+                $('#preview-source-label').text(state.sourceLabel || '未载入');
+                if (!state.rawData) {
+                    $('#ingest-summary-text').text('当前未载入样本，请先选择数据来源。');
+                    $('#summary-validation-state').text('待校验');
+                    $('#summary-validation-note').text('预测前将进行后端格式校验');
+                    setIngest('未载入', '', '<i class="bi bi-circle"></i>');
+                    setHero('等待载入样本', '等待选择数据来源。', 'primary');
+                    renderPreview([]);
+                    return;
+                }
+                $('#ingest-summary-text').text('已载入 ' + state.sourceLabel + '，共 ' + formatCount(state.featureCount) + ' 个特征，非零特征 ' + formatCount(state.nonZeroCount) + ' 个。');
+                $('#summary-validation-state').text('已载入');
+                $('#summary-validation-note').text('预测时将进行后端格式校验与特征对齐');
+                setIngest('已载入', 'positive', '<i class="bi bi-check-circle-fill"></i>');
+                setHero('样本已就绪', '当前使用 ' + state.sourceLabel + '。', 'positive');
+                renderPreview(state.previewItems);
+            }
+
+            function makePreview(items){
+                return items.slice().sort(function(a, b){ return b.value - a.value; }).slice(0, 20).map(function(item){
+                    return { name: item.name, value: item.value, displayValue: Number(item.value).toLocaleString('zh-CN', { maximumFractionDigits: 6 }), meta: item.meta || '丰度值' };
+                });
+            }
+
+            function loadData(payload){
+                state.source = payload.source || 'manual';
+                state.sourceLabel = payload.sourceLabel || '手工输入';
+                state.patientId = payload.patientId || null;
+                state.sampleId = payload.sampleId || '-';
+                state.featureCount = payload.featureCount || 0;
+                state.nonZeroCount = payload.nonZeroCount || 0;
+                state.rawData = payload.rawData || '';
+                state.previewItems = payload.previewItems || [];
+                state.featureItems = payload.featureItems || [];
+                $('#microbe-data').val(state.rawData);
+                updateSummary();
+            }
+
+            function parseVector(rawText, sourceLabel, sampleId){
+                var trimmed = (rawText || '').trim();
+                if (!trimmed) return null;
+                var items = [], parsed = null;
+                try { parsed = JSON.parse(trimmed); } catch (e) { parsed = null; }
+
+                function fromArray(arr){
+                    if (!arr.length) return [];
+                    if (typeof arr[0] === 'number') {
+                        return arr.map(function(value, index){ return { name: '特征 ' + (index + 1), value: Number(value) || 0, meta: '向量特征' }; });
+                    }
+                    return arr.map(function(item, index){
+                        var rawValue = item.abundanceValue != null ? item.abundanceValue : (item.value != null ? item.value : item.abundance);
+                        return { name: item.microbeName || item.name || item.feature || ('特征 ' + (index + 1)), value: Number(rawValue) || 0, meta: item.unit || '微生物丰度' };
+                    });
+                }
+
+                if (parsed) {
+                    if (Array.isArray(parsed)) items = fromArray(parsed);
+                    else if (typeof parsed === 'object') {
+                        if (typeof parsed.raw_data === 'string') return parseVector(parsed.raw_data, sourceLabel, sampleId || parsed.sampleId);
+                        if (Array.isArray(parsed.values)) items = fromArray(parsed.values);
+                        else if (Array.isArray(parsed.features)) items = fromArray(parsed.features);
+                        else if (Array.isArray(parsed.data)) items = fromArray(parsed.data);
+                        if (!sampleId && parsed.sampleId) sampleId = parsed.sampleId;
+                    }
+                }
+
+                if (!items.length) {
+                    var values = trimmed.split(/[\s,;\t\r\n]+/).map(function(token){ return token.trim(); }).filter(Boolean).map(Number).filter(function(value){ return !Number.isNaN(value); });
+                    items = values.map(function(value, index){ return { name: '特征 ' + (index + 1), value: value, meta: '向量特征' }; });
+                }
+                if (!items.length) return null;
+                var valuesOnly = items.map(function(item){ return item.value; });
+                return {
+                    source: state.source,
+                    sourceLabel: sourceLabel,
+                    sampleId: sampleId || (sourceLabel === '上传文件' ? '文件样本' : '手工样本'),
+                    rawData: valuesOnly.join(', '),
+                    featureCount: valuesOnly.length,
+                    nonZeroCount: valuesOnly.filter(function(value){ return Math.abs(value) > 0; }).length,
+                    previewItems: makePreview(items),
+                    featureItems: items
+                };
+            }
+
+            function loadFromPatientPayload(){
+                var cached = sessionStorage.getItem('prediction_patient_payload');
+                if (!cached) {
+                    setSourceCard('source-library-btn');
+                    state.source = 'library';
+                    state.sourceLabel = '库内样本';
+                    setHero('等待载入样本', '未检测到来自患者详情的样本。', 'primary');
+                    $('#ingest-summary-text').text('未检测到来自患者详情的样本，请先从患者详情进入，或改用文件上传。');
+                    $('#preview-source-label').text('库内样本');
+                    return;
+                }
+                try {
+                    var patient = JSON.parse(cached);
+                    var microbes = Array.isArray(patient.microbialAbundanceData) ? patient.microbialAbundanceData : [];
+                    if (!microbes.length) {
+                        $('#ingest-summary-text').text('该样本未包含微生物丰度数据，请改用文件上传或高级输入。');
+                        return;
+                    }
+                    var activeSampleId = patient.activeSampleId || patient.sampleId || (microbes[0] && microbes[0].sampleId) || patient.patientId || patient.patientName || '库内样本';
+                    var items = microbes.map(function(item, index){ return { name: item.microbeName || ('特征 ' + (index + 1)), value: Number(item.abundanceValue) || 0, meta: item.unit || '微生物丰度' }; });
+                    loadData({ source: 'library', sourceLabel: '库内样本', patientId: patient.patientId || null, sampleId: activeSampleId, rawData: items.map(function(item){ return item.value; }).join(', '), featureCount: items.length, nonZeroCount: items.filter(function(item){ return Math.abs(item.value) > 0; }).length, previewItems: makePreview(items), featureItems: items });
+                    setSourceCard('source-library-btn');
+                    if (advancedInput) advancedInput.hide();
+                } catch (e) { console.warn('患者样本解析失败', e); }
+            }
+
+            function resetWorkbench(){
+                state.source = 'library'; state.sourceLabel = '库内样本'; state.patientId = null; state.sampleId = '-'; state.featureCount = 0; state.nonZeroCount = 0; state.rawData = ''; state.previewItems = []; state.featureItems = [];
+                $('#microbe-data').val('');
+                updateSummary();
+                resultsSection.hide();
+                initialPlaceholder.show();
+                $('#prediction-result').empty();
+                statusBadge.removeClass('positive warning').addClass('primary').html('<i class="bi bi-circle-fill" style="font-size: 6px;"></i>待执行');
+            }
+
+            function ensureManualState(){
+                if (state.source !== 'manual') return true;
+                var currentText = $('#microbe-data').val();
+                if ((currentText || '').trim() === (state.rawData || '').trim() && state.rawData) return true;
+                var parsed = parseVector(currentText, '高级输入', state.sampleId && state.sampleId !== '-' ? state.sampleId : 'MANUAL-SAMPLE');
+                if (!parsed) return false;
+                parsed.source = 'manual';
+                loadData(parsed);
+                return true;
+            }
+
+            function buildRequestPayload(){
+                return {
+                    raw_data: state.rawData,
+                    sample_id: state.sampleId,
+                    source: state.source,
+                    features: (state.featureItems || []).map(function(item){
+                        return {
+                            name: item.name,
+                            value: Number(item.value) || 0,
+                            meta: item.meta || ''
+                        };
+                    })
+                };
+            }
+
+            $('#source-library-btn').on('click', function(){ state.source = 'library'; state.sourceLabel = '库内样本'; setSourceCard('source-library-btn'); loadFromPatientPayload(); });
+            $('#source-upload-btn').on('click', function(){ state.source = 'upload'; state.sourceLabel = '上传文件'; setSourceCard('source-upload-btn'); if (advancedInput) advancedInput.hide(); $('#sample-file-input').trigger('click'); });
+            $('#source-manual-btn').on('click', function(){ state.source = 'manual'; state.sourceLabel = '高级输入'; setSourceCard('source-manual-btn'); if (advancedInput) advancedInput.show(); setHero('高级输入模式', '当前使用手工输入模式。', 'primary'); setTimeout(function(){ $('#microbe-data').trigger('focus'); }, 250); });
+
+            $('#sample-file-input').on('change', function(event){
+                var file = event.target.files && event.target.files[0];
+                if (!file) return;
+                var reader = new FileReader();
+                reader.onload = function(loadEvent){
+                    var parsed = parseVector(loadEvent.target.result, '上传文件', file.name);
+                    if (!parsed) { alert('无法识别该文件中的有效数值，请检查格式。'); return; }
+                    loadData(parsed);
+                    setSourceCard('source-upload-btn');
+                };
+                reader.readAsText(file, 'utf-8');
+            });
+
+            $('#load-example-btn').on('click', function(){
+                var parsed = parseVector('0.55,0,0.12,0.08,2.31,0,0.41,3.18,0,0.65,1.24,0,6.72,0,0.91,4.38,0,0.04,0.18,0.76', '示例样本', 'DEMO-001');
+                if (parsed) {
+                    parsed.source = 'manual';
+                    loadData(parsed);
+                    setSourceCard('source-manual-btn');
+                    if (advancedInput) advancedInput.show();
+                }
+            });
+
+            $('#clear-workbench-btn').on('click', function(){ resetWorkbench(); $('#sample-file-input').val(''); });
+
+            $('#predict-btn').on('click', function(){
+                if (!ensureManualState()) { alert('请先载入样本数据。'); return; }
+                var payload = buildRequestPayload();
+                if ((!payload.raw_data || !payload.raw_data.trim()) && (!payload.features || !payload.features.length)) { alert('请先载入样本数据。'); return; }
+                var resultDiv = $('#prediction-result'), predictBtn = $(this);
+                resultDiv.empty(); resultsSection.hide(); initialPlaceholder.show();
+                statusBadge.removeClass('positive warning primary').addClass('primary').html('<span class="spinner-border spinner-border-sm me-2"></span>分析中');
+                $('#summary-validation-state').text('校验中');
+                $('#summary-validation-note').text('后端正在进行格式校验与预测');
+                predictBtn.prop('disabled', true).addClass('opacity-50');
+
+                $.ajax({
+                    url: '/predict_api',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(payload),
+                    success: function(response){
+                        initialPlaceholder.hide();
+                        resultsSection.fadeIn();
+                        if (response.success && response.predictions) {
+                            statusBadge.removeClass('primary warning').addClass('positive').html('<i class="bi bi-check-circle-fill me-2"></i>已完成');
+                            $('#summary-validation-state').text('已通过');
+                            $('#summary-validation-note').text('后端已完成输入校验与结果生成');
+                            var resultHtml = '';
+                            response.predictions.forEach(function(pred, index){
+                                var itemClass = index === 0 ? 'prediction-item top-result' : 'prediction-item';
+                                var icon = index === 0 ? '<i class="bi bi-check-circle-fill text-success me-3 fs-5"></i>' : '<i class="bi bi-circle text-muted me-3" style="font-size: 8px;"></i>';
+                                resultHtml += '<div class="' + itemClass + '"><div class="d-flex align-items-center">' + icon + pred.label + '</div><span class="probability-badge">' + pred.probability + '%</span></div>';
+                            });
+                            resultDiv.html(resultHtml);
+                            getAndRenderVisualizations(payload);
+                        } else if (response.model_ready === false) {
+                            statusBadge.removeClass('primary positive').addClass('warning').html('<i class="bi bi-exclamation-circle me-2"></i>模型未就绪');
+                            $('#summary-validation-state').text('待接模');
+                            $('#summary-validation-note').text(response.detail || '当前接口已连通，但模型文件或推理服务尚未就绪');
+                            resultDiv.html('<div class="alert alert-warning rounded-4 mb-0"><strong>' + (response.error || '模型未接入') + '</strong><div class="mt-2 small text-secondary">' + (response.suggestion || response.detail || '请先完成全量训练并启动模型服务。') + '</div></div>');
+                        } else {
+                            statusBadge.removeClass('primary positive').addClass('warning').html('执行失败');
+                            $('#summary-validation-state').text('失败');
+                            $('#summary-validation-note').text(response.detail || '后端未通过格式校验或结果生成失败');
+                            resultDiv.html('<div class="alert alert-danger rounded-4">' + (response.error || '未知错误') + '</div>');
+                        }
+                    },
+                    error: function(xhr){
+                        initialPlaceholder.hide();
+                        resultsSection.show();
+                        statusBadge.removeClass('primary positive').addClass('warning').html('执行失败');
+                        $('#summary-validation-state').text('失败');
+                        $('#summary-validation-note').text('后端未通过格式校验或接口调用失败');
+                        var errorMessage = xhr.responseJSON ? xhr.responseJSON.error : '连接失败';
+                        resultDiv.html('<div class="alert alert-danger rounded-4">请求失败：' + errorMessage + '</div>');
+                    },
+                    complete: function(){ predictBtn.prop('disabled', false).removeClass('opacity-50'); }
+                });
+            });
+
+            function getAndRenderVisualizations(payload){
+                var curveDom = document.getElementById('curve-comparison-chart');
+                var pcoaDom = document.getElementById('pcoa-chart');
+                if (curveChart === null || curveChart.isDisposed()) curveChart = echarts.init(curveDom, 'mico-medical', { renderer: 'svg' });
+                if (pcoaChart === null || pcoaChart.isDisposed()) pcoaChart = echarts.init(pcoaDom, 'mico-medical', { renderer: 'svg' });
+                curveChart.clear(); pcoaChart.clear();
+                curveChart.showLoading({ color: COLOR_PRIMARY, textColor: COLOR_TEXT_LIGHT, maskColor: 'rgba(255,255,255,0.8)' });
+                pcoaChart.showLoading({ color: COLOR_PRIMARY, textColor: COLOR_TEXT_LIGHT, maskColor: 'rgba(255,255,255,0.8)' });
+
+                $.when(
+                    $.ajax({ url: '/api/abundance_curves', type: 'POST', contentType: 'application/json', data: JSON.stringify(payload) }),
+                    $.ajax({ url: '/api/pcoa_data', type: 'POST', contentType: 'application/json', data: JSON.stringify(payload) })
+                ).done(function(curveAjaxResult, pcoaAjaxResult){
+                    var curveData = curveAjaxResult[0];
+                    curveChart.hideLoading();
+                    if (curveData.success) {
+                        var seriesData = [{
+                            name: '当前样本',
+                            type: 'line',
+                            smooth: true,
+                            data: curveData.user_curve,
+                            showSymbol: false,
+                            lineStyle: { width: 3, color: COLOR_PRIMARY },
+                            itemStyle: { color: COLOR_PRIMARY },
+                            areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(0, 113, 227, 0.2)' }, { offset: 1, color: 'rgba(0, 113, 227, 0)' }]) }
+                        }];
+                        var legendData = ['当前样本'];
+                        if (curveData.has_healthy_data) {
+                            seriesData.push({ name: '健康对照', type: 'line', smooth: true, data: curveData.healthy_curve, showSymbol: false, lineStyle: { type: 'dashed', width: 2, color: COLOR_SUCCESS }, itemStyle: { color: COLOR_SUCCESS } });
+                            legendData.push('健康对照');
+                        }
+                        curveChart.setOption({ title: { text: '丰度曲线对比', left: 'left', textStyle: { fontSize: 14, fontWeight: 600, fontFamily: FONT_FAMILY } }, tooltip: { trigger: 'axis' }, legend: { data: legendData, bottom: 0, icon: 'circle', itemGap: 20 }, grid: { left: '10%', right: '5%', bottom: '15%', top: '18%' }, xAxis: { type: 'value', splitLine: { show: false }, axisLabel: { color: COLOR_TEXT_LIGHT, fontFamily: FONT_FAMILY } }, yAxis: { type: 'value', axisLabel: { color: COLOR_TEXT_LIGHT, fontFamily: FONT_FAMILY }, splitLine: { lineStyle: { color: COLOR_GRID, type: 'dashed' } } }, series: seriesData });
+                    }
+
+                    var pcoaData = pcoaAjaxResult[0];
+                    pcoaChart.hideLoading();
+                    if (pcoaData.success) {
+                        var legendNames = ['健康对照', '当前样本'];
+                        var series = [
+                            { name: '健康对照', type: 'scatter', symbolSize: 8, data: pcoaData.healthy_coords, itemStyle: { color: 'rgba(52, 199, 89, 0.4)' } },
+                            { name: '当前样本', type: 'scatter', symbolSize: 18, data: [pcoaData.user_coord], itemStyle: { color: COLOR_PRIMARY, shadowBlur: 10, shadowColor: 'rgba(0, 113, 227, 0.5)' }, zlevel: 1 }
+                        ];
+                        if (pcoaData.ellipse_points && pcoaData.ellipse_points.length > 0) {
+                            legendNames.push('95% 置信区间');
+                            series.unshift({ name: '95% 置信区间', type: 'line', smooth: true, symbol: 'none', lineStyle: { width: 1, color: '#aaa', type: 'dotted' }, areaStyle: { color: 'rgba(0,0,0,0.02)', origin: 'auto' }, data: pcoaData.ellipse_points, zlevel: 0 });
+                        }
+                        pcoaChart.setOption({ title: { text: 'PCoA 分布', left: 'left', textStyle: { fontSize: 14, fontWeight: 600, fontFamily: FONT_FAMILY } }, tooltip: { trigger: 'item' }, legend: { data: legendNames, bottom: 0, icon: 'circle', itemGap: 20 }, grid: { left: '10%', right: '10%', bottom: '15%', top: '20%' }, xAxis: { type: 'value', axisLabel: { show: false }, axisTick: { show: false }, splitLine: { lineStyle: { color: COLOR_GRID } } }, yAxis: { type: 'value', axisLabel: { show: false }, axisTick: { show: false }, splitLine: { lineStyle: { color: COLOR_GRID } } }, series: series });
+                    }
+                }).fail(function(){ curveChart.hideLoading(); pcoaChart.hideLoading(); });
+            }
+
+            resetWorkbench();
+            loadFromPatientPayload();
+        });
+    </script>
+    <script>
+        window.aiAssistantConfig = {
+            title: '预测 AI 助手',
+            subtitle: '结合当前样本、预测结果与工作台状态进行解释',
+            welcome: '我可以结合当前预测工作台的样本状态、结果区和特征预览，帮助你解释接下来该怎么看。',
+            starterPrompts: [
+                '请解读当前预测工作台状态',
+                '这个样本接下来应该怎么看',
+                '请解释当前预测结果'
+            ],
+            getContext: function () {
+                var state = window.__predictionAssistantState || {};
+                return {
+                    page: 'disease_prediction',
+                    patientId: state.patientId || null,
+                    sampleId: state.sampleId && state.sampleId !== '-' ? state.sampleId : null
+                };
+            }
+        };
+    </script>
+    <script type="text/javascript" th:src="@{/js/ai-assistant.js}"></script>
+</body>
+</html>

@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.database.mico_database.mapper.PatientMapper">
+
+    <resultMap id="basePatientMap" type="com.database.mico_database.model.Patient">
+        <id     property="patientId"          column="patient_id" />
+        <result property="patientName"        column="patient_name" />
+        <result property="group"              column="Group" />
+        <result property="age"                column="age" />
+        <result property="gender"             column="gender" />
+        <result property="country"            column="country" />
+        <result property="bmi"                column="BMI" />
+        <result property="bodySite"           column="body_site" />
+        <result property="sequencingPlatform" column="sequencing_platform" />
+        <result property="disease"            column="disease" />
+    </resultMap>
+    <update id="updatePatientRisk" parameterType="com.database.mico_database.model.Patient">
+        UPDATE patients
+        SET
+            risk_score = #{riskScore},
+            risk_level = #{riskLevel},
+            ai_suggestion = #{aiSuggestion}
+        WHERE patient_name = #{patientName}
+    </update>
+
+    <select id="findById" parameterType="java.lang.String" resultMap="basePatientMap">
+        SELECT * FROM patients WHERE patient_id = #{patientId}
+    </select>
+
+    <select id="findMicrobesByPatientId" resultType="com.database.mico_database.model.MicrobeAbundance">
+        SELECT * FROM microbe_abundance WHERE patient_id = #{patientId} ORDER BY sample_date DESC
+    </select>
+
+    <select id="findStandardMicrobesByPatientId" resultType="com.database.mico_database.model.MicrobeAbundance">
+        SELECT
+            standard_abundance_id AS abundance_id,
+            patient_id,
+            sample_id,
+            sample_date,
+            microbe_name_standard AS microbe_name,
+            abundance_value,
+            abundance_unit AS unit,
+            normalization_method AS method
+        FROM microbe_abundance_standard
+        WHERE patient_id = #{patientId}
+        ORDER BY sample_date DESC, sample_id ASC, microbe_name_standard ASC
+    </select>
+
+    <select id="findStandardMicrobesByPatientIdAndSampleId" resultType="com.database.mico_database.model.MicrobeAbundance">
+        SELECT
+            standard_abundance_id AS abundance_id,
+            patient_id,
+            sample_id,
+            sample_date,
+            microbe_name_standard AS microbe_name,
+            abundance_value,
+            abundance_unit AS unit,
+            normalization_method AS method
+        FROM microbe_abundance_standard
+        WHERE patient_id = #{patientId}
+          AND sample_id = #{sampleId}
+        ORDER BY abundance_value DESC, microbe_name_standard ASC
+    </select>
+
+    <select id="findTopStandardMicrobesByPatientIdAndSampleId" resultType="com.database.mico_database.model.MicrobeAbundance">
+        SELECT
+            standard_abundance_id AS abundance_id,
+            patient_id,
+            sample_id,
+            sample_date,
+            microbe_name_standard AS microbe_name,
+            abundance_value,
+            abundance_unit AS unit,
+            normalization_method AS method
+        FROM microbe_abundance_standard
+        WHERE patient_id = #{patientId}
+          AND sample_id = #{sampleId}
+        ORDER BY abundance_value DESC, microbe_name_standard ASC
+        LIMIT #{limit}
+    </select>
+
+    <select id="findStandardSampleSummariesByPatientId" resultType="java.util.LinkedHashMap">
+        SELECT
+            patient_id,
+            sample_id,
+            MAX(sample_date) AS sample_date,
+            COUNT(*) AS feature_count,
+            SUM(abundance_value) AS abundance_total
+        FROM microbe_abundance_standard
+        WHERE patient_id = #{patientId}
+        GROUP BY patient_id, sample_id
+        ORDER BY sample_date DESC, sample_id ASC
+    </select>
+
+    <select id="countHealthyReferenceStats" resultType="java.util.LinkedHashMap">
+        SELECT
+            COUNT(DISTINCT P.patient_id) AS patient_count,
+            COUNT(DISTINCT CONCAT(M.patient_id, ':', M.sample_id)) AS sample_count
+        FROM patients P
+        JOIN microbe_abundance_standard M ON P.patient_id = M.patient_id
+        WHERE LOWER(TRIM(P.disease)) = 'healthy'
+        <if test="useBodySite and bodySite != null and bodySite != ''">
+            AND P.body_site = #{bodySite}
+        </if>
+    </select>
+
+    <select id="findHealthyAverageForMicrobes" resultType="java.util.LinkedHashMap">
+        SELECT
+            M.microbe_name_standard AS microbe_name,
+            AVG(M.abundance_value) AS avg_abundance,
+            STDDEV_POP(M.abundance_value) AS std_abundance,
+            COUNT(DISTINCT CONCAT(M.patient_id, ':', M.sample_id)) AS sample_hits
+        FROM patients P
+        JOIN microbe_abundance_standard M ON P.patient_id = M.patient_id
+        WHERE LOWER(TRIM(P.disease)) = 'healthy'
+        <if test="useBodySite and bodySite != null and bodySite != ''">
+            AND P.body_site = #{bodySite}
+        </if>
+        <if test="microbeNames != null and microbeNames.size() > 0">
+            AND M.microbe_name_standard IN
+            <foreach collection="microbeNames" item="name" open="(" separator="," close=")">
+                #{name}
+            </foreach>
+        </if>
+        GROUP BY M.microbe_name_standard
+        ORDER BY avg_abundance DESC, sample_hits DESC
+    </select>
+
+    <select id="findHealthyMicrobeStats" resultType="java.util.LinkedHashMap">
+        SELECT
+            M.microbe_name_standard AS microbe_name,
+            AVG(M.abundance_value) AS avg_abundance,
+            STDDEV_POP(M.abundance_value) AS std_abundance,
+            COUNT(DISTINCT CONCAT(M.patient_id, ':', M.sample_id)) AS sample_hits
+        FROM patients P
+        JOIN microbe_abundance_standard M ON P.patient_id = M.patient_id
+        WHERE LOWER(TRIM(P.disease)) = 'healthy'
+        <if test="useBodySite and bodySite != null and bodySite != ''">
+            AND P.body_site = #{bodySite}
+        </if>
+        GROUP BY M.microbe_name_standard
+        ORDER BY avg_abundance DESC, sample_hits DESC
+    </select>
+
+    <select id="findHealthyFeatureMatrix" resultType="java.util.LinkedHashMap">
+        SELECT
+            CONCAT(M.patient_id, ':', M.sample_id) AS sample_key,
+            M.patient_id AS patient_id,
+            M.sample_id AS sample_id,
+            M.microbe_name_standard AS microbe_name,
+            M.abundance_value AS abundance_value
+        FROM patients P
+        JOIN microbe_abundance_standard M ON P.patient_id = M.patient_id
+        WHERE LOWER(TRIM(P.disease)) = 'healthy'
+        <if test="useBodySite and bodySite != null and bodySite != ''">
+            AND P.body_site = #{bodySite}
+        </if>
+        <if test="microbeNames != null and microbeNames.size() > 0">
+            AND M.microbe_name_standard IN
+            <foreach collection="microbeNames" item="name" open="(" separator="," close=")">
+                #{name}
+            </foreach>
+        </if>
+        ORDER BY sample_key ASC, M.microbe_name_standard ASC
+    </select>
+
+    <select id="findHealthyTopMicrobes" resultType="java.util.LinkedHashMap">
+        SELECT
+            M.microbe_name_standard AS microbe_name,
+            AVG(M.abundance_value) AS avg_abundance,
+            COUNT(DISTINCT CONCAT(M.patient_id, ':', M.sample_id)) AS sample_hits
+        FROM patients P
+        JOIN microbe_abundance_standard M ON P.patient_id = M.patient_id
+        WHERE LOWER(TRIM(P.disease)) = 'healthy'
+        <if test="useBodySite and bodySite != null and bodySite != ''">
+            AND P.body_site = #{bodySite}
+        </if>
+        GROUP BY M.microbe_name_standard
+        ORDER BY avg_abundance DESC, sample_hits DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="findCytokinesByPatientId" resultType="com.database.mico_database.model.CytokineData">
+        SELECT * FROM cytokine_abundance WHERE patient_id = #{patientId} ORDER BY sample_date DESC
+    </select>
+
+    <select id="findIdsByName" parameterType="java.lang.String" resultType="java.lang.String">
+        SELECT patient_id FROM patients WHERE patient_name = #{patientName}
+    </select>
+
+    <select id="findIdsByDisease" parameterType="java.lang.String" resultType="java.lang.String">
+        SELECT P.patient_id FROM patients P
+                                     JOIN patient_diseases PD ON P.patient_id = PD.patient_id
+                                     JOIN diseases D ON PD.disease_id = D.disease_id
+        WHERE D.disease_name = #{diseaseName}
+    </select>
+
+
+    <select id="searchPatients" resultType="com.database.mico_database.model.Patient">
+        SELECT
+        patient_id,
+        patient_name,
+        age,
+        gender,
+        disease,
+        risk_score,
+        risk_level
+        FROM patients
+        <where>
+            <if test="queryType == 'id'">
+                AND patient_id = #{queryValue}
+            </if>
+
+            <if test="queryType == 'name'">
+                AND patient_name LIKE CONCAT('%', #{queryValue}, '%')
+            </if>
+
+            <if test="queryType == 'disease'">
+                AND disease LIKE CONCAT('%', #{queryValue}, '%')
+            </if>
+        </where>
+        ORDER BY patient_id ASC
+    </select>
+
+</mapper>

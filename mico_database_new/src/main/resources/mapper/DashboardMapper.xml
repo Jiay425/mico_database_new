@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.database.mico_database.mapper.DashboardMapper">
+
+    <select id="getDiseaseDistribution" resultType="com.database.mico_database.model.DiseaseCount">
+        SELECT
+            D.disease_name AS disease,
+            COUNT(PD.patient_id) AS count,
+            COUNT(PD.patient_id) AS percentage
+        FROM `diseases` D JOIN `patient_diseases` PD ON D.disease_id = PD.disease_id
+        GROUP BY D.disease_name
+        ORDER BY count DESC
+            LIMIT 10;
+    </select>
+
+    <select id="getTotalPatients" resultType="java.lang.Integer">
+        SELECT COUNT(patient_id) FROM `patients`;
+    </select>
+
+    <select id="getMostCommonDisease" resultType="java.util.Map">
+        SELECT D.disease_name as disease_name, COUNT(PD.patient_id) AS patient_count FROM `patient_diseases` PD
+                                                                                              JOIN `diseases` D ON PD.disease_id = D.disease_id
+        GROUP BY D.disease_name ORDER BY patient_count DESC LIMIT 1;
+    </select>
+
+    <select id="getMinMaxPatientAge" resultType="java.util.Map">
+        SELECT MIN(age) AS min_age, MAX(age) AS max_age FROM `patients`;
+    </select>
+
+    <select id="getAgeGenderDistribution" resultType="com.database.mico_database.model.AgeGenderCount">
+        SELECT
+            CASE
+                WHEN age BETWEEN 0 AND 10 THEN '0-10'
+                WHEN age BETWEEN 11 AND 20 THEN '11-20'
+                WHEN age BETWEEN 21 AND 30 THEN '21-30'
+                WHEN age BETWEEN 31 AND 40 THEN '31-40'
+                WHEN age BETWEEN 41 AND 50 THEN '41-50'
+                WHEN age BETWEEN 51 AND 60 THEN '51-60'
+                ELSE '60+'
+                END AS age_group,
+            gender,
+            COUNT(*) as count
+        FROM
+            patients
+        WHERE gender IS NOT NULL
+        GROUP BY
+            age_group, gender;
+    </select>
+
+    <select id="getPatientOriginDistribution" resultType="com.database.mico_database.model.CountryCount">
+        SELECT
+            country as name,
+            COUNT(*) as value
+        FROM
+            patients
+        WHERE
+            country IS NOT NULL AND country != ''
+        GROUP BY
+            country
+        ORDER BY
+            value DESC;
+    </select>
+</mapper>

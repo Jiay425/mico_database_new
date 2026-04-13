@@ -1,0 +1,4 @@
+interface:
+  display_name: "Frontend UIUX Design"
+  short_description: "Design and refine UI/UX for this medical analytics app"
+  default_prompt: "Use $frontend-uiux-design to redesign or polish a page in this medical analytics project."

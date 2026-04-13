@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>患者结果 - Mico 医疗分析平台</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" th:href="@{/css/comon0.css}">
+
+    <script type="text/javascript" th:src="@{/js/jquery.js}"></script>
+    <script type="text/javascript" th:src="@{/js/echarts.min.js}"></script>
+    <script type="text/javascript" th:src="@{/js/mico-theme.js}"></script>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-custom sticky-top">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand navbar-brand-custom" th:href="@{/}">
+                <i class="bi bi-activity"></i> Mico 医疗分析平台
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarContent">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-custom" th:href="@{/}">数据总览</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-custom active" th:href="@{/search_patient}">患者检索</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-custom" th:href="@{/disease_prediction}">预测分析</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="page-shell compact">
+
+        <div th:if="${patients_by_disease != null and not #lists.isEmpty(patients_by_disease)}" class="fade-in-up">
+            <section class="page-hero list-shell">
+                <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                    <div>
+                        <span class="eyebrow">检索结果</span>
+                        <h1 class="hero-title" style="font-size: clamp(2.1rem, 4vw, 3.8rem); max-width: none;">患者列表</h1>
+                        <p class="hero-description mb-0">
+                            当前检索结果。
+                        </p>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <span class="status-pill primary"><i class="bi bi-files"></i><span th:text="${#lists.size(patients_by_disease)}"></span> 条记录</span>
+                        <a class="btn btn-light" th:href="@{/search_patient}">
+                            <i class="bi bi-arrow-left me-2"></i>重新检索
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card-box overflow-hidden p-0">
+                <div class="table-responsive">
+                    <table class="table table-modern align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">患者编号</th>
+                                <th>姓名</th>
+                                <th>性别</th>
+                                <th>年龄</th>
+                                <th>地区</th>
+                                <th class="text-end pe-4">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="patient : ${patients_by_disease}">
+                                <td class="ps-4"><span class="table-badge" th:text="${patient.patientId}"></span></td>
+                                <td class="fw-bold" th:text="${patient.patientName}"></td>
+                                <td>
+                                    <span th:if="${#strings.equalsIgnoreCase(patient.gender, 'Male') or #strings.equalsIgnoreCase(patient.gender, 'M')}"><i class="bi bi-gender-male text-primary"></i> 男</span>
+                                    <span th:if="${#strings.equalsIgnoreCase(patient.gender, 'Female') or #strings.equalsIgnoreCase(patient.gender, 'F')}"><i class="bi bi-gender-female text-danger"></i> 女</span>
+                                    <span th:unless="${#strings.equalsIgnoreCase(patient.gender, 'Male') or #strings.equalsIgnoreCase(patient.gender, 'M') or #strings.equalsIgnoreCase(patient.gender, 'Female') or #strings.equalsIgnoreCase(patient.gender, 'F')}" th:text="${patient.gender != null ? patient.gender : '-'}"></span>
+                                </td>
+                                <td th:text="${patient.age}"></td>
+                                <td th:text="${patient.country != null and !#strings.isEmpty(patient.country) ? patient.country : '-'}"></td>
+                                <td class="text-end pe-4">
+                                    <a th:href="@{/search_patient/result(query_type='id', query_value=${patient.patientId})}" class="btn btn-sm btn-primary px-3">
+                                        查看详情
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <div th:if="${patient_data != null}" class="fade-in-up">
+            <section class="page-hero profile-shell">
+                <div class="hero-grid">
+                    <div class="hero-copy">
+                        <span class="eyebrow">患者详情</span>
+                        <div class="profile-lead">
+                            <div class="profile-avatar">
+                                <i class="bi bi-person-fill"></i>
+                            </div>
+                            <div>
+                                <h1 class="profile-heading" th:text="${patient_data.patientName}">患者姓名</h1>
+                                <div class="profile-subline">
+                                    <span><i class="bi bi-upc-scan me-1"></i><span th:text="${patient_data.patientId}"></span></span>
+                                    <span><i class="bi bi-geo-alt me-1"></i><span th:text="${patient_data.country != null and !#strings.isEmpty(patient_data.country) ? patient_data.country : '地区未录入'}"></span></span>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="hero-description">基础信息、微生物丰度与细胞因子指标。</p>
+                        <div class="sample-switcher" id="sample-switcher" style="display: none;">
+                            <div class="sample-switcher-copy">
+                                <span class="section-kicker mb-1">当前样本</span>
+                                <strong id="active-sample-label">未选择样本</strong>
+                                <small id="active-sample-meta">请先选择单一样本后再查看明细或进入预测分析。</small>
+                            </div>
+                            <div class="sample-switcher-actions">
+                                <select id="sample-selector" class="form-select form-select-lg"></select>
+                                <span class="metric-chip" id="sample-feature-chip">0 个非零特征</span>
+                            </div>
+                        </div>
+                        <div class="hero-actions">
+                            <a class="btn btn-light" th:href="@{/search_patient}">
+                                <i class="bi bi-arrow-left me-2"></i>返回检索
+                            </a>
+                            <button type="button" class="btn btn-light ai-assistant-open" data-ai-message="请解读当前患者和样本重点">
+                                <i class="bi bi-stars me-2"></i>AI 助手
+                            </button>
+                            <a class="btn btn-primary launch-predict-btn" th:href="@{/disease_prediction}">
+                                <i class="bi bi-cpu me-2"></i>进入预测分析
+                            </a>
+                        </div>
+                    </div>
+                    <div class="profile-metrics">
+                        <div class="profile-stat">
+                            <span>年龄</span>
+                            <strong th:text="${patient_data.age != null ? patient_data.age : '-'}"></strong>
+                        </div>
+                        <div class="profile-stat">
+                            <span>性别</span>
+                            <strong th:text="${#strings.equalsIgnoreCase(patient_data.gender, 'Male') or #strings.equalsIgnoreCase(patient_data.gender, 'M') ? '男' : (#strings.equalsIgnoreCase(patient_data.gender, 'Female') or #strings.equalsIgnoreCase(patient_data.gender, 'F') ? '女' : (patient_data.gender != null ? patient_data.gender : '-'))}"></strong>
+                        </div>
+                        <div class="profile-stat">
+                            <span>BMI</span>
+                            <strong th:text="${patient_data.bmi != null ? patient_data.bmi : '-'}"></strong>
+                        </div>
+                        <div class="profile-stat">
+                            <span>疾病</span>
+                            <strong th:text="${#strings.equalsIgnoreCase(patient_data.disease, 'healthy') ? '健康' : (patient_data.disease != null ? patient_data.disease : '-')}"></strong>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="row g-4 mb-4">
+                <div class="col-lg-7">
+                    <div class="card-box h-100 p-0">
+                        <div class="surface-header">
+                            <div>
+                                <span class="section-kicker">前十项</span>
+                                <h2 class="surface-title">微生物丰度</h2>
+                                <p class="surface-subtitle">主要微生物丰度</p>
+                            </div>
+                            <button class="btn btn-light btn-sm rounded-circle"><i class="bi bi-three-dots"></i></button>
+                        </div>
+                        <div class="p-3">
+                            <div id="microbe-chart" style="width: 100%; height: 410px;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-5">
+                    <div class="card-box h-100 p-0 overflow-hidden">
+                        <div class="surface-header">
+                            <div>
+                                <span class="section-kicker">明细表</span>
+                                <h2 class="surface-title">微生物明细</h2>
+                            </div>
+                        </div>
+                        <div class="table-responsive" style="height: 410px; overflow-y: auto;">
+                            <table class="table table-modern table-sm mb-0 align-middle">
+                                <thead>
+                                    <tr>
+                                        <th class="ps-4">微生物</th>
+                                        <th>丰度</th>
+                                        <th>单位</th>
+                                        <th>样本</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="microbe-table-body">
+                                    <tr th:each="microbe : ${patient_data.microbialAbundanceData}">
+                                        <td class="ps-4 fw-medium text-truncate" style="max-width: 150px;" th:text="${microbe.microbeName}" th:title="${microbe.microbeName}"></td>
+                                        <td class="fw-bold text-primary" th:text="${microbe.abundanceValue}"></td>
+                                        <td class="text-muted small" th:text="${microbe.unit}"></td>
+                                        <td class="text-muted small" th:text="${microbe.sampleId}"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div th:if="${patient_data.microbialAbundanceData == null or #lists.isEmpty(patient_data.microbialAbundanceData)}" class="empty-state">
+                                <div class="empty-state-icon"><i class="bi bi-bar-chart"></i></div>
+                                <div>暂无微生物数据</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <section class="card-box p-0 overflow-hidden">
+                <div class="surface-header">
+                    <div>
+                        <span class="section-kicker">免疫指标</span>
+                        <h2 class="surface-title"><i class="bi bi-diagram-3 me-2 text-primary"></i>细胞因子分析</h2>
+                        <p class="surface-subtitle">细胞因子检测结果</p>
+                    </div>
+                </div>
+                <div class="table-responsive p-0">
+                    <table class="table table-modern align-middle mb-0" th:if="${patient_data.cytokineData != null and not #lists.isEmpty(patient_data.cytokineData)}">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">指标名称</th>
+                                <th>检测值</th>
+                                        <th>单位</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="cytokine : ${patient_data.cytokineData}">
+                                <td class="ps-4 fw-bold text-dark" th:text="${cytokine.cytokineName}"></td>
+                                <td>
+                                    <div class="progress" style="height: 7px; width: 120px; display: inline-flex; vertical-align: middle; margin-right: 12px; border-radius: 999px; background: rgba(29, 29, 31, 0.07);">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: 65%; border-radius: 999px;"></div>
+                                    </div>
+                                    <span class="fw-bold" th:text="${cytokine.abundanceValue}"></span>
+                                </td>
+                                <td class="text-muted" th:text="${cytokine.unit}"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div th:if="${patient_data.cytokineData == null or #lists.isEmpty(patient_data.cytokineData)}" class="empty-state">
+                        <div class="empty-state-icon"><i class="bi bi-diagram-3"></i></div>
+                        <div>暂无细胞因子数据</div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div th:if="${error != null}" class="fade-in-up">
+            <section class="page-hero">
+                <div class="empty-state">
+                    <div class="empty-state-icon"><i class="bi bi-search"></i></div>
+                    <div>
+                        <h2 class="surface-title mb-2">未找到符合条件的结果</h2>
+                        <p class="text-secondary mb-3" th:text="${error}"></p>
+                        <a th:href="@{/search_patient}" class="btn btn-primary">重新检索</a>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div class="d-flex justify-content-center mt-5 mb-5" th:if="${total_pages > 1}">
+            <nav>
+                <ul class="pagination pagination-lg">
+                    <li class="page-item" th:classappend="${current_page <= 1} ? 'disabled'">
+                        <a class="page-link rounded-pill me-2" th:href="@{/search_patient/result(query_type=${query_type}, query_value=${query_value}, page=${current_page - 1})}">
+                            <i class="bi bi-arrow-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link border-0 bg-transparent text-secondary fw-bold shadow-none">第 [[${current_page}]] 页 / 共 [[${total_pages}]] 页</span>
+                    </li>
+                    <li class="page-item" th:classappend="${current_page >= total_pages} ? 'disabled'">
+                        <a class="page-link rounded-pill ms-2" th:href="@{/search_patient/result(query_type=${query_type}, query_value=${query_value}, page=${current_page + 1})}">
+                            <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+
+    </main>
+
+    <script type="application/json" id="patient-data-json" th:utext="${patient_data_json}"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            try {
+                const rawNode = document.getElementById('patient-data-json');
+                if (!rawNode) return;
+
+                const rawJson = rawNode.textContent;
+                if (!rawJson || rawJson === 'null') return;
+
+                const patientData = JSON.parse(rawJson);
+                const microbes = Array.isArray(patientData.microbialAbundanceData) ? patientData.microbialAbundanceData : [];
+                const sampleSwitcher = document.getElementById('sample-switcher');
+                const sampleSelector = document.getElementById('sample-selector');
+                const sampleLabel = document.getElementById('active-sample-label');
+                const sampleMeta = document.getElementById('active-sample-meta');
+                const sampleFeatureChip = document.getElementById('sample-feature-chip');
+                const microbeTableBody = document.getElementById('microbe-table-body');
+                let microbeChart = null;
+                window.__patientAssistantState = window.__patientAssistantState || {};
+                window.__patientAssistantState.patientId = patientData.patientId || null;
+                window.__patientAssistantState.patientName = patientData.patientName || null;
+                window.__patientAssistantState.sampleId = null;
+
+                function groupBySample(items) {
+                    const groups = new Map();
+                    items.forEach(function (item) {
+                        const sampleId = item.sampleId || '未标注样本';
+                        if (!groups.has(sampleId)) {
+                            groups.set(sampleId, []);
+                        }
+                        groups.get(sampleId).push(item);
+                    });
+                    return groups;
+                }
+
+                function formatSampleDate(items) {
+                    const dated = items.find(function (item) { return item.sampleDate; });
+                    if (!dated || !dated.sampleDate) return '日期未记录';
+                    return String(dated.sampleDate).slice(0, 10);
+                }
+
+                function renderMicrobeTable(items) {
+                    if (!microbeTableBody) return;
+                    microbeTableBody.innerHTML = items.map(function (microbe) {
+                        return '<tr>'
+                            + '<td class="ps-4 fw-medium text-truncate" style="max-width: 150px;" title="' + (microbe.microbeName || '') + '">' + (microbe.microbeName || '-') + '</td>'
+                            + '<td class="fw-bold text-primary">' + (microbe.abundanceValue != null ? microbe.abundanceValue : '-') + '</td>'
+                            + '<td class="text-muted small">' + (microbe.unit || '-') + '</td>'
+                            + '<td class="text-muted small">' + (microbe.sampleId || '-') + '</td>'
+                            + '</tr>';
+                    }).join('');
+                }
+
+                function buildPredictionPayload(activeSampleId, activeMicrobes) {
+                    return Object.assign({}, patientData, {
+                        activeSampleId: activeSampleId,
+                        microbialAbundanceData: activeMicrobes
+                    });
+                }
+
+                const sampleGroups = groupBySample(microbes);
+                const sampleIds = Array.from(sampleGroups.keys());
+                let activeSampleId = sampleIds.length ? sampleIds[0] : null;
+
+                const launchPredictBtn = document.querySelector('.launch-predict-btn');
+                if (launchPredictBtn) {
+                    launchPredictBtn.addEventListener('click', function () {
+                        try {
+                            const activeMicrobes = activeSampleId ? (sampleGroups.get(activeSampleId) || []) : [];
+                            sessionStorage.setItem('prediction_patient_payload', JSON.stringify(buildPredictionPayload(activeSampleId, activeMicrobes)));
+                        } catch (storageError) {
+                            console.warn('无法缓存患者预测数据', storageError);
+                        }
+                    });
+                }
+
+                function renderActiveSample(sampleId) {
+                    const activeMicrobes = sampleGroups.get(sampleId) || [];
+                    activeSampleId = sampleId;
+                    window.__patientAssistantState.sampleId = sampleId || null;
+                    if (sampleLabel) sampleLabel.textContent = sampleId || '未标注样本';
+                    if (sampleMeta) sampleMeta.textContent = '采样日期：' + formatSampleDate(activeMicrobes) + '，当前仅展示该样本的标准丰度。';
+                    if (sampleFeatureChip) sampleFeatureChip.textContent = activeMicrobes.length + ' 个非零特征';
+                    renderMicrobeTable(activeMicrobes);
+
+                    const top10Microbes = activeMicrobes
+                        .slice()
+                        .sort(function (a, b) { return b.abundanceValue - a.abundanceValue; })
+                        .slice(0, 10)
+                        .reverse();
+
+                    const chartLabels = top10Microbes.map(function (m) {
+                        const parts = (m.microbeName || '').split('.');
+                        return parts[parts.length - 1] || m.microbeName;
+                    });
+                    const chartValues = top10Microbes.map(function (m) { return m.abundanceValue; });
+
+                    const chartDom = document.getElementById('microbe-chart');
+                    if (chartDom) {
+                        if (!microbeChart || microbeChart.isDisposed()) {
+                            microbeChart = echarts.init(chartDom, 'mico-medical', { renderer: 'svg' });
+                            window.addEventListener('resize', function() { microbeChart.resize(); });
+                        }
+                        const option = {
+                            grid: { left: '5%', right: '6%', bottom: '5%', top: '4%', containLabel: true },
+                            xAxis: {
+                                type: 'value',
+                                axisLabel: { color: '#6e6e73', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif' },
+                                splitLine: { lineStyle: { type: 'dashed', color: '#ececf0' } }
+                            },
+                            yAxis: {
+                                type: 'category',
+                                data: chartLabels,
+                                axisLine: { show: false },
+                                axisTick: { show: false },
+                                axisLabel: { color: '#1d1d1f', fontWeight: 500, fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif' }
+                            },
+                            series: [{
+                                name: '丰度',
+                                type: 'bar',
+                                data: chartValues,
+                                barWidth: 18,
+                                itemStyle: {
+                                    color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                                        { offset: 0, color: '#0071E3' },
+                                        { offset: 1, color: '#5bb6ff' }
+                                    ]),
+                                    borderRadius: [0, 10, 10, 0]
+                                }
+                            }]
+                        };
+                        microbeChart.setOption(option, true);
+                    }
+                }
+
+                if (sampleIds.length > 0 && sampleSelector && sampleSwitcher) {
+                    sampleSwitcher.style.display = 'flex';
+                    sampleSelector.innerHTML = sampleIds.map(function (sampleId) {
+                        return '<option value="' + sampleId + '">' + sampleId + '</option>';
+                    }).join('');
+                    sampleSelector.value = activeSampleId;
+                    sampleSelector.addEventListener('change', function () {
+                        renderActiveSample(this.value);
+                    });
+                }
+
+                if (microbes.length > 0 && activeSampleId) {
+                    renderActiveSample(activeSampleId);
+                }
+            } catch (e) {
+                console.error("Chart Init Error", e);
+            }
+        });
+    </script>
+    <script>
+        window.aiAssistantConfig = {
+            title: '患者 AI 助手',
+            subtitle: '结合患者详情、样本与高丰度特征进行解读',
+            welcome: '我可以结合当前患者、当前样本和标准丰度数据，快速给出一版结构化解读。',
+            starterPrompts: [
+                '当前样本和健康组相比有什么区别',
+                '相对健康基线偏离在哪里',
+                '这些偏离和预测结果一致吗'
+            ],
+            getContext: function () {
+                var state = window.__patientAssistantState || {};
+                return {
+                    page: 'patient_results',
+                    patientId: state.patientId || null,
+                    sampleId: state.sampleId || null
+                };
+            }
+        };
+    </script>
+    <script type="text/javascript" th:src="@{/js/ai-assistant.js}"></script>
+</body>
+</html>

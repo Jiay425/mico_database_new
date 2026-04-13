@@ -1,0 +1,210 @@
+2025-11-24 20:44:07.890 [main] INFO  c.database.mico_database.MicoDatabaseApplication - Starting MicoDatabaseApplication using Java 17.0.16 with PID 18388 (E:\DeskTop\java_code\mico_database\target\classes started by ASUS in E:\DeskTop\java_code\mico_database)
+2025-11-24 20:44:07.892 [main] DEBUG c.database.mico_database.MicoDatabaseApplication - Running with Spring Boot v3.1.5, Spring v6.0.13
+2025-11-24 20:44:07.893 [main] INFO  c.database.mico_database.MicoDatabaseApplication - No active profile set, falling back to 1 default profile: "default"
+2025-11-24 20:44:08.696 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-11-24 20:44:08.699 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-11-24 20:44:08.721 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 7 ms. Found 0 Redis repository interfaces.
+2025-11-24 20:44:09.357 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 5000 (http)
+2025-11-24 20:44:09.365 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-5000"]
+2025-11-24 20:44:09.367 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2025-11-24 20:44:09.367 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.15]
+2025-11-24 20:44:09.444 [main] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2025-11-24 20:44:09.445 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1508 ms
+2025-11-24 20:44:10.510 [main] INFO  o.s.b.a.web.servlet.WelcomePageHandlerMapping - Adding welcome page template: index
+2025-11-24 20:44:10.653 [main] INFO  o.s.security.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@4bff28e7, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@39e7e040, org.springframework.security.web.context.SecurityContextHolderFilter@3d718248, org.springframework.security.web.header.HeaderWriterFilter@13404f75, org.springframework.security.web.authentication.logout.LogoutFilter@6124dda2, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter@3f122cdc, org.springframework.security.web.authentication.ui.DefaultLoginPageGeneratingFilter@7a7f9d45, org.springframework.security.web.authentication.ui.DefaultLogoutPageGeneratingFilter@2591d23a, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@8aa5ab4, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@4e756867, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@6c1f15df, org.springframework.security.web.access.ExceptionTranslationFilter@66314fee, org.springframework.security.web.access.intercept.AuthorizationFilter@29188050]
+2025-11-24 20:44:11.052 [main] WARN  o.s.core.LocalVariableTableParameterNameDiscoverer - Using deprecated '-debug' fallback for parameter name resolution. Compile the affected code with '-parameters' instead or avoid its introspection: org.springframework.amqp.rabbit.core.RabbitAdmin
+2025-11-24 20:44:11.089 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-5000"]
+2025-11-24 20:44:11.107 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 5000 (http) with context path ''
+2025-11-24 20:44:11.110 [main] INFO  o.s.a.rabbit.connection.CachingConnectionFactory - Attempting to connect to: [localhost:5672]
+2025-11-24 20:44:11.154 [main] INFO  o.s.a.rabbit.connection.CachingConnectionFactory - Created new connection: rabbitConnectionFactory#5fb7ab9c:0/SimpleConnection@22854f2b [delegate=amqp://guest@127.0.0.1:5672/, localPort=5514]
+2025-11-24 20:44:11.206 [main] INFO  c.database.mico_database.MicoDatabaseApplication - Started MicoDatabaseApplication in 3.824 seconds (process running for 4.561)
+2025-11-24 20:44:24.340 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] INFO  o.s.a.r.listener.SimpleMessageListenerContainer - Waiting for workers to finish.
+2025-11-24 20:44:25.340 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] INFO  o.s.a.r.listener.SimpleMessageListenerContainer - Successfully waited for workers to finish.
+2025-11-24 20:44:30.974 [main] INFO  c.database.mico_database.MicoDatabaseApplication - Starting MicoDatabaseApplication using Java 17.0.16 with PID 15088 (E:\DeskTop\java_code\mico_database\target\classes started by ASUS in E:\DeskTop\java_code\mico_database)
+2025-11-24 20:44:30.976 [main] DEBUG c.database.mico_database.MicoDatabaseApplication - Running with Spring Boot v3.1.5, Spring v6.0.13
+2025-11-24 20:44:30.977 [main] INFO  c.database.mico_database.MicoDatabaseApplication - No active profile set, falling back to 1 default profile: "default"
+2025-11-24 20:44:31.661 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-11-24 20:44:31.663 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-11-24 20:44:31.681 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 6 ms. Found 0 Redis repository interfaces.
+2025-11-24 20:44:32.255 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 5000 (http)
+2025-11-24 20:44:32.262 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-5000"]
+2025-11-24 20:44:32.264 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2025-11-24 20:44:32.264 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.15]
+2025-11-24 20:44:32.338 [main] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2025-11-24 20:44:32.339 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1320 ms
+2025-11-24 20:44:33.155 [main] INFO  o.s.b.a.web.servlet.WelcomePageHandlerMapping - Adding welcome page template: index
+2025-11-24 20:44:33.263 [main] INFO  o.s.security.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@f237ae7, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@42edde25, org.springframework.security.web.context.SecurityContextHolderFilter@45ad3cd8, org.springframework.security.web.header.HeaderWriterFilter@949d347, org.springframework.security.web.authentication.logout.LogoutFilter@6c1f15df, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter@45311a99, org.springframework.security.web.authentication.ui.DefaultLoginPageGeneratingFilter@380e33c2, org.springframework.security.web.authentication.ui.DefaultLogoutPageGeneratingFilter@6fe5da76, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@5a2f401a, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@2d230cff, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@77d95e5a, org.springframework.security.web.access.ExceptionTranslationFilter@772cf46b, org.springframework.security.web.access.intercept.AuthorizationFilter@ba0018e]
+2025-11-24 20:44:33.656 [main] WARN  o.s.core.LocalVariableTableParameterNameDiscoverer - Using deprecated '-debug' fallback for parameter name resolution. Compile the affected code with '-parameters' instead or avoid its introspection: org.springframework.amqp.rabbit.core.RabbitAdmin
+2025-11-24 20:44:33.696 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-5000"]
+2025-11-24 20:44:33.717 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 5000 (http) with context path ''
+2025-11-24 20:44:33.720 [main] INFO  o.s.a.rabbit.connection.CachingConnectionFactory - Attempting to connect to: [localhost:5672]
+2025-11-24 20:44:33.764 [main] INFO  o.s.a.rabbit.connection.CachingConnectionFactory - Created new connection: rabbitConnectionFactory#54a056e4:0/SimpleConnection@538f45f1 [delegate=amqp://guest@127.0.0.1:5672/, localPort=5541]
+2025-11-24 20:44:33.819 [main] INFO  c.database.mico_database.MicoDatabaseApplication - Started MicoDatabaseApplication in 3.307 seconds (process running for 3.936)
+2025-11-24 20:44:47.932 [http-nio-5000-exec-1] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-11-24 20:44:47.933 [http-nio-5000-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2025-11-24 20:44:47.934 [http-nio-5000-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2025-11-24 20:44:54.113 [http-nio-5000-exec-3] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-11-24 20:44:54.233 [http-nio-5000-exec-3] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@7d6c658f
+2025-11-24 20:44:54.234 [http-nio-5000-exec-3] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2025-11-24 20:44:54.240 [http-nio-5000-exec-3] DEBUG c.d.mico_database.mapper.UserMapper.findByUsername - ==>  Preparing: SELECT * FROM sys_user WHERE username = ?
+2025-11-24 20:44:54.260 [http-nio-5000-exec-3] DEBUG c.d.mico_database.mapper.UserMapper.findByUsername - ==> Parameters: admin(String)
+2025-11-24 20:44:54.279 [http-nio-5000-exec-3] DEBUG c.d.mico_database.mapper.UserMapper.findByUsername - <==      Total: 1
+2025-11-24 20:44:54.819 [http-nio-5000-exec-4] DEBUG c.d.m.m.DashboardMapper.getDiseaseDistribution - ==>  Preparing: SELECT D.disease_name AS disease, COUNT(PD.patient_id) AS count, COUNT(PD.patient_id) AS percentage FROM `diseases` D JOIN `patient_diseases` PD ON D.disease_id = PD.disease_id GROUP BY D.disease_name ORDER BY count DESC LIMIT 10;
+2025-11-24 20:44:54.820 [http-nio-5000-exec-4] DEBUG c.d.m.m.DashboardMapper.getDiseaseDistribution - ==> Parameters: 
+2025-11-24 20:44:54.834 [http-nio-5000-exec-4] DEBUG c.d.m.m.DashboardMapper.getDiseaseDistribution - <==      Total: 10
+2025-11-24 20:44:54.835 [http-nio-5000-exec-4] DEBUG c.d.m.m.D.getPatientOriginDistribution - ==>  Preparing: SELECT country as name, COUNT(*) as value FROM patients WHERE country IS NOT NULL AND country != '' GROUP BY country ORDER BY value DESC;
+2025-11-24 20:44:54.835 [http-nio-5000-exec-4] DEBUG c.d.m.m.D.getPatientOriginDistribution - ==> Parameters: 
+2025-11-24 20:44:54.848 [http-nio-5000-exec-4] DEBUG c.d.m.m.D.getPatientOriginDistribution - <==      Total: 38
+2025-11-24 20:44:54.849 [http-nio-5000-exec-4] DEBUG c.d.m.m.DashboardMapper.getAgeGenderDistribution - ==>  Preparing: SELECT CASE WHEN age BETWEEN 0 AND 10 THEN '0-10' WHEN age BETWEEN 11 AND 20 THEN '11-20' WHEN age BETWEEN 21 AND 30 THEN '21-30' WHEN age BETWEEN 31 AND 40 THEN '31-40' WHEN age BETWEEN 41 AND 50 THEN '41-50' WHEN age BETWEEN 51 AND 60 THEN '51-60' ELSE '60+' END AS age_group, gender, COUNT(*) as count FROM patients WHERE gender IS NOT NULL GROUP BY age_group, gender;
+2025-11-24 20:44:54.849 [http-nio-5000-exec-4] DEBUG c.d.m.m.DashboardMapper.getAgeGenderDistribution - ==> Parameters: 
+2025-11-24 20:44:54.865 [http-nio-5000-exec-4] DEBUG c.d.m.m.DashboardMapper.getAgeGenderDistribution - <==      Total: 18
+2025-11-24 20:44:54.865 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.DashboardMapper.getTotalPatients - ==>  Preparing: SELECT COUNT(patient_id) FROM `patients`;
+2025-11-24 20:44:54.866 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.DashboardMapper.getTotalPatients - ==> Parameters: 
+2025-11-24 20:44:54.870 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.DashboardMapper.getTotalPatients - <==      Total: 1
+2025-11-24 20:44:54.871 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.DashboardMapper.getMostCommonDisease - ==>  Preparing: SELECT D.disease_name as disease_name, COUNT(PD.patient_id) AS patient_count FROM `patient_diseases` PD JOIN `diseases` D ON PD.disease_id = D.disease_id GROUP BY D.disease_name ORDER BY patient_count DESC LIMIT 1;
+2025-11-24 20:44:54.871 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.DashboardMapper.getMostCommonDisease - ==> Parameters: 
+2025-11-24 20:44:54.883 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.DashboardMapper.getMostCommonDisease - <==      Total: 1
+2025-11-24 20:44:54.884 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.DashboardMapper.getMinMaxPatientAge - ==>  Preparing: SELECT MIN(age) AS min_age, MAX(age) AS max_age FROM `patients`;
+2025-11-24 20:44:54.884 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.DashboardMapper.getMinMaxPatientAge - ==> Parameters: 
+2025-11-24 20:44:54.889 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.DashboardMapper.getMinMaxPatientAge - <==      Total: 1
+2025-11-24 20:45:00.896 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] INFO  c.database.mico_database.service.AnalysisConsumer - 【消费者】收到分析任务，ID: P001
+2025-11-24 20:45:00.896 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] INFO  c.database.mico_database.service.AnalysisConsumer - 【消费者】准备调用 Python AI 服务...
+2025-11-24 20:45:02.955 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] INFO  c.database.mico_database.service.AnalysisConsumer - 【消费者】Python 服务响应: {"patient_id":"P001","risk_level":"LOW","risk_score":0.1542,"suggestion":"\u5065\u5eb7\u72b6\u51b5\u826f\u597d"}
+
+2025-11-24 20:45:02.970 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] DEBUG c.d.m.mapper.PatientMapper.updatePatientRisk - ==>  Preparing: UPDATE patients SET risk_score = ?, risk_level = ?, ai_suggestion = ? WHERE patient_id = ?
+2025-11-24 20:45:02.971 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] DEBUG c.d.m.mapper.PatientMapper.updatePatientRisk - ==> Parameters: 0.1542(Double), LOW(String), 健康状况良好(String), P001(String)
+2025-11-24 20:45:03.017 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] ERROR c.database.mico_database.service.AnalysisConsumer - 【消费者】处理失败，ID: P001
+org.springframework.dao.DataIntegrityViolationException: 
+### Error updating database.  Cause: com.mysql.cj.jdbc.exceptions.MysqlDataTruncation: Data truncation: Truncated incorrect DOUBLE value: 'P001'
+### The error may exist in file [E:\DeskTop\java_code\mico_database\target\classes\mapper\PatientMapper.xml]
+### The error may involve com.database.mico_database.mapper.PatientMapper.updatePatientRisk-Inline
+### The error occurred while setting parameters
+### SQL: UPDATE patients         SET             risk_score = ?,             risk_level = ?,             ai_suggestion = ?         WHERE patient_id = ?
+### Cause: com.mysql.cj.jdbc.exceptions.MysqlDataTruncation: Data truncation: Truncated incorrect DOUBLE value: 'P001'
+; Data truncation: Truncated incorrect DOUBLE value: 'P001'
+	at org.springframework.jdbc.support.SQLStateSQLExceptionTranslator.doTranslate(SQLStateSQLExceptionTranslator.java:110)
+	at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:73)
+	at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:82)
+	at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:82)
+	at org.mybatis.spring.MyBatisExceptionTranslator.translateExceptionIfPossible(MyBatisExceptionTranslator.java:92)
+	at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:439)
+	at jdk.proxy2/jdk.proxy2.$Proxy76.update(Unknown Source)
+	at org.mybatis.spring.SqlSessionTemplate.update(SqlSessionTemplate.java:288)
+	at org.apache.ibatis.binding.MapperMethod.execute(MapperMethod.java:67)
+	at org.apache.ibatis.binding.MapperProxy$PlainMethodInvoker.invoke(MapperProxy.java:141)
+	at org.apache.ibatis.binding.MapperProxy.invoke(MapperProxy.java:86)
+	at jdk.proxy2/jdk.proxy2.$Proxy80.updatePatientRisk(Unknown Source)
+	at com.database.mico_database.service.AnalysisConsumer.handleAnalysisTask(AnalysisConsumer.java:85)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at org.springframework.messaging.handler.invocation.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:169)
+	at org.springframework.amqp.rabbit.listener.adapter.KotlinAwareInvocableHandlerMethod.doInvoke(KotlinAwareInvocableHandlerMethod.java:45)
+	at org.springframework.messaging.handler.invocation.InvocableHandlerMethod.invoke(InvocableHandlerMethod.java:119)
+	at org.springframework.amqp.rabbit.listener.adapter.HandlerAdapter.invoke(HandlerAdapter.java:75)
+	at org.springframework.amqp.rabbit.listener.adapter.MessagingMessageListenerAdapter.invokeHandler(MessagingMessageListenerAdapter.java:277)
+	at org.springframework.amqp.rabbit.listener.adapter.MessagingMessageListenerAdapter.invokeHandlerAndProcessResult(MessagingMessageListenerAdapter.java:224)
+	at org.springframework.amqp.rabbit.listener.adapter.MessagingMessageListenerAdapter.onMessage(MessagingMessageListenerAdapter.java:149)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.doInvokeListener(AbstractMessageListenerContainer.java:1663)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.actualInvokeListener(AbstractMessageListenerContainer.java:1582)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.invokeListener(AbstractMessageListenerContainer.java:1570)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.doExecuteListener(AbstractMessageListenerContainer.java:1561)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.executeListenerAndHandleException(AbstractMessageListenerContainer.java:1506)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.lambda$executeListener$8(AbstractMessageListenerContainer.java:1484)
+	at io.micrometer.observation.Observation.lambda$observe$0(Observation.java:493)
+	at io.micrometer.observation.Observation.observeWithContext(Observation.java:603)
+	at io.micrometer.observation.Observation.observe(Observation.java:492)
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.executeListener(AbstractMessageListenerContainer.java:1484)
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer.doReceiveAndExecute(SimpleMessageListenerContainer.java:994)
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer.receiveAndExecute(SimpleMessageListenerContainer.java:941)
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.mainLoop(SimpleMessageListenerContainer.java:1323)
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.run(SimpleMessageListenerContainer.java:1225)
+	at java.base/java.lang.Thread.run(Thread.java:842)
+Caused by: com.mysql.cj.jdbc.exceptions.MysqlDataTruncation: Data truncation: Truncated incorrect DOUBLE value: 'P001'
+	at com.mysql.cj.jdbc.exceptions.SQLExceptionsMapping.translateException(SQLExceptionsMapping.java:104)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.executeInternal(ClientPreparedStatement.java:916)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.execute(ClientPreparedStatement.java:354)
+	at com.zaxxer.hikari.pool.ProxyPreparedStatement.execute(ProxyPreparedStatement.java:44)
+	at com.zaxxer.hikari.pool.HikariProxyPreparedStatement.execute(HikariProxyPreparedStatement.java)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at org.apache.ibatis.logging.jdbc.PreparedStatementLogger.invoke(PreparedStatementLogger.java:58)
+	at jdk.proxy3/jdk.proxy3.$Proxy97.execute(Unknown Source)
+	at org.apache.ibatis.executor.statement.PreparedStatementHandler.update(PreparedStatementHandler.java:48)
+	at org.apache.ibatis.executor.statement.RoutingStatementHandler.update(RoutingStatementHandler.java:75)
+	at org.apache.ibatis.executor.SimpleExecutor.doUpdate(SimpleExecutor.java:50)
+	at org.apache.ibatis.executor.BaseExecutor.update(BaseExecutor.java:117)
+	at org.apache.ibatis.executor.CachingExecutor.update(CachingExecutor.java:76)
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.update(DefaultSqlSession.java:197)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:425)
+	... 33 common frames omitted
+2025-11-24 20:47:22.830 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] INFO  o.s.a.r.listener.SimpleMessageListenerContainer - Waiting for workers to finish.
+2025-11-24 20:47:23.429 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] INFO  o.s.a.r.listener.SimpleMessageListenerContainer - Successfully waited for workers to finish.
+2025-11-24 20:47:23.585 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2025-11-24 20:47:23.592 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2025-11-24 20:55:16.971 [main] INFO  c.database.mico_database.MicoDatabaseApplication - Starting MicoDatabaseApplication using Java 17.0.16 with PID 16828 (E:\DeskTop\java_code\mico_database\target\classes started by ASUS in E:\DeskTop\java_code\mico_database)
+2025-11-24 20:55:16.973 [main] DEBUG c.database.mico_database.MicoDatabaseApplication - Running with Spring Boot v3.1.5, Spring v6.0.13
+2025-11-24 20:55:16.974 [main] INFO  c.database.mico_database.MicoDatabaseApplication - No active profile set, falling back to 1 default profile: "default"
+2025-11-24 20:55:17.681 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-11-24 20:55:17.683 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-11-24 20:55:17.702 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 6 ms. Found 0 Redis repository interfaces.
+2025-11-24 20:55:18.427 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 5000 (http)
+2025-11-24 20:55:18.434 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-5000"]
+2025-11-24 20:55:18.437 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2025-11-24 20:55:18.437 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.15]
+2025-11-24 20:55:18.527 [main] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2025-11-24 20:55:18.528 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1505 ms
+2025-11-24 20:55:19.447 [main] INFO  o.s.b.a.web.servlet.WelcomePageHandlerMapping - Adding welcome page template: index
+2025-11-24 20:55:19.569 [main] INFO  o.s.security.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@492c8137, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@420b55ed, org.springframework.security.web.context.SecurityContextHolderFilter@f5ae29e, org.springframework.security.web.header.HeaderWriterFilter@772cf46b, org.springframework.security.web.authentication.logout.LogoutFilter@39e7e040, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter@47ffdbba, org.springframework.security.web.authentication.ui.DefaultLoginPageGeneratingFilter@54556723, org.springframework.security.web.authentication.ui.DefaultLogoutPageGeneratingFilter@f237ae7, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@45ad3cd8, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@47b961e2, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@42edde25, org.springframework.security.web.access.ExceptionTranslationFilter@1c31de5d, org.springframework.security.web.access.intercept.AuthorizationFilter@670a4738]
+2025-11-24 20:55:19.947 [main] WARN  o.s.core.LocalVariableTableParameterNameDiscoverer - Using deprecated '-debug' fallback for parameter name resolution. Compile the affected code with '-parameters' instead or avoid its introspection: org.springframework.amqp.rabbit.core.RabbitAdmin
+2025-11-24 20:55:19.985 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-5000"]
+2025-11-24 20:55:20.005 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 5000 (http) with context path ''
+2025-11-24 20:55:20.008 [main] INFO  o.s.a.rabbit.connection.CachingConnectionFactory - Attempting to connect to: [localhost:5672]
+2025-11-24 20:55:20.051 [main] INFO  o.s.a.rabbit.connection.CachingConnectionFactory - Created new connection: rabbitConnectionFactory#53bb71e5:0/SimpleConnection@18f4086e [delegate=amqp://guest@127.0.0.1:5672/, localPort=6274]
+2025-11-24 20:55:20.103 [main] INFO  c.database.mico_database.MicoDatabaseApplication - Started MicoDatabaseApplication in 3.651 seconds (process running for 4.265)
+2025-11-24 20:55:27.074 [http-nio-5000-exec-1] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-11-24 20:55:27.075 [http-nio-5000-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2025-11-24 20:55:27.076 [http-nio-5000-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2025-11-24 20:55:33.620 [http-nio-5000-exec-3] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-11-24 20:55:33.742 [http-nio-5000-exec-3] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@8f37c50
+2025-11-24 20:55:33.743 [http-nio-5000-exec-3] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2025-11-24 20:55:33.750 [http-nio-5000-exec-3] DEBUG c.d.mico_database.mapper.UserMapper.findByUsername - ==>  Preparing: SELECT * FROM sys_user WHERE username = ?
+2025-11-24 20:55:33.770 [http-nio-5000-exec-3] DEBUG c.d.mico_database.mapper.UserMapper.findByUsername - ==> Parameters: admin(String)
+2025-11-24 20:55:33.790 [http-nio-5000-exec-3] DEBUG c.d.mico_database.mapper.UserMapper.findByUsername - <==      Total: 1
+2025-11-24 20:55:34.304 [http-nio-5000-exec-7] DEBUG c.d.m.m.DashboardMapper.getDiseaseDistribution - ==>  Preparing: SELECT D.disease_name AS disease, COUNT(PD.patient_id) AS count, COUNT(PD.patient_id) AS percentage FROM `diseases` D JOIN `patient_diseases` PD ON D.disease_id = PD.disease_id GROUP BY D.disease_name ORDER BY count DESC LIMIT 10;
+2025-11-24 20:55:34.305 [http-nio-5000-exec-7] DEBUG c.d.m.m.DashboardMapper.getDiseaseDistribution - ==> Parameters: 
+2025-11-24 20:55:34.317 [http-nio-5000-exec-7] DEBUG c.d.m.m.DashboardMapper.getDiseaseDistribution - <==      Total: 10
+2025-11-24 20:55:34.317 [http-nio-5000-exec-7] DEBUG c.d.m.m.D.getPatientOriginDistribution - ==>  Preparing: SELECT country as name, COUNT(*) as value FROM patients WHERE country IS NOT NULL AND country != '' GROUP BY country ORDER BY value DESC;
+2025-11-24 20:55:34.318 [http-nio-5000-exec-7] DEBUG c.d.m.m.D.getPatientOriginDistribution - ==> Parameters: 
+2025-11-24 20:55:34.330 [http-nio-5000-exec-7] DEBUG c.d.m.m.D.getPatientOriginDistribution - <==      Total: 38
+2025-11-24 20:55:34.331 [http-nio-5000-exec-7] DEBUG c.d.m.m.DashboardMapper.getAgeGenderDistribution - ==>  Preparing: SELECT CASE WHEN age BETWEEN 0 AND 10 THEN '0-10' WHEN age BETWEEN 11 AND 20 THEN '11-20' WHEN age BETWEEN 21 AND 30 THEN '21-30' WHEN age BETWEEN 31 AND 40 THEN '31-40' WHEN age BETWEEN 41 AND 50 THEN '41-50' WHEN age BETWEEN 51 AND 60 THEN '51-60' ELSE '60+' END AS age_group, gender, COUNT(*) as count FROM patients WHERE gender IS NOT NULL GROUP BY age_group, gender;
+2025-11-24 20:55:34.331 [http-nio-5000-exec-7] DEBUG c.d.m.m.DashboardMapper.getAgeGenderDistribution - ==> Parameters: 
+2025-11-24 20:55:34.346 [http-nio-5000-exec-7] DEBUG c.d.m.m.DashboardMapper.getAgeGenderDistribution - <==      Total: 18
+2025-11-24 20:55:34.347 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.DashboardMapper.getTotalPatients - ==>  Preparing: SELECT COUNT(patient_id) FROM `patients`;
+2025-11-24 20:55:34.347 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.DashboardMapper.getTotalPatients - ==> Parameters: 
+2025-11-24 20:55:34.351 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.DashboardMapper.getTotalPatients - <==      Total: 1
+2025-11-24 20:55:34.352 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.DashboardMapper.getMostCommonDisease - ==>  Preparing: SELECT D.disease_name as disease_name, COUNT(PD.patient_id) AS patient_count FROM `patient_diseases` PD JOIN `diseases` D ON PD.disease_id = D.disease_id GROUP BY D.disease_name ORDER BY patient_count DESC LIMIT 1;
+2025-11-24 20:55:34.352 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.DashboardMapper.getMostCommonDisease - ==> Parameters: 
+2025-11-24 20:55:34.363 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.DashboardMapper.getMostCommonDisease - <==      Total: 1
+2025-11-24 20:55:34.364 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.DashboardMapper.getMinMaxPatientAge - ==>  Preparing: SELECT MIN(age) AS min_age, MAX(age) AS max_age FROM `patients`;
+2025-11-24 20:55:34.364 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.DashboardMapper.getMinMaxPatientAge - ==> Parameters: 
+2025-11-24 20:55:34.368 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.DashboardMapper.getMinMaxPatientAge - <==      Total: 1
+2025-11-24 20:55:39.566 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] INFO  c.database.mico_database.service.AnalysisConsumer - 【消费者】收到分析任务，ID: P001
+2025-11-24 20:55:39.567 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] INFO  c.database.mico_database.service.AnalysisConsumer - 【消费者】准备调用 Python AI 服务...
+2025-11-24 20:55:41.607 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] INFO  c.database.mico_database.service.AnalysisConsumer - 【消费者】Python 服务响应: {"patient_id":"P001","risk_level":"LOW","risk_score":0.149,"suggestion":"\u5065\u5eb7\u72b6\u51b5\u826f\u597d"}
+
+2025-11-24 20:55:41.621 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] DEBUG c.d.m.mapper.PatientMapper.updatePatientRisk - ==>  Preparing: UPDATE patients SET risk_score = ?, risk_level = ?, ai_suggestion = ? WHERE patient_name = ?
+2025-11-24 20:55:41.622 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] DEBUG c.d.m.mapper.PatientMapper.updatePatientRisk - ==> Parameters: 0.149(Double), LOW(String), 健康状况良好(String), P001(String)
+2025-11-24 20:55:41.624 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] DEBUG c.d.m.mapper.PatientMapper.updatePatientRisk - <==    Updates: 0
+2025-11-24 20:55:41.624 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] INFO  c.database.mico_database.service.AnalysisConsumer - 【数据库】AI分析结果已更新，风险值: 0.149
+2025-11-24 21:00:01.490 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] INFO  o.s.a.r.listener.SimpleMessageListenerContainer - Waiting for workers to finish.
+2025-11-24 21:00:02.234 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] INFO  o.s.a.r.listener.SimpleMessageListenerContainer - Successfully waited for workers to finish.
+2025-11-24 21:00:02.389 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2025-11-24 21:00:02.397 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.

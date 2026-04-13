@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>登录 - 微生态数据平台</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" th:href="@{/css/comon0.css}">
+</head>
+<body class="login-screen">
+<main class="login-shell">
+    <section class="login-stage fade-in-up">
+        <div class="login-story">
+            <span class="section-kicker">安全入口</span>
+            <h1>微生态数据平台</h1>
+            <p>面向临床研究与医学分析的统一工作入口，集中承载患者检索、群体看板与预测分析。</p>
+
+            <div class="login-story-grid">
+                <article class="login-story-card">
+                    <span><i class="bi bi-activity"></i> 临床监测</span>
+                    <strong>统一查看患者概况与微生态变化</strong>
+                    <small>以标准化样本数据为核心，提升检索与判读效率。</small>
+                </article>
+                <article class="login-story-card">
+                    <span><i class="bi bi-shield-check"></i> 标准特征</span>
+                    <strong>训练与预测使用同一套特征口径</strong>
+                    <small>标准丰度表与模型工件保持一致，减少训练推理偏差。</small>
+                </article>
+                <article class="login-story-card">
+                    <span><i class="bi bi-bezier2"></i> 分析协同</span>
+                    <strong>看板、检索与预测入口统一串联</strong>
+                    <small>让数据浏览、样本定位和风险判读形成连续工作流。</small>
+                </article>
+            </div>
+        </div>
+
+        <section class="login-panel">
+            <div class="login-panel-head">
+                <div class="login-brand-mark">
+                    <i class="bi bi-cpu"></i>
+                </div>
+                <div>
+                    <span class="section-kicker mb-2">账户登录</span>
+                    <h2>进入平台</h2>
+                    <p>输入账号与密码后继续。</p>
+                </div>
+            </div>
+
+            <div th:if="${param.error}" class="login-alert error">
+                <i class="bi bi-exclamation-circle"></i>
+                <span>用户名或密码不正确，请重新输入。</span>
+            </div>
+
+            <div th:if="${param.logout}" class="login-alert success">
+                <i class="bi bi-check-circle"></i>
+                <span>已安全退出登录。</span>
+            </div>
+
+            <form th:action="@{/login}" method="post" class="login-form">
+                <label class="login-label" for="username">账号</label>
+                <div class="login-input-shell">
+                    <i class="bi bi-person"></i>
+                    <input id="username" name="username" type="text" autocomplete="username" placeholder="请输入账号" required>
+                </div>
+
+                <label class="login-label" for="password">密码</label>
+                <div class="login-input-shell">
+                    <i class="bi bi-lock"></i>
+                    <input id="password" name="password" type="password" autocomplete="current-password" placeholder="请输入密码" required>
+                </div>
+
+                <button type="submit" class="login-submit">
+                    <span>登录系统</span>
+                    <i class="bi bi-arrow-right-short"></i>
+                </button>
+            </form>
+
+            <div class="login-footnote">
+                <span><i class="bi bi-database-check"></i> 标准丰度数据已接入</span>
+                <span><i class="bi bi-shield-lock"></i> 基于 Spring Security 认证</span>
+            </div>
+        </section>
+    </section>
+</main>
+</body>
+</html>

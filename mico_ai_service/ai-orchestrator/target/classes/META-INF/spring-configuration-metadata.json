@@ -1,0 +1,207 @@
+{
+  "groups": [
+    {
+      "name": "app.ai",
+      "type": "com.database.mico_ai.config.AiProviderProperties",
+      "sourceType": "com.database.mico_ai.config.AiProviderProperties"
+    },
+    {
+      "name": "app.ai.openai",
+      "type": "com.database.mico_ai.config.OpenAiCompatibleProperties",
+      "sourceType": "com.database.mico_ai.config.OpenAiCompatibleProperties"
+    },
+    {
+      "name": "app.harness.flow",
+      "type": "com.database.mico_ai.config.FlowEngineProperties",
+      "sourceType": "com.database.mico_ai.config.FlowEngineProperties"
+    },
+    {
+      "name": "app.harness.mcp-registry",
+      "type": "com.database.mico_ai.config.McpClientRegistryProperties",
+      "sourceType": "com.database.mico_ai.config.McpClientRegistryProperties"
+    },
+    {
+      "name": "app.knowledge",
+      "type": "com.database.mico_ai.config.KnowledgeBaseProperties",
+      "sourceType": "com.database.mico_ai.config.KnowledgeBaseProperties"
+    },
+    {
+      "name": "app.upstream",
+      "type": "com.database.mico_ai.config.UpstreamProperties",
+      "sourceType": "com.database.mico_ai.config.UpstreamProperties"
+    },
+    {
+      "name": "app.web-search",
+      "type": "com.database.mico_ai.config.WebSearchProperties",
+      "sourceType": "com.database.mico_ai.config.WebSearchProperties"
+    }
+  ],
+  "properties": [
+    {
+      "name": "app.ai.openai.api-key",
+      "type": "java.lang.String",
+      "sourceType": "com.database.mico_ai.config.OpenAiCompatibleProperties"
+    },
+    {
+      "name": "app.ai.openai.base-url",
+      "type": "java.lang.String",
+      "sourceType": "com.database.mico_ai.config.OpenAiCompatibleProperties"
+    },
+    {
+      "name": "app.ai.openai.log-requests",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.database.mico_ai.config.OpenAiCompatibleProperties",
+      "defaultValue": false
+    },
+    {
+      "name": "app.ai.openai.log-responses",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.database.mico_ai.config.OpenAiCompatibleProperties",
+      "defaultValue": false
+    },
+    {
+      "name": "app.ai.openai.model-name",
+      "type": "java.lang.String",
+      "sourceType": "com.database.mico_ai.config.OpenAiCompatibleProperties",
+      "defaultValue": "gpt-4o"
+    },
+    {
+      "name": "app.ai.openai.temperature",
+      "type": "java.lang.Double",
+      "sourceType": "com.database.mico_ai.config.OpenAiCompatibleProperties",
+      "defaultValue": 0.2
+    },
+    {
+      "name": "app.ai.provider-enabled",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.database.mico_ai.config.AiProviderProperties",
+      "defaultValue": false
+    },
+    {
+      "name": "app.ai.summary-enabled",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.database.mico_ai.config.AiProviderProperties",
+      "defaultValue": true
+    },
+    {
+      "name": "app.harness.flow.definitions",
+      "type": "java.util.List<com.database.mico_ai.config.FlowEngineProperties$FlowDefinition>",
+      "sourceType": "com.database.mico_ai.config.FlowEngineProperties"
+    },
+    {
+      "name": "app.harness.flow.enabled",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.database.mico_ai.config.FlowEngineProperties",
+      "defaultValue": true
+    },
+    {
+      "name": "app.harness.flow.max-iterations",
+      "type": "java.lang.Integer",
+      "sourceType": "com.database.mico_ai.config.FlowEngineProperties",
+      "defaultValue": 1
+    },
+    {
+      "name": "app.harness.flow.override-summary",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.database.mico_ai.config.FlowEngineProperties",
+      "defaultValue": true
+    },
+    {
+      "name": "app.harness.mcp-registry.clients",
+      "type": "java.util.List<com.database.mico_ai.config.McpClientRegistryProperties$McpClientDefinition>",
+      "sourceType": "com.database.mico_ai.config.McpClientRegistryProperties"
+    },
+    {
+      "name": "app.harness.mcp-registry.enabled",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.database.mico_ai.config.McpClientRegistryProperties",
+      "defaultValue": true
+    },
+    {
+      "name": "app.knowledge.enabled",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.database.mico_ai.config.KnowledgeBaseProperties",
+      "defaultValue": true
+    },
+    {
+      "name": "app.knowledge.max-results",
+      "type": "java.lang.Integer",
+      "sourceType": "com.database.mico_ai.config.KnowledgeBaseProperties",
+      "defaultValue": 3
+    },
+    {
+      "name": "app.knowledge.root-dir",
+      "type": "java.lang.String",
+      "sourceType": "com.database.mico_ai.config.KnowledgeBaseProperties",
+      "defaultValue": "E:\/DeskTop\/java_code\/mico_database_new\/references\/knowledge"
+    },
+    {
+      "name": "app.upstream.business-base-url",
+      "type": "java.lang.String",
+      "sourceType": "com.database.mico_ai.config.UpstreamProperties",
+      "defaultValue": "http:\/\/localhost:5000\/api"
+    },
+    {
+      "name": "app.web-search.api-key",
+      "type": "java.lang.String",
+      "sourceType": "com.database.mico_ai.config.WebSearchProperties"
+    },
+    {
+      "name": "app.web-search.base-url",
+      "type": "java.lang.String",
+      "sourceType": "com.database.mico_ai.config.WebSearchProperties",
+      "defaultValue": "https:\/\/api.tavily.com"
+    },
+    {
+      "name": "app.web-search.enabled",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.database.mico_ai.config.WebSearchProperties",
+      "defaultValue": false
+    },
+    {
+      "name": "app.web-search.include-answer",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.database.mico_ai.config.WebSearchProperties",
+      "defaultValue": false
+    },
+    {
+      "name": "app.web-search.max-results",
+      "type": "java.lang.Integer",
+      "sourceType": "com.database.mico_ai.config.WebSearchProperties",
+      "defaultValue": 3
+    },
+    {
+      "name": "app.web-search.medical-allowed-domains",
+      "type": "java.util.List<java.lang.String>",
+      "sourceType": "com.database.mico_ai.config.WebSearchProperties"
+    },
+    {
+      "name": "app.web-search.provider",
+      "type": "java.lang.String",
+      "sourceType": "com.database.mico_ai.config.WebSearchProperties",
+      "defaultValue": "tavily"
+    },
+    {
+      "name": "app.web-search.search-depth",
+      "type": "java.lang.String",
+      "sourceType": "com.database.mico_ai.config.WebSearchProperties",
+      "defaultValue": "basic"
+    },
+    {
+      "name": "app.web-search.search-path",
+      "type": "java.lang.String",
+      "sourceType": "com.database.mico_ai.config.WebSearchProperties",
+      "defaultValue": "\/search"
+    },
+    {
+      "name": "app.web-search.topic",
+      "type": "java.lang.String",
+      "sourceType": "com.database.mico_ai.config.WebSearchProperties",
+      "defaultValue": "general"
+    }
+  ],
+  "hints": [],
+  "ignored": {
+    "properties": []
+  }
+}

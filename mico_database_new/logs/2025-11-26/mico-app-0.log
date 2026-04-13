@@ -1,0 +1,618 @@
+2025-11-26 20:37:48.012 [main] INFO  c.database.mico_database.MicoDatabaseApplication - Starting MicoDatabaseApplication using Java 17.0.16 with PID 11520 (E:\DeskTop\java_code\mico_database\target\classes started by ASUS in E:\DeskTop\java_code\mico_database)
+2025-11-26 20:37:48.018 [main] DEBUG c.database.mico_database.MicoDatabaseApplication - Running with Spring Boot v3.1.5, Spring v6.0.13
+2025-11-26 20:37:48.020 [main] INFO  c.database.mico_database.MicoDatabaseApplication - No active profile set, falling back to 1 default profile: "default"
+2025-11-26 20:37:49.287 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-11-26 20:37:49.293 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-11-26 20:37:49.333 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 13 ms. Found 0 Redis repository interfaces.
+2025-11-26 20:37:50.284 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 5000 (http)
+2025-11-26 20:37:50.294 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-5000"]
+2025-11-26 20:37:50.296 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2025-11-26 20:37:50.296 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.15]
+2025-11-26 20:37:50.396 [main] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2025-11-26 20:37:50.396 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 2303 ms
+2025-11-26 20:37:51.568 [main] INFO  o.s.b.a.web.servlet.WelcomePageHandlerMapping - Adding welcome page template: index
+2025-11-26 20:37:51.688 [main] INFO  o.s.security.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@5af40e45, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@1a06602f, org.springframework.security.web.context.SecurityContextHolderFilter@13cf5f8a, org.springframework.security.web.header.HeaderWriterFilter@25e95af1, org.springframework.security.web.authentication.logout.LogoutFilter@27a90ce5, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter@3ff26c9, org.springframework.security.web.authentication.ui.DefaultLoginPageGeneratingFilter@7497a554, org.springframework.security.web.authentication.ui.DefaultLogoutPageGeneratingFilter@46591e98, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@72f3acc9, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@3ea2f72e, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@5b6cc344, org.springframework.security.web.access.ExceptionTranslationFilter@f44d033, org.springframework.security.web.access.intercept.AuthorizationFilter@71668a67]
+2025-11-26 20:37:52.130 [main] WARN  o.s.core.LocalVariableTableParameterNameDiscoverer - Using deprecated '-debug' fallback for parameter name resolution. Compile the affected code with '-parameters' instead or avoid its introspection: org.springframework.amqp.rabbit.core.RabbitAdmin
+2025-11-26 20:37:52.169 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-5000"]
+2025-11-26 20:37:52.188 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 5000 (http) with context path ''
+2025-11-26 20:37:52.191 [main] INFO  o.s.a.rabbit.connection.CachingConnectionFactory - Attempting to connect to: [localhost:5672]
+2025-11-26 20:37:52.249 [main] INFO  o.s.a.rabbit.connection.CachingConnectionFactory - Created new connection: rabbitConnectionFactory#49ced9c7:0/SimpleConnection@3e63bd6b [delegate=amqp://guest@127.0.0.1:5672/, localPort=1207]
+2025-11-26 20:37:52.305 [main] INFO  c.database.mico_database.MicoDatabaseApplication - Started MicoDatabaseApplication in 4.889 seconds (process running for 5.997)
+2025-11-26 20:38:16.320 [http-nio-5000-exec-1] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-11-26 20:38:16.321 [http-nio-5000-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2025-11-26 20:38:16.322 [http-nio-5000-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2025-11-26 20:38:24.935 [http-nio-5000-exec-5] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-11-26 20:38:25.100 [http-nio-5000-exec-5] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@4e248d99
+2025-11-26 20:38:25.102 [http-nio-5000-exec-5] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2025-11-26 20:38:25.110 [http-nio-5000-exec-5] DEBUG c.d.mico_database.mapper.UserMapper.findByUsername - ==>  Preparing: SELECT * FROM sys_user WHERE username = ?
+2025-11-26 20:38:25.136 [http-nio-5000-exec-5] DEBUG c.d.mico_database.mapper.UserMapper.findByUsername - ==> Parameters: admin(String)
+2025-11-26 20:38:25.170 [http-nio-5000-exec-5] DEBUG c.d.mico_database.mapper.UserMapper.findByUsername - <==      Total: 1
+2025-11-26 20:38:25.775 [http-nio-5000-exec-6] DEBUG c.d.m.m.DashboardMapper.getDiseaseDistribution - ==>  Preparing: SELECT D.disease_name AS disease, COUNT(PD.patient_id) AS count, COUNT(PD.patient_id) AS percentage FROM `diseases` D JOIN `patient_diseases` PD ON D.disease_id = PD.disease_id GROUP BY D.disease_name ORDER BY count DESC LIMIT 10;
+2025-11-26 20:38:25.776 [http-nio-5000-exec-6] DEBUG c.d.m.m.DashboardMapper.getDiseaseDistribution - ==> Parameters: 
+2025-11-26 20:38:25.793 [http-nio-5000-exec-6] DEBUG c.d.m.m.DashboardMapper.getDiseaseDistribution - <==      Total: 10
+2025-11-26 20:38:25.794 [http-nio-5000-exec-6] DEBUG c.d.m.m.D.getPatientOriginDistribution - ==>  Preparing: SELECT country as name, COUNT(*) as value FROM patients WHERE country IS NOT NULL AND country != '' GROUP BY country ORDER BY value DESC;
+2025-11-26 20:38:25.795 [http-nio-5000-exec-6] DEBUG c.d.m.m.D.getPatientOriginDistribution - ==> Parameters: 
+2025-11-26 20:38:25.811 [http-nio-5000-exec-6] DEBUG c.d.m.m.D.getPatientOriginDistribution - <==      Total: 38
+2025-11-26 20:38:25.811 [http-nio-5000-exec-6] DEBUG c.d.m.m.DashboardMapper.getAgeGenderDistribution - ==>  Preparing: SELECT CASE WHEN age BETWEEN 0 AND 10 THEN '0-10' WHEN age BETWEEN 11 AND 20 THEN '11-20' WHEN age BETWEEN 21 AND 30 THEN '21-30' WHEN age BETWEEN 31 AND 40 THEN '31-40' WHEN age BETWEEN 41 AND 50 THEN '41-50' WHEN age BETWEEN 51 AND 60 THEN '51-60' ELSE '60+' END AS age_group, gender, COUNT(*) as count FROM patients WHERE gender IS NOT NULL GROUP BY age_group, gender;
+2025-11-26 20:38:25.811 [http-nio-5000-exec-6] DEBUG c.d.m.m.DashboardMapper.getAgeGenderDistribution - ==> Parameters: 
+2025-11-26 20:38:25.825 [http-nio-5000-exec-6] DEBUG c.d.m.m.DashboardMapper.getAgeGenderDistribution - <==      Total: 18
+2025-11-26 20:38:25.826 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.DashboardMapper.getTotalPatients - ==>  Preparing: SELECT COUNT(patient_id) FROM `patients`;
+2025-11-26 20:38:25.827 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.DashboardMapper.getTotalPatients - ==> Parameters: 
+2025-11-26 20:38:25.831 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.DashboardMapper.getTotalPatients - <==      Total: 1
+2025-11-26 20:38:25.831 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.DashboardMapper.getMostCommonDisease - ==>  Preparing: SELECT D.disease_name as disease_name, COUNT(PD.patient_id) AS patient_count FROM `patient_diseases` PD JOIN `diseases` D ON PD.disease_id = D.disease_id GROUP BY D.disease_name ORDER BY patient_count DESC LIMIT 1;
+2025-11-26 20:38:25.832 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.DashboardMapper.getMostCommonDisease - ==> Parameters: 
+2025-11-26 20:38:25.844 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.DashboardMapper.getMostCommonDisease - <==      Total: 1
+2025-11-26 20:38:25.844 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.DashboardMapper.getMinMaxPatientAge - ==>  Preparing: SELECT MIN(age) AS min_age, MAX(age) AS max_age FROM `patients`;
+2025-11-26 20:38:25.844 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.DashboardMapper.getMinMaxPatientAge - ==> Parameters: 
+2025-11-26 20:38:25.849 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.DashboardMapper.getMinMaxPatientAge - <==      Total: 1
+2025-11-26 20:38:36.011 [http-nio-5000-exec-1] INFO  c.d.mico_database.controller.PatientController - 搜索请求: type=id, value=119, page=1, size=10
+2025-11-26 20:38:36.095 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - ==>  Preparing: SELECT count(0) FROM patients WHERE patient_id = ?
+2025-11-26 20:38:36.095 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - ==> Parameters: 119(String)
+2025-11-26 20:38:36.096 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - <==      Total: 1
+2025-11-26 20:38:36.098 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.searchPatients - ==>  Preparing: SELECT patient_id, patient_name, age, gender, disease, risk_score, risk_level FROM patients WHERE patient_id = ? ORDER BY patient_id ASC LIMIT ?
+2025-11-26 20:38:36.099 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.searchPatients - ==> Parameters: 119(String), 10(Integer)
+2025-11-26 20:38:36.102 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.searchPatients - <==      Total: 1
+2025-11-26 20:38:36.102 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:38:36.103 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 119(String)
+2025-11-26 20:38:36.114 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 42
+2025-11-26 20:38:36.115 [http-nio-5000-exec-1] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:38:36.115 [http-nio-5000-exec-1] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 119(String)
+2025-11-26 20:38:36.117 [http-nio-5000-exec-1] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:38:45.676 [http-nio-5000-exec-10] INFO  c.d.mico_database.controller.PatientController - 搜索请求: type=id, value=119, page=1, size=10
+2025-11-26 20:38:45.681 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - ==>  Preparing: SELECT count(0) FROM patients WHERE patient_id = ?
+2025-11-26 20:38:45.681 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - ==> Parameters: 119(String)
+2025-11-26 20:38:45.682 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - <==      Total: 1
+2025-11-26 20:38:45.683 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.searchPatients - ==>  Preparing: SELECT patient_id, patient_name, age, gender, disease, risk_score, risk_level FROM patients WHERE patient_id = ? ORDER BY patient_id ASC LIMIT ?
+2025-11-26 20:38:45.684 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.searchPatients - ==> Parameters: 119(String), 10(Integer)
+2025-11-26 20:38:45.685 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.searchPatients - <==      Total: 1
+2025-11-26 20:38:45.686 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:38:45.686 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 119(String)
+2025-11-26 20:38:45.690 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 42
+2025-11-26 20:38:45.691 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:38:45.691 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 119(String)
+2025-11-26 20:38:45.692 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:38:46.985 [http-nio-5000-exec-2] INFO  c.d.mico_database.controller.PatientController - 搜索请求: type=id, value=119, page=1, size=10
+2025-11-26 20:38:46.989 [http-nio-5000-exec-2] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - ==>  Preparing: SELECT count(0) FROM patients WHERE patient_id = ?
+2025-11-26 20:38:46.990 [http-nio-5000-exec-2] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - ==> Parameters: 119(String)
+2025-11-26 20:38:46.992 [http-nio-5000-exec-2] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - <==      Total: 1
+2025-11-26 20:38:46.993 [http-nio-5000-exec-2] DEBUG c.d.m.mapper.PatientMapper.searchPatients - ==>  Preparing: SELECT patient_id, patient_name, age, gender, disease, risk_score, risk_level FROM patients WHERE patient_id = ? ORDER BY patient_id ASC LIMIT ?
+2025-11-26 20:38:46.993 [http-nio-5000-exec-2] DEBUG c.d.m.mapper.PatientMapper.searchPatients - ==> Parameters: 119(String), 10(Integer)
+2025-11-26 20:38:46.995 [http-nio-5000-exec-2] DEBUG c.d.m.mapper.PatientMapper.searchPatients - <==      Total: 1
+2025-11-26 20:38:46.996 [http-nio-5000-exec-2] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:38:46.996 [http-nio-5000-exec-2] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 119(String)
+2025-11-26 20:38:47.000 [http-nio-5000-exec-2] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 42
+2025-11-26 20:38:47.001 [http-nio-5000-exec-2] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:38:47.001 [http-nio-5000-exec-2] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 119(String)
+2025-11-26 20:38:47.002 [http-nio-5000-exec-2] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:38:53.326 [http-nio-5000-exec-10] INFO  c.d.mico_database.controller.PatientController - 搜索请求: type=name, value=119, page=1, size=10
+2025-11-26 20:38:53.334 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - ==>  Preparing: SELECT count(0) FROM patients WHERE patient_name LIKE CONCAT('%', ?, '%')
+2025-11-26 20:38:53.335 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - ==> Parameters: 119(String)
+2025-11-26 20:38:53.340 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - <==      Total: 1
+2025-11-26 20:38:53.340 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.searchPatients - ==>  Preparing: SELECT patient_id, patient_name, age, gender, disease, risk_score, risk_level FROM patients WHERE patient_name LIKE CONCAT('%', ?, '%') ORDER BY patient_id ASC LIMIT ?
+2025-11-26 20:38:53.341 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.searchPatients - ==> Parameters: 119(String), 10(Integer)
+2025-11-26 20:38:53.343 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.searchPatients - <==      Total: 10
+2025-11-26 20:38:53.344 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:38:53.345 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 34(String)
+2025-11-26 20:38:53.349 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 35
+2025-11-26 20:38:53.350 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:38:53.351 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 34(String)
+2025-11-26 20:38:53.352 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:38:53.352 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:38:53.353 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 35(String)
+2025-11-26 20:38:53.356 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 38
+2025-11-26 20:38:53.357 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:38:53.357 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 35(String)
+2025-11-26 20:38:53.358 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:38:53.359 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:38:53.359 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 36(String)
+2025-11-26 20:38:53.363 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 39
+2025-11-26 20:38:53.364 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:38:53.364 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 36(String)
+2025-11-26 20:38:53.366 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:38:53.366 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:38:53.366 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 37(String)
+2025-11-26 20:38:53.369 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 32
+2025-11-26 20:38:53.370 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:38:53.370 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 37(String)
+2025-11-26 20:38:53.371 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:38:53.371 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:38:53.372 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 38(String)
+2025-11-26 20:38:53.374 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 25
+2025-11-26 20:38:53.375 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:38:53.375 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 38(String)
+2025-11-26 20:38:53.376 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:38:53.377 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:38:53.377 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 39(String)
+2025-11-26 20:38:53.379 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 16
+2025-11-26 20:38:53.380 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:38:53.380 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 39(String)
+2025-11-26 20:38:53.381 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:38:53.381 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:38:53.381 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 40(String)
+2025-11-26 20:38:53.383 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 38
+2025-11-26 20:38:53.384 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:38:53.384 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 40(String)
+2025-11-26 20:38:53.385 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:38:53.385 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:38:53.385 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1082(String)
+2025-11-26 20:38:53.388 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 49
+2025-11-26 20:38:53.388 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:38:53.388 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1082(String)
+2025-11-26 20:38:53.389 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:38:53.389 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:38:53.389 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1526(String)
+2025-11-26 20:38:53.391 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 49
+2025-11-26 20:38:53.392 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:38:53.392 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1526(String)
+2025-11-26 20:38:53.393 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:38:53.394 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:38:53.394 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1747(String)
+2025-11-26 20:38:53.396 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 22
+2025-11-26 20:38:53.396 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:38:53.396 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1747(String)
+2025-11-26 20:38:53.397 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:39:09.402 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] INFO  o.s.a.r.listener.SimpleMessageListenerContainer - Waiting for workers to finish.
+2025-11-26 20:39:09.991 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] INFO  o.s.a.r.listener.SimpleMessageListenerContainer - Successfully waited for workers to finish.
+2025-11-26 20:39:10.148 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2025-11-26 20:39:10.157 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2025-11-26 20:40:39.730 [main] INFO  c.database.mico_database.MicoDatabaseApplication - Starting MicoDatabaseApplication using Java 17.0.16 with PID 18044 (E:\DeskTop\java_code\mico_database\target\classes started by ASUS in E:\DeskTop\java_code\mico_database)
+2025-11-26 20:40:39.732 [main] DEBUG c.database.mico_database.MicoDatabaseApplication - Running with Spring Boot v3.1.5, Spring v6.0.13
+2025-11-26 20:40:39.733 [main] INFO  c.database.mico_database.MicoDatabaseApplication - No active profile set, falling back to 1 default profile: "default"
+2025-11-26 20:40:40.465 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-11-26 20:40:40.468 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-11-26 20:40:40.493 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 8 ms. Found 0 Redis repository interfaces.
+2025-11-26 20:40:41.160 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 5000 (http)
+2025-11-26 20:40:41.169 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-5000"]
+2025-11-26 20:40:41.171 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2025-11-26 20:40:41.171 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.15]
+2025-11-26 20:40:41.263 [main] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2025-11-26 20:40:41.264 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1490 ms
+2025-11-26 20:40:42.235 [main] INFO  o.s.b.a.web.servlet.WelcomePageHandlerMapping - Adding welcome page template: index
+2025-11-26 20:40:42.370 [main] INFO  o.s.security.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@5c60c08, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@1cb44a2f, org.springframework.security.web.context.SecurityContextHolderFilter@664f49f, org.springframework.security.web.header.HeaderWriterFilter@3a8b9458, org.springframework.security.web.authentication.logout.LogoutFilter@2047adea, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter@62794582, org.springframework.security.web.authentication.ui.DefaultLoginPageGeneratingFilter@1eb9d69a, org.springframework.security.web.authentication.ui.DefaultLogoutPageGeneratingFilter@5fe3b058, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@295f2d1b, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@28dacf31, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@2a661215, org.springframework.security.web.access.ExceptionTranslationFilter@615ef20, org.springframework.security.web.access.intercept.AuthorizationFilter@1926f962]
+2025-11-26 20:40:42.802 [main] WARN  o.s.core.LocalVariableTableParameterNameDiscoverer - Using deprecated '-debug' fallback for parameter name resolution. Compile the affected code with '-parameters' instead or avoid its introspection: org.springframework.amqp.rabbit.core.RabbitAdmin
+2025-11-26 20:40:42.845 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-5000"]
+2025-11-26 20:40:42.865 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 5000 (http) with context path ''
+2025-11-26 20:40:42.868 [main] INFO  o.s.a.rabbit.connection.CachingConnectionFactory - Attempting to connect to: [localhost:5672]
+2025-11-26 20:40:42.914 [main] INFO  o.s.a.rabbit.connection.CachingConnectionFactory - Created new connection: rabbitConnectionFactory#5bb2fb2b:0/SimpleConnection@575c23f1 [delegate=amqp://guest@127.0.0.1:5672/, localPort=1556]
+2025-11-26 20:40:42.969 [main] INFO  c.database.mico_database.MicoDatabaseApplication - Started MicoDatabaseApplication in 3.756 seconds (process running for 4.41)
+2025-11-26 20:40:49.133 [http-nio-5000-exec-1] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-11-26 20:40:49.133 [http-nio-5000-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2025-11-26 20:40:49.134 [http-nio-5000-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2025-11-26 20:40:55.372 [http-nio-5000-exec-3] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-11-26 20:40:55.522 [http-nio-5000-exec-3] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@2994cb89
+2025-11-26 20:40:55.524 [http-nio-5000-exec-3] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2025-11-26 20:40:55.530 [http-nio-5000-exec-3] DEBUG c.d.mico_database.mapper.UserMapper.findByUsername - ==>  Preparing: SELECT * FROM sys_user WHERE username = ?
+2025-11-26 20:40:55.552 [http-nio-5000-exec-3] DEBUG c.d.mico_database.mapper.UserMapper.findByUsername - ==> Parameters: admin(String)
+2025-11-26 20:40:55.573 [http-nio-5000-exec-3] DEBUG c.d.mico_database.mapper.UserMapper.findByUsername - <==      Total: 1
+2025-11-26 20:41:02.612 [http-nio-5000-exec-7] INFO  c.d.mico_database.controller.PatientController - 搜索请求: type=id, value=119, page=1, size=10
+2025-11-26 20:41:02.689 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - ==>  Preparing: SELECT count(0) FROM patients WHERE patient_id = ?
+2025-11-26 20:41:02.689 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - ==> Parameters: 119(String)
+2025-11-26 20:41:02.691 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - <==      Total: 1
+2025-11-26 20:41:02.693 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.searchPatients - ==>  Preparing: SELECT patient_id, patient_name, age, gender, disease, risk_score, risk_level FROM patients WHERE patient_id = ? ORDER BY patient_id ASC LIMIT ?
+2025-11-26 20:41:02.694 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.searchPatients - ==> Parameters: 119(String), 10(Integer)
+2025-11-26 20:41:02.696 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.searchPatients - <==      Total: 1
+2025-11-26 20:41:02.697 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:02.698 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 119(String)
+2025-11-26 20:41:02.711 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 42
+2025-11-26 20:41:02.712 [http-nio-5000-exec-7] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:02.712 [http-nio-5000-exec-7] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 119(String)
+2025-11-26 20:41:02.714 [http-nio-5000-exec-7] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:05.579 [http-nio-5000-exec-10] INFO  c.d.mico_database.controller.PatientController - 搜索请求: type=id, value=119, page=1, size=10
+2025-11-26 20:41:05.582 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - ==>  Preparing: SELECT count(0) FROM patients WHERE patient_id = ?
+2025-11-26 20:41:05.582 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - ==> Parameters: 119(String)
+2025-11-26 20:41:05.584 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - <==      Total: 1
+2025-11-26 20:41:05.584 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.searchPatients - ==>  Preparing: SELECT patient_id, patient_name, age, gender, disease, risk_score, risk_level FROM patients WHERE patient_id = ? ORDER BY patient_id ASC LIMIT ?
+2025-11-26 20:41:05.584 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.searchPatients - ==> Parameters: 119(String), 10(Integer)
+2025-11-26 20:41:05.585 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.searchPatients - <==      Total: 1
+2025-11-26 20:41:05.586 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:05.586 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 119(String)
+2025-11-26 20:41:05.591 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 42
+2025-11-26 20:41:05.591 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:05.592 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 119(String)
+2025-11-26 20:41:05.592 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:09.668 [http-nio-5000-exec-6] INFO  c.d.mico_database.controller.PatientController - 搜索请求: type=name, value=119, page=1, size=10
+2025-11-26 20:41:09.673 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - ==>  Preparing: SELECT count(0) FROM patients WHERE patient_name LIKE CONCAT('%', ?, '%')
+2025-11-26 20:41:09.674 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - ==> Parameters: 119(String)
+2025-11-26 20:41:09.679 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - <==      Total: 1
+2025-11-26 20:41:09.680 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.searchPatients - ==>  Preparing: SELECT patient_id, patient_name, age, gender, disease, risk_score, risk_level FROM patients WHERE patient_name LIKE CONCAT('%', ?, '%') ORDER BY patient_id ASC LIMIT ?
+2025-11-26 20:41:09.680 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.searchPatients - ==> Parameters: 119(String), 10(Integer)
+2025-11-26 20:41:09.683 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.searchPatients - <==      Total: 10
+2025-11-26 20:41:09.684 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:09.684 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 34(String)
+2025-11-26 20:41:09.688 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 35
+2025-11-26 20:41:09.688 [http-nio-5000-exec-6] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:09.689 [http-nio-5000-exec-6] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 34(String)
+2025-11-26 20:41:09.691 [http-nio-5000-exec-6] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:09.691 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:09.692 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 35(String)
+2025-11-26 20:41:09.695 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 38
+2025-11-26 20:41:09.696 [http-nio-5000-exec-6] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:09.697 [http-nio-5000-exec-6] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 35(String)
+2025-11-26 20:41:09.698 [http-nio-5000-exec-6] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:09.699 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:09.699 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 36(String)
+2025-11-26 20:41:09.704 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 39
+2025-11-26 20:41:09.706 [http-nio-5000-exec-6] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:09.706 [http-nio-5000-exec-6] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 36(String)
+2025-11-26 20:41:09.707 [http-nio-5000-exec-6] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:09.707 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:09.708 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 37(String)
+2025-11-26 20:41:09.710 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 32
+2025-11-26 20:41:09.711 [http-nio-5000-exec-6] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:09.712 [http-nio-5000-exec-6] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 37(String)
+2025-11-26 20:41:09.713 [http-nio-5000-exec-6] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:09.714 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:09.714 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 38(String)
+2025-11-26 20:41:09.716 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 25
+2025-11-26 20:41:09.717 [http-nio-5000-exec-6] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:09.718 [http-nio-5000-exec-6] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 38(String)
+2025-11-26 20:41:09.719 [http-nio-5000-exec-6] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:09.720 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:09.720 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 39(String)
+2025-11-26 20:41:09.723 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 16
+2025-11-26 20:41:09.723 [http-nio-5000-exec-6] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:09.724 [http-nio-5000-exec-6] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 39(String)
+2025-11-26 20:41:09.725 [http-nio-5000-exec-6] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:09.725 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:09.726 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 40(String)
+2025-11-26 20:41:09.728 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 38
+2025-11-26 20:41:09.728 [http-nio-5000-exec-6] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:09.728 [http-nio-5000-exec-6] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 40(String)
+2025-11-26 20:41:09.729 [http-nio-5000-exec-6] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:09.730 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:09.730 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1082(String)
+2025-11-26 20:41:09.732 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 49
+2025-11-26 20:41:09.733 [http-nio-5000-exec-6] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:09.733 [http-nio-5000-exec-6] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1082(String)
+2025-11-26 20:41:09.734 [http-nio-5000-exec-6] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:09.734 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:09.734 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1526(String)
+2025-11-26 20:41:09.736 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 49
+2025-11-26 20:41:09.737 [http-nio-5000-exec-6] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:09.738 [http-nio-5000-exec-6] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1526(String)
+2025-11-26 20:41:09.739 [http-nio-5000-exec-6] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:09.739 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:09.740 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1747(String)
+2025-11-26 20:41:09.741 [http-nio-5000-exec-6] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 22
+2025-11-26 20:41:09.742 [http-nio-5000-exec-6] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:09.742 [http-nio-5000-exec-6] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1747(String)
+2025-11-26 20:41:09.742 [http-nio-5000-exec-6] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:14.103 [http-nio-5000-exec-1] INFO  c.d.mico_database.controller.PatientController - 搜索请求: type=name, value=119, page=2, size=10
+2025-11-26 20:41:14.106 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - ==>  Preparing: SELECT count(0) FROM patients WHERE patient_name LIKE CONCAT('%', ?, '%')
+2025-11-26 20:41:14.107 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - ==> Parameters: 119(String)
+2025-11-26 20:41:14.111 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - <==      Total: 1
+2025-11-26 20:41:14.112 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.searchPatients - ==>  Preparing: SELECT patient_id, patient_name, age, gender, disease, risk_score, risk_level FROM patients WHERE patient_name LIKE CONCAT('%', ?, '%') ORDER BY patient_id ASC LIMIT ?, ?
+2025-11-26 20:41:14.112 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.searchPatients - ==> Parameters: 119(String), 10(Long), 10(Integer)
+2025-11-26 20:41:14.117 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.searchPatients - <==      Total: 10
+2025-11-26 20:41:14.118 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:14.118 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1922(String)
+2025-11-26 20:41:14.121 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 39
+2025-11-26 20:41:14.121 [http-nio-5000-exec-1] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:14.121 [http-nio-5000-exec-1] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1922(String)
+2025-11-26 20:41:14.122 [http-nio-5000-exec-1] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:14.122 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:14.123 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1923(String)
+2025-11-26 20:41:14.125 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 42
+2025-11-26 20:41:14.125 [http-nio-5000-exec-1] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:14.125 [http-nio-5000-exec-1] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1923(String)
+2025-11-26 20:41:14.126 [http-nio-5000-exec-1] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:14.126 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:14.127 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1924(String)
+2025-11-26 20:41:14.129 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 34
+2025-11-26 20:41:14.129 [http-nio-5000-exec-1] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:14.130 [http-nio-5000-exec-1] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1924(String)
+2025-11-26 20:41:14.131 [http-nio-5000-exec-1] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:14.131 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:14.131 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 2001(String)
+2025-11-26 20:41:14.133 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 30
+2025-11-26 20:41:14.134 [http-nio-5000-exec-1] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:14.134 [http-nio-5000-exec-1] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 2001(String)
+2025-11-26 20:41:14.135 [http-nio-5000-exec-1] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:14.135 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:14.135 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 2086(String)
+2025-11-26 20:41:14.138 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 31
+2025-11-26 20:41:14.138 [http-nio-5000-exec-1] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:14.138 [http-nio-5000-exec-1] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 2086(String)
+2025-11-26 20:41:14.139 [http-nio-5000-exec-1] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:14.140 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:14.140 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 2087(String)
+2025-11-26 20:41:14.141 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 40
+2025-11-26 20:41:14.142 [http-nio-5000-exec-1] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:14.142 [http-nio-5000-exec-1] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 2087(String)
+2025-11-26 20:41:14.143 [http-nio-5000-exec-1] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:14.143 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:14.143 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 2153(String)
+2025-11-26 20:41:14.145 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 40
+2025-11-26 20:41:14.145 [http-nio-5000-exec-1] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:14.146 [http-nio-5000-exec-1] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 2153(String)
+2025-11-26 20:41:14.147 [http-nio-5000-exec-1] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:14.147 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:14.147 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 2161(String)
+2025-11-26 20:41:14.149 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 28
+2025-11-26 20:41:14.149 [http-nio-5000-exec-1] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:14.149 [http-nio-5000-exec-1] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 2161(String)
+2025-11-26 20:41:14.150 [http-nio-5000-exec-1] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:14.150 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:14.150 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 2162(String)
+2025-11-26 20:41:14.152 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 40
+2025-11-26 20:41:14.153 [http-nio-5000-exec-1] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:14.153 [http-nio-5000-exec-1] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 2162(String)
+2025-11-26 20:41:14.153 [http-nio-5000-exec-1] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:14.153 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:14.154 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 2185(String)
+2025-11-26 20:41:14.155 [http-nio-5000-exec-1] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 29
+2025-11-26 20:41:14.156 [http-nio-5000-exec-1] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:14.156 [http-nio-5000-exec-1] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 2185(String)
+2025-11-26 20:41:14.156 [http-nio-5000-exec-1] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:16.183 [http-nio-5000-exec-5] INFO  c.d.mico_database.controller.PatientController - 搜索请求: type=name, value=119, page=1, size=10
+2025-11-26 20:41:16.186 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - ==>  Preparing: SELECT count(0) FROM patients WHERE patient_name LIKE CONCAT('%', ?, '%')
+2025-11-26 20:41:16.187 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - ==> Parameters: 119(String)
+2025-11-26 20:41:16.191 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - <==      Total: 1
+2025-11-26 20:41:16.191 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.searchPatients - ==>  Preparing: SELECT patient_id, patient_name, age, gender, disease, risk_score, risk_level FROM patients WHERE patient_name LIKE CONCAT('%', ?, '%') ORDER BY patient_id ASC LIMIT ?
+2025-11-26 20:41:16.191 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.searchPatients - ==> Parameters: 119(String), 10(Integer)
+2025-11-26 20:41:16.193 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.searchPatients - <==      Total: 10
+2025-11-26 20:41:16.194 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:16.194 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 34(String)
+2025-11-26 20:41:16.195 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 35
+2025-11-26 20:41:16.196 [http-nio-5000-exec-5] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:16.196 [http-nio-5000-exec-5] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 34(String)
+2025-11-26 20:41:16.197 [http-nio-5000-exec-5] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:16.197 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:16.197 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 35(String)
+2025-11-26 20:41:16.198 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 38
+2025-11-26 20:41:16.198 [http-nio-5000-exec-5] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:16.199 [http-nio-5000-exec-5] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 35(String)
+2025-11-26 20:41:16.199 [http-nio-5000-exec-5] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:16.199 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:16.199 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 36(String)
+2025-11-26 20:41:16.201 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 39
+2025-11-26 20:41:16.201 [http-nio-5000-exec-5] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:16.201 [http-nio-5000-exec-5] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 36(String)
+2025-11-26 20:41:16.202 [http-nio-5000-exec-5] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:16.202 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:16.202 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 37(String)
+2025-11-26 20:41:16.203 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 32
+2025-11-26 20:41:16.204 [http-nio-5000-exec-5] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:16.204 [http-nio-5000-exec-5] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 37(String)
+2025-11-26 20:41:16.204 [http-nio-5000-exec-5] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:16.205 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:16.205 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 38(String)
+2025-11-26 20:41:16.206 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 25
+2025-11-26 20:41:16.207 [http-nio-5000-exec-5] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:16.207 [http-nio-5000-exec-5] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 38(String)
+2025-11-26 20:41:16.208 [http-nio-5000-exec-5] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:16.215 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:16.215 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 39(String)
+2025-11-26 20:41:16.217 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 16
+2025-11-26 20:41:16.217 [http-nio-5000-exec-5] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:16.217 [http-nio-5000-exec-5] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 39(String)
+2025-11-26 20:41:16.218 [http-nio-5000-exec-5] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:16.218 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:16.218 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 40(String)
+2025-11-26 20:41:16.219 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 38
+2025-11-26 20:41:16.219 [http-nio-5000-exec-5] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:16.219 [http-nio-5000-exec-5] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 40(String)
+2025-11-26 20:41:16.220 [http-nio-5000-exec-5] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:16.220 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:16.220 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1082(String)
+2025-11-26 20:41:16.222 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 49
+2025-11-26 20:41:16.222 [http-nio-5000-exec-5] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:16.222 [http-nio-5000-exec-5] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1082(String)
+2025-11-26 20:41:16.223 [http-nio-5000-exec-5] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:16.224 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:16.224 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1526(String)
+2025-11-26 20:41:16.225 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 49
+2025-11-26 20:41:16.226 [http-nio-5000-exec-5] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:16.226 [http-nio-5000-exec-5] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1526(String)
+2025-11-26 20:41:16.226 [http-nio-5000-exec-5] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:16.226 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:16.227 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1747(String)
+2025-11-26 20:41:16.228 [http-nio-5000-exec-5] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 22
+2025-11-26 20:41:16.228 [http-nio-5000-exec-5] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:16.228 [http-nio-5000-exec-5] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1747(String)
+2025-11-26 20:41:16.229 [http-nio-5000-exec-5] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:22.569 [http-nio-5000-exec-4] INFO  c.d.mico_database.controller.PatientController - 搜索请求: type=disease, value=t2d, page=1, size=10
+2025-11-26 20:41:22.572 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - ==>  Preparing: SELECT count(0) FROM patients WHERE disease LIKE CONCAT('%', ?, '%')
+2025-11-26 20:41:22.573 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - ==> Parameters: t2d(String)
+2025-11-26 20:41:22.577 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - <==      Total: 1
+2025-11-26 20:41:22.578 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.searchPatients - ==>  Preparing: SELECT patient_id, patient_name, age, gender, disease, risk_score, risk_level FROM patients WHERE disease LIKE CONCAT('%', ?, '%') ORDER BY patient_id ASC LIMIT ?
+2025-11-26 20:41:22.578 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.searchPatients - ==> Parameters: t2d(String), 10(Integer)
+2025-11-26 20:41:22.580 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.searchPatients - <==      Total: 10
+2025-11-26 20:41:22.580 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:22.582 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1014(String)
+2025-11-26 20:41:22.583 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 37
+2025-11-26 20:41:22.584 [http-nio-5000-exec-4] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:22.584 [http-nio-5000-exec-4] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1014(String)
+2025-11-26 20:41:22.585 [http-nio-5000-exec-4] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:22.585 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:22.586 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1026(String)
+2025-11-26 20:41:22.587 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 35
+2025-11-26 20:41:22.588 [http-nio-5000-exec-4] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:22.588 [http-nio-5000-exec-4] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1026(String)
+2025-11-26 20:41:22.588 [http-nio-5000-exec-4] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:22.589 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:22.589 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1027(String)
+2025-11-26 20:41:22.590 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 54
+2025-11-26 20:41:22.591 [http-nio-5000-exec-4] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:22.591 [http-nio-5000-exec-4] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1027(String)
+2025-11-26 20:41:22.592 [http-nio-5000-exec-4] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:22.592 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:22.592 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1030(String)
+2025-11-26 20:41:22.594 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 35
+2025-11-26 20:41:22.594 [http-nio-5000-exec-4] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:22.594 [http-nio-5000-exec-4] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1030(String)
+2025-11-26 20:41:22.595 [http-nio-5000-exec-4] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:22.596 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:22.596 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1032(String)
+2025-11-26 20:41:22.597 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 57
+2025-11-26 20:41:22.598 [http-nio-5000-exec-4] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:22.598 [http-nio-5000-exec-4] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1032(String)
+2025-11-26 20:41:22.599 [http-nio-5000-exec-4] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:22.599 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:22.600 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1034(String)
+2025-11-26 20:41:22.601 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 23
+2025-11-26 20:41:22.601 [http-nio-5000-exec-4] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:22.601 [http-nio-5000-exec-4] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1034(String)
+2025-11-26 20:41:22.602 [http-nio-5000-exec-4] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:22.603 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:22.603 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1035(String)
+2025-11-26 20:41:22.604 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 38
+2025-11-26 20:41:22.604 [http-nio-5000-exec-4] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:22.604 [http-nio-5000-exec-4] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1035(String)
+2025-11-26 20:41:22.605 [http-nio-5000-exec-4] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:22.605 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:22.606 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1036(String)
+2025-11-26 20:41:22.607 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 47
+2025-11-26 20:41:22.608 [http-nio-5000-exec-4] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:22.608 [http-nio-5000-exec-4] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1036(String)
+2025-11-26 20:41:22.609 [http-nio-5000-exec-4] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:22.609 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:22.609 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1050(String)
+2025-11-26 20:41:22.611 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 52
+2025-11-26 20:41:22.611 [http-nio-5000-exec-4] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:22.611 [http-nio-5000-exec-4] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1050(String)
+2025-11-26 20:41:22.612 [http-nio-5000-exec-4] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:22.612 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:22.612 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1052(String)
+2025-11-26 20:41:22.614 [http-nio-5000-exec-4] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 34
+2025-11-26 20:41:22.615 [http-nio-5000-exec-4] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:22.615 [http-nio-5000-exec-4] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1052(String)
+2025-11-26 20:41:22.616 [http-nio-5000-exec-4] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:24.114 [http-nio-5000-exec-7] INFO  c.d.mico_database.controller.PatientController - 搜索请求: type=disease, value=t2d, page=2, size=10
+2025-11-26 20:41:24.116 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - ==>  Preparing: SELECT count(0) FROM patients WHERE disease LIKE CONCAT('%', ?, '%')
+2025-11-26 20:41:24.117 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - ==> Parameters: t2d(String)
+2025-11-26 20:41:24.122 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - <==      Total: 1
+2025-11-26 20:41:24.122 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.searchPatients - ==>  Preparing: SELECT patient_id, patient_name, age, gender, disease, risk_score, risk_level FROM patients WHERE disease LIKE CONCAT('%', ?, '%') ORDER BY patient_id ASC LIMIT ?, ?
+2025-11-26 20:41:24.122 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.searchPatients - ==> Parameters: t2d(String), 10(Long), 10(Integer)
+2025-11-26 20:41:24.124 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.searchPatients - <==      Total: 10
+2025-11-26 20:41:24.124 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:24.124 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1061(String)
+2025-11-26 20:41:24.126 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 44
+2025-11-26 20:41:24.126 [http-nio-5000-exec-7] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:24.126 [http-nio-5000-exec-7] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1061(String)
+2025-11-26 20:41:24.127 [http-nio-5000-exec-7] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:24.128 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:24.128 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1063(String)
+2025-11-26 20:41:24.129 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 51
+2025-11-26 20:41:24.129 [http-nio-5000-exec-7] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:24.129 [http-nio-5000-exec-7] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1063(String)
+2025-11-26 20:41:24.130 [http-nio-5000-exec-7] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:24.130 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:24.130 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1069(String)
+2025-11-26 20:41:24.131 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 52
+2025-11-26 20:41:24.131 [http-nio-5000-exec-7] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:24.132 [http-nio-5000-exec-7] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1069(String)
+2025-11-26 20:41:24.132 [http-nio-5000-exec-7] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:24.132 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:24.132 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1077(String)
+2025-11-26 20:41:24.134 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 28
+2025-11-26 20:41:24.134 [http-nio-5000-exec-7] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:24.134 [http-nio-5000-exec-7] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1077(String)
+2025-11-26 20:41:24.135 [http-nio-5000-exec-7] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:24.135 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:24.136 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1082(String)
+2025-11-26 20:41:24.137 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 49
+2025-11-26 20:41:24.137 [http-nio-5000-exec-7] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:24.138 [http-nio-5000-exec-7] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1082(String)
+2025-11-26 20:41:24.138 [http-nio-5000-exec-7] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:24.138 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:24.139 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1084(String)
+2025-11-26 20:41:24.140 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 37
+2025-11-26 20:41:24.140 [http-nio-5000-exec-7] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:24.141 [http-nio-5000-exec-7] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1084(String)
+2025-11-26 20:41:24.141 [http-nio-5000-exec-7] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:24.142 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:24.142 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1088(String)
+2025-11-26 20:41:24.143 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 47
+2025-11-26 20:41:24.143 [http-nio-5000-exec-7] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:24.143 [http-nio-5000-exec-7] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1088(String)
+2025-11-26 20:41:24.144 [http-nio-5000-exec-7] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:24.144 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:24.144 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1098(String)
+2025-11-26 20:41:24.145 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 40
+2025-11-26 20:41:24.146 [http-nio-5000-exec-7] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:24.146 [http-nio-5000-exec-7] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1098(String)
+2025-11-26 20:41:24.146 [http-nio-5000-exec-7] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:24.147 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:24.147 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1100(String)
+2025-11-26 20:41:24.148 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 20
+2025-11-26 20:41:24.149 [http-nio-5000-exec-7] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:24.149 [http-nio-5000-exec-7] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1100(String)
+2025-11-26 20:41:24.149 [http-nio-5000-exec-7] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:24.150 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:24.150 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1115(String)
+2025-11-26 20:41:24.151 [http-nio-5000-exec-7] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 56
+2025-11-26 20:41:24.152 [http-nio-5000-exec-7] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:24.152 [http-nio-5000-exec-7] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1115(String)
+2025-11-26 20:41:24.153 [http-nio-5000-exec-7] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:25.331 [http-nio-5000-exec-10] INFO  c.d.mico_database.controller.PatientController - 搜索请求: type=disease, value=t2d, page=1, size=10
+2025-11-26 20:41:25.334 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - ==>  Preparing: SELECT count(0) FROM patients WHERE disease LIKE CONCAT('%', ?, '%')
+2025-11-26 20:41:25.334 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - ==> Parameters: t2d(String)
+2025-11-26 20:41:25.338 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.searchPatients_COUNT - <==      Total: 1
+2025-11-26 20:41:25.339 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.searchPatients - ==>  Preparing: SELECT patient_id, patient_name, age, gender, disease, risk_score, risk_level FROM patients WHERE disease LIKE CONCAT('%', ?, '%') ORDER BY patient_id ASC LIMIT ?
+2025-11-26 20:41:25.339 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.searchPatients - ==> Parameters: t2d(String), 10(Integer)
+2025-11-26 20:41:25.340 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.searchPatients - <==      Total: 10
+2025-11-26 20:41:25.340 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:25.341 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1014(String)
+2025-11-26 20:41:25.342 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 37
+2025-11-26 20:41:25.342 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:25.343 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1014(String)
+2025-11-26 20:41:25.343 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:25.343 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:25.344 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1026(String)
+2025-11-26 20:41:25.345 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 35
+2025-11-26 20:41:25.345 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:25.345 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1026(String)
+2025-11-26 20:41:25.345 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:25.346 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:25.346 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1027(String)
+2025-11-26 20:41:25.347 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 54
+2025-11-26 20:41:25.347 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:25.348 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1027(String)
+2025-11-26 20:41:25.348 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:25.349 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:25.349 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1030(String)
+2025-11-26 20:41:25.351 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 35
+2025-11-26 20:41:25.351 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:25.351 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1030(String)
+2025-11-26 20:41:25.352 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:25.352 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:25.353 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1032(String)
+2025-11-26 20:41:25.354 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 57
+2025-11-26 20:41:25.354 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:25.354 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1032(String)
+2025-11-26 20:41:25.355 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:25.355 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:25.356 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1034(String)
+2025-11-26 20:41:25.357 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 23
+2025-11-26 20:41:25.357 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:25.357 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1034(String)
+2025-11-26 20:41:25.358 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:25.358 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:25.358 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1035(String)
+2025-11-26 20:41:25.359 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 38
+2025-11-26 20:41:25.359 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:25.360 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1035(String)
+2025-11-26 20:41:25.360 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:25.360 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:25.360 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1036(String)
+2025-11-26 20:41:25.362 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 47
+2025-11-26 20:41:25.363 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:25.363 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1036(String)
+2025-11-26 20:41:25.363 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:25.364 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:25.364 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1050(String)
+2025-11-26 20:41:25.365 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 52
+2025-11-26 20:41:25.365 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:25.365 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1050(String)
+2025-11-26 20:41:25.366 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:25.366 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==>  Preparing: SELECT * FROM microbe_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:25.366 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - ==> Parameters: 1052(String)
+2025-11-26 20:41:25.367 [http-nio-5000-exec-10] DEBUG c.d.m.mapper.PatientMapper.findMicrobesByPatientId - <==      Total: 34
+2025-11-26 20:41:25.368 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==>  Preparing: SELECT * FROM cytokine_abundance WHERE patient_id = ? ORDER BY sample_date DESC
+2025-11-26 20:41:25.368 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - ==> Parameters: 1052(String)
+2025-11-26 20:41:25.368 [http-nio-5000-exec-10] DEBUG c.d.m.m.PatientMapper.findCytokinesByPatientId - <==      Total: 0
+2025-11-26 20:41:32.870 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] INFO  o.s.a.r.listener.SimpleMessageListenerContainer - Waiting for workers to finish.
+2025-11-26 20:41:33.405 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] INFO  o.s.a.r.listener.SimpleMessageListenerContainer - Successfully waited for workers to finish.
+2025-11-26 20:41:33.571 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2025-11-26 20:41:33.576 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.

@@ -1,0 +1,725 @@
+{
+  "baseUrl": "http://localhost:8088",
+  "totalBadCases": 15,
+  "severity": {
+    "P1": 9,
+    "P0": 4,
+    "P2": 2
+  },
+  "primaryFixLayers": {
+    "response-synthesis": 9,
+    "runtime-ops": 4,
+    "prompt-tuning": 2
+  },
+  "badCases": [
+    {
+      "id": "patient-001",
+      "intent": "PATIENT_ANALYSIS",
+      "question": "当前样本和健康组相比有什么区别",
+      "severity": "P1",
+      "notes": "患者页基础健康对照场景",
+      "runtime_error": null,
+      "missing_must": [
+        "提到健康组对照或健康基线",
+        "提到偏高或偏低特征",
+        "给出下一步建议"
+      ],
+      "forbidden_hits": [],
+      "trace_issues": [],
+      "missing_trace_steps": [],
+      "mcp_usage": {
+        "tools": 0,
+        "resources": 0,
+        "prompts": 0
+      },
+      "review": {
+        "usedKnowledge": true,
+        "usedWebEvidence": false,
+        "usedPrediction": true,
+        "usedHybrid": true,
+        "usedMultiAgent": true,
+        "usedMcpTools": false,
+        "usedMcpResources": false,
+        "usedMcpPrompts": false,
+        "mcpUsage": {
+          "tools": 0,
+          "resources": 0,
+          "prompts": 0
+        },
+        "missingChannels": [],
+        "needsHumanReview": false,
+        "summaryQualityHint": "已具备内部数据、模型判断和知识支撑，MCP 命中情况可继续增强。"
+      },
+      "fix_suggestion": {
+        "primary_layer": "response-synthesis",
+        "recommended_layers": [
+          "response-synthesis"
+        ],
+        "rationale": [
+          "关键回答要点缺失，优先检查总结层是否把数据、知识和预测真正说出来。"
+        ],
+        "next_action": "先看最终 summary/cards/actions 是否真正覆盖 case 的 expected_must。"
+      },
+      "suite": "patient"
+    },
+    {
+      "id": "patient-002",
+      "intent": "PATIENT_ANALYSIS",
+      "question": "这些偏离和预测结果一致吗",
+      "severity": "P1",
+      "notes": "患者页预测联动场景",
+      "runtime_error": null,
+      "missing_must": [
+        "提到预测方向",
+        "提到与健康组偏离是否同向",
+        "说明这不是最终诊断"
+      ],
+      "forbidden_hits": [],
+      "trace_issues": [],
+      "missing_trace_steps": [],
+      "mcp_usage": {
+        "tools": 0,
+        "resources": 0,
+        "prompts": 0
+      },
+      "review": {
+        "usedKnowledge": true,
+        "usedWebEvidence": false,
+        "usedPrediction": true,
+        "usedHybrid": true,
+        "usedMultiAgent": true,
+        "usedMcpTools": false,
+        "usedMcpResources": false,
+        "usedMcpPrompts": false,
+        "mcpUsage": {
+          "tools": 0,
+          "resources": 0,
+          "prompts": 0
+        },
+        "missingChannels": [],
+        "needsHumanReview": false,
+        "summaryQualityHint": "已具备内部数据、模型判断和知识支撑，MCP 命中情况可继续增强。"
+      },
+      "fix_suggestion": {
+        "primary_layer": "response-synthesis",
+        "recommended_layers": [
+          "response-synthesis"
+        ],
+        "rationale": [
+          "关键回答要点缺失，优先检查总结层是否把数据、知识和预测真正说出来。"
+        ],
+        "next_action": "先看最终 summary/cards/actions 是否真正覆盖 case 的 expected_must。"
+      },
+      "suite": "patient"
+    },
+    {
+      "id": "patient-003",
+      "intent": "PATIENT_ANALYSIS",
+      "question": "请分层解释当前样本",
+      "severity": "P1",
+      "notes": "患者页分层与多智能体场景",
+      "runtime_error": null,
+      "missing_must": [
+        "区分数据观察和模型判断",
+        "提到知识支持或证据支持",
+        "有下一步动作"
+      ],
+      "forbidden_hits": [],
+      "trace_issues": [],
+      "missing_trace_steps": [],
+      "mcp_usage": {
+        "tools": 0,
+        "resources": 0,
+        "prompts": 0
+      },
+      "review": {
+        "usedKnowledge": true,
+        "usedWebEvidence": false,
+        "usedPrediction": true,
+        "usedHybrid": true,
+        "usedMultiAgent": true,
+        "usedMcpTools": false,
+        "usedMcpResources": false,
+        "usedMcpPrompts": false,
+        "mcpUsage": {
+          "tools": 0,
+          "resources": 0,
+          "prompts": 0
+        },
+        "missingChannels": [],
+        "needsHumanReview": false,
+        "summaryQualityHint": "已具备内部数据、模型判断和知识支撑，MCP 命中情况可继续增强。"
+      },
+      "fix_suggestion": {
+        "primary_layer": "response-synthesis",
+        "recommended_layers": [
+          "response-synthesis"
+        ],
+        "rationale": [
+          "关键回答要点缺失，优先检查总结层是否把数据、知识和预测真正说出来。"
+        ],
+        "next_action": "先看最终 summary/cards/actions 是否真正覆盖 case 的 expected_must。"
+      },
+      "suite": "patient"
+    },
+    {
+      "id": "patient-004",
+      "intent": "PATIENT_ANALYSIS",
+      "question": "这些偏离有外部医学证据支持吗",
+      "severity": "P1",
+      "notes": "患者页医学证据增强场景",
+      "runtime_error": null,
+      "missing_must": [
+        "提到医学证据或文献支持",
+        "提到来源或权威机构",
+        "说明医学证据是补充层"
+      ],
+      "forbidden_hits": [],
+      "trace_issues": [],
+      "missing_trace_steps": [],
+      "mcp_usage": {
+        "tools": 0,
+        "resources": 0,
+        "prompts": 0
+      },
+      "review": {
+        "usedKnowledge": true,
+        "usedWebEvidence": false,
+        "usedPrediction": true,
+        "usedHybrid": true,
+        "usedMultiAgent": true,
+        "usedMcpTools": false,
+        "usedMcpResources": false,
+        "usedMcpPrompts": false,
+        "mcpUsage": {
+          "tools": 0,
+          "resources": 0,
+          "prompts": 0
+        },
+        "missingChannels": [],
+        "needsHumanReview": false,
+        "summaryQualityHint": "已具备内部数据、模型判断和知识支撑，MCP 命中情况可继续增强。"
+      },
+      "fix_suggestion": {
+        "primary_layer": "response-synthesis",
+        "recommended_layers": [
+          "response-synthesis"
+        ],
+        "rationale": [
+          "关键回答要点缺失，优先检查总结层是否把数据、知识和预测真正说出来。"
+        ],
+        "next_action": "先看最终 summary/cards/actions 是否真正覆盖 case 的 expected_must。"
+      },
+      "suite": "patient"
+    },
+    {
+      "id": "prediction-001",
+      "intent": "PREDICTION_ASSISTANT",
+      "question": "请解释当前预测结果",
+      "severity": "P1",
+      "notes": "预测页基础解释场景",
+      "runtime_error": null,
+      "missing_must": [
+        "提到Top1方向",
+        "提到模型边界",
+        "说明不是临床诊断"
+      ],
+      "forbidden_hits": [],
+      "trace_issues": [],
+      "missing_trace_steps": [],
+      "mcp_usage": {
+        "tools": 0,
+        "resources": 0,
+        "prompts": 0
+      },
+      "review": {
+        "usedKnowledge": true,
+        "usedWebEvidence": false,
+        "usedPrediction": true,
+        "usedHybrid": true,
+        "usedMultiAgent": true,
+        "usedMcpTools": false,
+        "usedMcpResources": false,
+        "usedMcpPrompts": false,
+        "mcpUsage": {
+          "tools": 0,
+          "resources": 0,
+          "prompts": 0
+        },
+        "missingChannels": [],
+        "needsHumanReview": false,
+        "summaryQualityHint": "已具备内部数据、模型判断和知识支撑，MCP 命中情况可继续增强。"
+      },
+      "fix_suggestion": {
+        "primary_layer": "response-synthesis",
+        "recommended_layers": [
+          "response-synthesis"
+        ],
+        "rationale": [
+          "关键回答要点缺失，优先检查总结层是否把数据、知识和预测真正说出来。"
+        ],
+        "next_action": "先看最终 summary/cards/actions 是否真正覆盖 case 的 expected_must。"
+      },
+      "suite": "prediction"
+    },
+    {
+      "id": "prediction-002",
+      "intent": "PREDICTION_ASSISTANT",
+      "question": "为什么不是Top2",
+      "severity": "P1",
+      "notes": "预测页竞争方向解释",
+      "runtime_error": null,
+      "missing_must": [
+        "提到Top1与Top2差异",
+        "说明概率只是方向不是确诊",
+        "提到需要结合其他证据"
+      ],
+      "forbidden_hits": [],
+      "trace_issues": [],
+      "missing_trace_steps": [],
+      "mcp_usage": {
+        "tools": 0,
+        "resources": 0,
+        "prompts": 0
+      },
+      "review": {
+        "usedKnowledge": true,
+        "usedWebEvidence": false,
+        "usedPrediction": true,
+        "usedHybrid": true,
+        "usedMultiAgent": true,
+        "usedMcpTools": false,
+        "usedMcpResources": false,
+        "usedMcpPrompts": false,
+        "mcpUsage": {
+          "tools": 0,
+          "resources": 0,
+          "prompts": 0
+        },
+        "missingChannels": [],
+        "needsHumanReview": false,
+        "summaryQualityHint": "已具备内部数据、模型判断和知识支撑，MCP 命中情况可继续增强。"
+      },
+      "fix_suggestion": {
+        "primary_layer": "response-synthesis",
+        "recommended_layers": [
+          "response-synthesis"
+        ],
+        "rationale": [
+          "关键回答要点缺失，优先检查总结层是否把数据、知识和预测真正说出来。"
+        ],
+        "next_action": "先看最终 summary/cards/actions 是否真正覆盖 case 的 expected_must。"
+      },
+      "suite": "prediction"
+    },
+    {
+      "id": "prediction-003",
+      "intent": "PREDICTION_ASSISTANT",
+      "question": "哪些结论来自模型，哪些来自知识支持",
+      "severity": "P1",
+      "notes": "预测页证据分层场景",
+      "runtime_error": null,
+      "missing_must": [
+        "区分模型判断与知识支持",
+        "提到外部证据仅为补充或未使用",
+        "有下一步建议"
+      ],
+      "forbidden_hits": [],
+      "trace_issues": [],
+      "missing_trace_steps": [],
+      "mcp_usage": {
+        "tools": 0,
+        "resources": 0,
+        "prompts": 0
+      },
+      "review": {
+        "usedKnowledge": true,
+        "usedWebEvidence": false,
+        "usedPrediction": true,
+        "usedHybrid": true,
+        "usedMultiAgent": true,
+        "usedMcpTools": false,
+        "usedMcpResources": false,
+        "usedMcpPrompts": false,
+        "mcpUsage": {
+          "tools": 0,
+          "resources": 0,
+          "prompts": 0
+        },
+        "missingChannels": [],
+        "needsHumanReview": false,
+        "summaryQualityHint": "已具备内部数据、模型判断和知识支撑，MCP 命中情况可继续增强。"
+      },
+      "fix_suggestion": {
+        "primary_layer": "response-synthesis",
+        "recommended_layers": [
+          "response-synthesis"
+        ],
+        "rationale": [
+          "关键回答要点缺失，优先检查总结层是否把数据、知识和预测真正说出来。"
+        ],
+        "next_action": "先看最终 summary/cards/actions 是否真正覆盖 case 的 expected_must。"
+      },
+      "suite": "prediction"
+    },
+    {
+      "id": "prediction-004",
+      "intent": "PREDICTION_ASSISTANT",
+      "question": "这个预测方向有没有外部医学证据支持",
+      "severity": "P1",
+      "notes": "预测页医学证据增强场景",
+      "runtime_error": null,
+      "missing_must": [
+        "提到医学证据或权威来源",
+        "说明这是补充证据层",
+        "说明不能直接当诊断"
+      ],
+      "forbidden_hits": [],
+      "trace_issues": [],
+      "missing_trace_steps": [],
+      "mcp_usage": {
+        "tools": 0,
+        "resources": 0,
+        "prompts": 0
+      },
+      "review": {
+        "usedKnowledge": true,
+        "usedWebEvidence": false,
+        "usedPrediction": true,
+        "usedHybrid": true,
+        "usedMultiAgent": true,
+        "usedMcpTools": false,
+        "usedMcpResources": false,
+        "usedMcpPrompts": false,
+        "mcpUsage": {
+          "tools": 0,
+          "resources": 0,
+          "prompts": 0
+        },
+        "missingChannels": [],
+        "needsHumanReview": false,
+        "summaryQualityHint": "已具备内部数据、模型判断和知识支撑，MCP 命中情况可继续增强。"
+      },
+      "fix_suggestion": {
+        "primary_layer": "response-synthesis",
+        "recommended_layers": [
+          "response-synthesis"
+        ],
+        "rationale": [
+          "关键回答要点缺失，优先检查总结层是否把数据、知识和预测真正说出来。"
+        ],
+        "next_action": "先看最终 summary/cards/actions 是否真正覆盖 case 的 expected_must。"
+      },
+      "suite": "prediction"
+    },
+    {
+      "id": "dashboard-001",
+      "intent": "DASHBOARD_QA",
+      "question": "请解读首页当前数据重点",
+      "severity": "P0",
+      "notes": "首页总览场景",
+      "runtime_error": "HTTP Error 500: ",
+      "missing_must": [
+        "提到主要疾病或重点疾病方向",
+        "提到地区或群体分布",
+        "给出关注建议"
+      ],
+      "forbidden_hits": [],
+      "trace_issues": [
+        "request_failed"
+      ],
+      "missing_trace_steps": [
+        "context_merged",
+        "intent_resolved",
+        "task_packet_created",
+        "workflow",
+        "knowledge_augmentation",
+        "hybrid_orchestration",
+        "multi_agent_orchestration"
+      ],
+      "mcp_usage": {},
+      "review": {},
+      "fix_suggestion": {
+        "primary_layer": "runtime-ops",
+        "recommended_layers": [
+          "runtime-ops",
+          "connectivity",
+          "response-synthesis"
+        ],
+        "rationale": [
+          "请求阶段已失败，先检查服务可用性、端口和接口连通性。",
+          "关键回答要点缺失，优先检查总结层是否把数据、知识和预测真正说出来。"
+        ],
+        "next_action": "先确认 ai-orchestrator 是否启动，/api/ai/health 是否正常。"
+      },
+      "suite": "dashboard"
+    },
+    {
+      "id": "dashboard-002",
+      "intent": "DASHBOARD_QA",
+      "question": "当前最值得关注什么",
+      "severity": "P0",
+      "notes": "首页优先级判断场景",
+      "runtime_error": "HTTP Error 500: ",
+      "missing_must": [
+        "指出一个重点方向",
+        "说明为什么值得关注",
+        "给出下一步动作"
+      ],
+      "forbidden_hits": [],
+      "trace_issues": [
+        "request_failed"
+      ],
+      "missing_trace_steps": [
+        "context_merged",
+        "intent_resolved",
+        "task_packet_created",
+        "workflow",
+        "knowledge_augmentation",
+        "hybrid_orchestration",
+        "multi_agent_orchestration"
+      ],
+      "mcp_usage": {},
+      "review": {},
+      "fix_suggestion": {
+        "primary_layer": "runtime-ops",
+        "recommended_layers": [
+          "runtime-ops",
+          "connectivity",
+          "response-synthesis"
+        ],
+        "rationale": [
+          "请求阶段已失败，先检查服务可用性、端口和接口连通性。",
+          "关键回答要点缺失，优先检查总结层是否把数据、知识和预测真正说出来。"
+        ],
+        "next_action": "先确认 ai-orchestrator 是否启动，/api/ai/health 是否正常。"
+      },
+      "suite": "dashboard"
+    },
+    {
+      "id": "dashboard-003",
+      "intent": "DASHBOARD_QA",
+      "question": "哪些是内部统计，哪些是解释支持",
+      "severity": "P0",
+      "notes": "首页分层场景",
+      "runtime_error": "HTTP Error 500: ",
+      "missing_must": [
+        "区分内部统计与解释支持",
+        "提到知识或证据是补充层",
+        "回答结构清晰"
+      ],
+      "forbidden_hits": [],
+      "trace_issues": [
+        "request_failed"
+      ],
+      "missing_trace_steps": [
+        "context_merged",
+        "intent_resolved",
+        "task_packet_created",
+        "workflow",
+        "knowledge_augmentation",
+        "hybrid_orchestration",
+        "multi_agent_orchestration"
+      ],
+      "mcp_usage": {},
+      "review": {},
+      "fix_suggestion": {
+        "primary_layer": "runtime-ops",
+        "recommended_layers": [
+          "runtime-ops",
+          "connectivity",
+          "response-synthesis"
+        ],
+        "rationale": [
+          "请求阶段已失败，先检查服务可用性、端口和接口连通性。",
+          "关键回答要点缺失，优先检查总结层是否把数据、知识和预测真正说出来。"
+        ],
+        "next_action": "先确认 ai-orchestrator 是否启动，/api/ai/health 是否正常。"
+      },
+      "suite": "dashboard"
+    },
+    {
+      "id": "harness-001",
+      "intent": "PATIENT_ANALYSIS",
+      "question": "请解读当前样本重点",
+      "severity": "P2",
+      "notes": "验证 MCP resource 命中会进入 harness trace",
+      "runtime_error": null,
+      "missing_must": [],
+      "forbidden_hits": [],
+      "trace_issues": [],
+      "missing_trace_steps": [],
+      "mcp_usage": {
+        "tools": 0,
+        "resources": 2,
+        "prompts": 0
+      },
+      "review": {
+        "usedKnowledge": true,
+        "usedWebEvidence": false,
+        "usedPrediction": true,
+        "usedHybrid": true,
+        "usedMultiAgent": true,
+        "usedMcpTools": false,
+        "usedMcpResources": false,
+        "usedMcpPrompts": false,
+        "mcpUsage": {
+          "tools": 0,
+          "resources": 0,
+          "prompts": 0
+        },
+        "missingChannels": [],
+        "needsHumanReview": false,
+        "summaryQualityHint": "已具备内部数据、模型判断和知识支撑，MCP 命中情况可继续增强。"
+      },
+      "fix_suggestion": {
+        "primary_layer": "prompt-tuning",
+        "recommended_layers": [
+          "prompt-tuning"
+        ],
+        "rationale": [
+          "回答基础正确但不够完整，可优先优化总结提示词和卡片表达。"
+        ],
+        "next_action": "先优化总结层提示词，让 should 项更稳定命中。"
+      },
+      "suite": "harness"
+    },
+    {
+      "id": "harness-002",
+      "intent": "PATIENT_ANALYSIS",
+      "question": "请解读当前样本重点",
+      "severity": "P2",
+      "notes": "验证 MCP prompt 命中会进入 harness trace",
+      "runtime_error": null,
+      "missing_must": [],
+      "forbidden_hits": [],
+      "trace_issues": [],
+      "missing_trace_steps": [],
+      "mcp_usage": {
+        "tools": 0,
+        "resources": 0,
+        "prompts": 2
+      },
+      "review": {
+        "usedKnowledge": true,
+        "usedWebEvidence": false,
+        "usedPrediction": true,
+        "usedHybrid": true,
+        "usedMultiAgent": true,
+        "usedMcpTools": false,
+        "usedMcpResources": false,
+        "usedMcpPrompts": false,
+        "mcpUsage": {
+          "tools": 0,
+          "resources": 0,
+          "prompts": 0
+        },
+        "missingChannels": [],
+        "needsHumanReview": false,
+        "summaryQualityHint": "已具备内部数据、模型判断和知识支撑，MCP 命中情况可继续增强。"
+      },
+      "fix_suggestion": {
+        "primary_layer": "prompt-tuning",
+        "recommended_layers": [
+          "prompt-tuning"
+        ],
+        "rationale": [
+          "回答基础正确但不够完整，可优先优化总结提示词和卡片表达。"
+        ],
+        "next_action": "先优化总结层提示词，让 should 项更稳定命中。"
+      },
+      "suite": "harness"
+    },
+    {
+      "id": "harness-003",
+      "intent": "DASHBOARD_QA",
+      "question": "请解读首页当前数据重点",
+      "severity": "P0",
+      "notes": "验证 MCP tool 命中会进入 harness trace",
+      "runtime_error": "HTTP Error 500: ",
+      "missing_must": [
+        "疾病",
+        "地区",
+        "建议"
+      ],
+      "forbidden_hits": [],
+      "trace_issues": [
+        "request_failed"
+      ],
+      "missing_trace_steps": [
+        "context_merged",
+        "intent_resolved",
+        "task_packet_created",
+        "workflow",
+        "knowledge_augmentation",
+        "hybrid_orchestration",
+        "multi_agent_orchestration"
+      ],
+      "mcp_usage": {},
+      "review": {},
+      "fix_suggestion": {
+        "primary_layer": "runtime-ops",
+        "recommended_layers": [
+          "runtime-ops",
+          "connectivity",
+          "response-synthesis"
+        ],
+        "rationale": [
+          "请求阶段已失败，先检查服务可用性、端口和接口连通性。",
+          "关键回答要点缺失，优先检查总结层是否把数据、知识和预测真正说出来。"
+        ],
+        "next_action": "先确认 ai-orchestrator 是否启动，/api/ai/health 是否正常。"
+      },
+      "suite": "harness"
+    },
+    {
+      "id": "harness-004",
+      "intent": "PREDICTION_ASSISTANT",
+      "question": "这个预测方向有没有外部医学证据支持",
+      "severity": "P1",
+      "notes": "验证医学证据 MCP tool/resource/prompt 都会进入 trace",
+      "runtime_error": null,
+      "missing_must": [
+        "医学证据",
+        "来源"
+      ],
+      "forbidden_hits": [],
+      "trace_issues": [],
+      "missing_trace_steps": [],
+      "mcp_usage": {
+        "tools": 2,
+        "resources": 1,
+        "prompts": 1
+      },
+      "review": {
+        "usedKnowledge": true,
+        "usedWebEvidence": false,
+        "usedPrediction": true,
+        "usedHybrid": true,
+        "usedMultiAgent": true,
+        "usedMcpTools": false,
+        "usedMcpResources": false,
+        "usedMcpPrompts": false,
+        "mcpUsage": {
+          "tools": 0,
+          "resources": 0,
+          "prompts": 0
+        },
+        "missingChannels": [],
+        "needsHumanReview": false,
+        "summaryQualityHint": "已具备内部数据、模型判断和知识支撑，MCP 命中情况可继续增强。"
+      },
+      "fix_suggestion": {
+        "primary_layer": "response-synthesis",
+        "recommended_layers": [
+          "response-synthesis"
+        ],
+        "rationale": [
+          "关键回答要点缺失，优先检查总结层是否把数据、知识和预测真正说出来。"
+        ],
+        "next_action": "先看最终 summary/cards/actions 是否真正覆盖 case 的 expected_must。"
+      },
+      "suite": "harness"
+    }
+  ]
+}

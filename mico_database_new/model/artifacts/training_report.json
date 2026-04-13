@@ -1,0 +1,6 @@
+{
+  "oof_report": {
+    "note": "cross validation skipped because --folds <= 1",
+    "configured_n_estimators": 900
+  }
+}

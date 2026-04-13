@@ -1,0 +1,20 @@
+2026-04-11 12:00:48.110 [main] INFO  com.database.mico_database.MicoDatabaseApplication - Starting MicoDatabaseApplication using Java 1.8.0_481 on Jiay with PID 1520 (E:\DeskTop\java_code\mico_database_new\target\classes started by ASUS in E:\DeskTop\java_code\mico_database_new)
+2026-04-11 12:00:48.123 [main] DEBUG com.database.mico_database.MicoDatabaseApplication - Running with Spring Boot v2.7.18, Spring v5.3.31
+2026-04-11 12:00:48.124 [main] INFO  com.database.mico_database.MicoDatabaseApplication - No active profile set, falling back to 1 default profile: "default"
+2026-04-11 12:00:49.048 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-04-11 12:00:49.052 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-04-11 12:00:49.084 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 10 ms. Found 0 Redis repository interfaces.
+2026-04-11 12:00:50.828 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 5000 (http)
+2026-04-11 12:00:50.838 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-5000"]
+2026-04-11 12:00:50.840 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-04-11 12:00:50.840 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.83]
+2026-04-11 12:00:51.089 [main] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-04-11 12:00:51.090 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 2914 ms
+2026-04-11 12:00:53.242 [main] INFO  o.s.security.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@45f9d394, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@1c2d63f0, org.springframework.security.web.context.SecurityContextPersistenceFilter@2120bed, org.springframework.security.web.header.HeaderWriterFilter@31228d83, org.springframework.security.web.authentication.logout.LogoutFilter@25ae1f80, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter@719c1faf, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@743bb39a, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@2de3b052, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@3a588b5f, org.springframework.security.web.session.SessionManagementFilter@28bf82d9, org.springframework.security.web.access.ExceptionTranslationFilter@83b0d0f, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@2326180c]
+2026-04-11 12:00:53.419 [main] INFO  o.s.b.a.web.servlet.WelcomePageHandlerMapping - Adding welcome page template: index
+2026-04-11 12:00:53.722 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-5000"]
+2026-04-11 12:00:53.767 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 5000 (http) with context path ''
+2026-04-11 12:00:53.778 [main] INFO  com.database.mico_database.MicoDatabaseApplication - Started MicoDatabaseApplication in 6.161 seconds (JVM running for 7.568)
+2026-04-11 12:03:21.164 [http-nio-5000-exec-1] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-11 12:03:21.164 [http-nio-5000-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-04-11 12:03:21.165 [http-nio-5000-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 1 ms

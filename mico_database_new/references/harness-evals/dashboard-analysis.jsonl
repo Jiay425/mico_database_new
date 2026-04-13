@@ -1,0 +1,3 @@
+{"id":"dashboard-001","intent":"DASHBOARD_QA","question":"请解读首页当前数据重点","context":{"page":"index"},"expected_must":["提到主要疾病或重点疾病方向","提到地区或群体分布","给出关注建议"],"expected_should":["体现首页是统计总览","提到知识支持"],"forbidden":["编造趋势数据","把首页统计写成个体结论"],"notes":"首页总览场景"}
+{"id":"dashboard-002","intent":"DASHBOARD_QA","question":"当前最值得关注什么","context":{"page":"index"},"expected_must":["指出一个重点方向","说明为什么值得关注","给出下一步动作"],"expected_should":["提到业务规则或分析模板","提到证据层区分"],"forbidden":["空泛地重复首页标题","完全不引用页面数据"],"notes":"首页优先级判断场景"}
+{"id":"dashboard-003","intent":"DASHBOARD_QA","question":"哪些是内部统计，哪些是解释支持","context":{"page":"index"},"expected_must":["区分内部统计与解释支持","提到知识或证据是补充层","回答结构清晰"],"expected_should":["体现分层输出","提到外部证据是否使用"],"forbidden":["把统计和解释混为一体","把外部证据说成内部数据"],"notes":"首页分层场景"}

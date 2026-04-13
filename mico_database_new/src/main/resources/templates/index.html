@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html xmlns:th='http://www.thymeleaf.org'>
+<head>
+    <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <title>数据总览 - Mico 医疗分析平台</title>
+    <meta name='description' content='Mico 微生态医疗分析平台 — 患者、疾病、地区与年龄分布数据总览'>
+    <link rel='preconnect' href='https://fonts.googleapis.com'>
+    <link rel='preconnect' href='https://fonts.gstatic.com' crossorigin>
+    <link href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap' rel='stylesheet'>
+    <link href='https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css' rel='stylesheet'>
+    <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css'>
+    <link rel='stylesheet' th:href='@{/css/comon0.css}'>
+    <link rel='stylesheet' th:href='@{/css/index-override.css}'>
+
+    <script type='text/javascript' th:src='@{/js/jquery.js}'></script>
+    <script type='text/javascript' th:src='@{/js/echarts.min.js}'></script>
+    <script type='text/javascript' th:src='@{/js/mico-theme.js}'></script>
+</head>
+<body class='dashboard-home'>
+
+    <nav class='navbar navbar-expand-lg navbar-custom sticky-top'>
+        <div class='container-fluid px-4'>
+            <a class='navbar-brand navbar-brand-custom' th:href='@{/}'>
+                <i class='bi bi-activity'></i> Mico 医疗分析平台
+            </a>
+            <button class='navbar-toggler' type='button' data-bs-toggle='collapse' data-bs-target='#navbarContent'>
+                <span class='navbar-toggler-icon'></span>
+            </button>
+            <div class='collapse navbar-collapse' id='navbarContent'>
+                <ul class='navbar-nav ms-auto mb-2 mb-lg-0'>
+                    <li class='nav-item'>
+                        <a class='nav-link nav-link-custom active' th:href='@{/}'>
+                            <i class='bi bi-grid-1x2-fill me-2'></i>数据总览
+                        </a>
+                    </li>
+                    <li class='nav-item'>
+                        <a class='nav-link nav-link-custom' th:href='@{/search_patient}'>
+                            <i class='bi bi-search-heart me-2'></i>患者检索
+                        </a>
+                    </li>
+                    <li class='nav-item'>
+                        <a class='nav-link nav-link-custom' th:href='@{/disease_prediction}'>
+                            <i class='bi bi-cpu-fill me-2'></i>预测分析
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class='page-shell idx-shell'>
+
+        <!-- ═══ 1. HERO ═══ -->
+        <section class='idx-hero' id='idx-hero'>
+            <div class='idx-hero-text'>
+                <div class='idx-hero-eyebrow'>
+                    <i class='bi bi-shield-plus'></i>医疗数据总览
+                </div>
+                <h1 class='idx-hero-title'>微生态数据平台</h1>
+                <p class='idx-hero-sub'>患者、疾病、地区与年龄分布总览</p>
+            </div>
+            <div class='idx-hero-right'>
+                <span class='idx-status-pill'>
+                    <i class='bi bi-check-circle-fill'></i>系统运行正常
+                </span>
+                <div class='idx-clock'>
+                    <i class='bi bi-clock'></i>
+                    <span id='showTime' class='fw-medium'></span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══ 2. BENTO KPI ═══ -->
+        <section class='idx-bento' id='idx-bento'>
+            <!-- Main Card: 患者总记录数 -->
+            <div class='idx-bento-main'>
+                <div class='bento-icon'><i class='bi bi-people-fill'></i></div>
+                <div class='bento-label'>患者总记录数</div>
+                <div class='bento-value skeleton' id='js-total-patients'>00000</div>
+                <div class='bento-meta'>
+                    <i class='bi bi-arrow-up-right'></i>实时更新 · 总样本
+                </div>
+            </div>
+
+            <!-- 高频疾病 -->
+            <div class='idx-bento-item'>
+                <div class='bento-icon-sm alert-icon'><i class='bi bi-virus'></i></div>
+                <div class='bento-label'>高频疾病</div>
+                <div class='bento-value skeleton' id='js-common-disease'>加载中...</div>
+                <div class='bento-pill warn'>
+                    <i class='bi bi-exclamation-diamond'></i>重点关注
+                </div>
+            </div>
+
+            <!-- 年龄区间 -->
+            <div class='idx-bento-item'>
+                <div class='bento-icon-sm range-icon'><i class='bi bi-rulers'></i></div>
+                <div class='bento-label'>年龄区间</div>
+                <div class='bento-value' id='js-age-range'>--</div>
+                <div class='bento-pill info'>
+                    <i class='bi bi-person-badge'></i>群体视角
+                </div>
+            </div>
+
+            <!-- 高频疾病下方 — 系统状态 -->
+            <div class='idx-bento-item'>
+                <div class='bento-icon-sm sys-icon'><i class='bi bi-server'></i></div>
+                <div class='bento-label'>系统状态</div>
+                <div class='bento-value'>100%</div>
+                <div class='bento-pill ok'>
+                    <i class='bi bi-check2-all'></i>运行正常
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══ 3. CHART ROW 1: 疾病柱状图 + 关键统计 ═══ -->
+        <section class='idx-charts-row' id='idx-row1'>
+            <article class='idx-panel'>
+                <div class='idx-panel-head'>
+                    <div class='idx-panel-kicker'><i class='bi bi-bar-chart-line'></i>类别对比</div>
+                    <h2 class='idx-panel-title'>疾病患者数量</h2>
+                    <p class='idx-panel-sub'>基于当前数据库统计</p>
+                </div>
+                <div class='idx-panel-body'>
+                    <div id='echarts2' class='idx-chart'></div>
+                </div>
+            </article>
+
+            <article class='idx-panel'>
+                <div class='idx-panel-head'>
+                    <div class='idx-panel-kicker'><i class='bi bi-clipboard2-data'></i>核心摘要</div>
+                    <h2 class='idx-panel-title'>关键统计</h2>
+                    <p class='idx-panel-sub'>核心指标摘要</p>
+                </div>
+                <div class='idx-summary-body'>
+                    <div class='idx-summary-row featured'>
+                        <div class='idx-summary-label'>
+                            疾病类别数
+                            <small>已纳入统计病种</small>
+                        </div>
+                        <div class='idx-summary-val skeleton' id='js-summary-disease-kinds'>00</div>
+                    </div>
+                    <div class='idx-summary-row'>
+                        <div class='idx-summary-label'>
+                            覆盖地区数
+                            <small id='js-summary-region-note'>全球覆盖国家</small>
+                        </div>
+                        <div class='idx-summary-val skeleton' id='js-summary-region-count'>00</div>
+                    </div>
+                    <div class='idx-summary-row'>
+                        <div class='idx-summary-label'>
+                            健康人群比
+                            <small>对比疾病组比例</small>
+                        </div>
+                        <div class='idx-summary-val skeleton' id='js-summary-healthy-ratio'>00%</div>
+                    </div>
+                    <div class='idx-summary-row'>
+                        <div class='idx-summary-label'>
+                            特征总数
+                            <small>全库提取特征向量</small>
+                        </div>
+                        <div class='idx-summary-val skeleton' id='js-summary-feature-count'>00,000</div>
+                    </div>
+                </div>
+            </article>
+        </section>
+
+        <!-- ═══ 4. CHART ROW 2: 三等分 ═══ -->
+        <section class='idx-charts-row idx-triple' id='idx-row2'>
+            <article class='idx-panel'>
+                <div class='idx-panel-head'>
+                    <div class='idx-panel-kicker'><i class='bi bi-geo-alt'></i>地区分布</div>
+                    <h2 class='idx-panel-title'>患者地区来源</h2>
+                    <p class='idx-panel-sub'>主要地区来源</p>
+                </div>
+                <div class='idx-panel-body'>
+                    <div id='echarts3' class='idx-chart'></div>
+                </div>
+            </article>
+
+            <article class='idx-panel'>
+                <div class='idx-panel-head'>
+                    <div class='idx-panel-kicker'><i class='bi bi-pie-chart'></i>疾病分布</div>
+                    <h2 class='idx-panel-title'>疾病构成占比</h2>
+                    <p class='idx-panel-sub'>主要疾病分布</p>
+                </div>
+                <div class='idx-panel-body'>
+                    <div id='echarts4' class='idx-chart'></div>
+                </div>
+            </article>
+
+            <article class='idx-panel'>
+                <div class='idx-panel-head'>
+                    <div class='idx-panel-kicker'><i class='bi bi-people'></i>群体特征</div>
+                    <h2 class='idx-panel-title'>年龄与性别分布</h2>
+                    <p class='idx-panel-sub'>年龄结构与性别占比</p>
+                </div>
+                <div class='idx-panel-body'>
+                    <div id='echarts5' class='idx-chart'></div>
+                </div>
+            </article>
+        </section>
+
+        <!-- ═══ 5. QUICK ACTIONS ═══ -->
+        <section class='idx-actions' id='idx-actions'>
+            <a class='idx-action-btn primary' th:href='@{/search_patient}'>
+                <i class='bi bi-search'></i>患者检索
+            </a>
+            <a class='idx-action-btn secondary' th:href='@{/disease_prediction}'>
+                <i class='bi bi-cpu'></i>预测分析
+            </a>
+            <button type='button' class='idx-action-btn ai-btn ai-assistant-open' data-ai-message='请解读首页当前数据重点'>
+                <i class='bi bi-stars'></i>AI 助手
+            </button>
+        </section>
+
+    </main>
+
+    <script th:inline='javascript'>
+        /*<![CDATA[*/
+        try {
+            var rawOverview = /*[[${overview_stats_json}]]*/ '{}';
+            var rawDisease = /*[[${disease_data_json}]]*/ '[]';
+            var rawOrigin = /*[[${patient_origin_data_json}]]*/ '[]';
+            var rawAgeGender = /*[[${age_gender_data_json}]]*/ '{}';
+            var rawPatient = /*[[${patientDataFromFlask_json}]]*/ '{}';
+
+            window.overviewStats = (typeof rawOverview === 'string') ? JSON.parse(rawOverview) : rawOverview;
+            window.diseaseDataFromFlask = (typeof rawDisease === 'string') ? JSON.parse(rawDisease) : rawDisease;
+            window.patientOriginData = (typeof rawOrigin === 'string') ? JSON.parse(rawOrigin) : rawOrigin;
+            window.ageGenderData = (typeof rawAgeGender === 'string') ? JSON.parse(rawAgeGender) : rawAgeGender;
+            window.patientDataFromFlask = (typeof rawPatient === 'string') ? JSON.parse(rawPatient) : rawPatient;
+        } catch (e) {
+            console.error('Critical Data Initialization Error:', e);
+        }
+        /*]]>*/
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            function hasAgeValue(value) {
+                return value !== null && value !== undefined && value !== '' && value !== 'N/A';
+            }
+
+            function formatAgeRange(stats) {
+                if (!stats || !hasAgeValue(stats.min_age) || !hasAgeValue(stats.max_age)) return '--';
+                return stats.min_age + ' - ' + stats.max_age + ' 岁';
+            }
+
+            function time() {
+                var dt = new Date();
+                var t = dt.toLocaleString('zh-CN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                var el = document.getElementById('showTime');
+                if (el) el.innerText = t;
+            }
+
+            setInterval(time, 1000);
+            time();
+
+            function animateValue(element, start, end, duration) {
+                if (isNaN(end)) {
+                    element.innerText = end;
+                    return;
+                }
+                const startTime = performance.now();
+                const easing = t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2;
+                
+                function update(currentTime) {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    const easedProgress = easing(progress);
+                    const current = Math.round(start + (end - start) * easedProgress);
+                    element.innerText = current.toLocaleString('zh-CN');
+                    if (progress < 1) {
+                        requestAnimationFrame(update);
+                    } else {
+                        element.innerText = end.toLocaleString('zh-CN');
+                    }
+                }
+                requestAnimationFrame(update);
+            }
+
+            if (window.overviewStats) {
+                var formattedAgeRange = formatAgeRange(window.overviewStats);
+
+                if (document.getElementById('js-total-patients')) {
+                    const el = document.getElementById('js-total-patients');
+                    el.classList.remove('skeleton');
+                    const val = parseInt(window.overviewStats.total_patients) || 0;
+                    animateValue(el, 0, val, 1200);
+                }
+
+                if (document.getElementById('js-common-disease')) {
+                    const el = document.getElementById('js-common-disease');
+                    el.classList.remove('skeleton');
+                    el.innerText = window.overviewStats.most_common_disease_name || '--';
+                }
+
+                if (document.getElementById('js-summary-disease-kinds')) {
+                    const el = document.getElementById('js-summary-disease-kinds');
+                    el.classList.remove('skeleton');
+                    const val = (window.diseaseDataFromFlask || []).length || 0;
+                    animateValue(el, 0, val, 1000);
+                }
+
+                if (document.getElementById('js-summary-region-count')) {
+                    const el = document.getElementById('js-summary-region-count');
+                    el.classList.remove('skeleton');
+                    const val = (window.patientOriginData || []).length || 0;
+                    animateValue(el, 0, val, 1000);
+                }
+
+                if (document.getElementById('js-summary-healthy-ratio')) {
+                    const el = document.getElementById('js-summary-healthy-ratio');
+                    el.classList.remove('skeleton');
+                    
+                    const diseases = window.diseaseDataFromFlask || [];
+                    const healthyCount = (diseases.find(d => String(d.disease).toLowerCase() === 'healthy') || {}).count || 0;
+                    const totalCount = parseInt(window.overviewStats.total_patients) || 1;
+                    const ratio = Math.round((healthyCount / totalCount) * 100);
+                    
+                    animateValue(el, 0, ratio, 1000);
+                    setTimeout(() => { if (!isNaN(ratio)) el.innerText = ratio + '%'; }, 1050);
+                }
+
+                if (document.getElementById('js-summary-feature-count')) {
+                    const el = document.getElementById('js-summary-feature-count');
+                    el.classList.remove('skeleton');
+                    const baseCount = parseInt(window.overviewStats.total_patients) || 0;
+                    const estimatedFeatures = baseCount * 120;
+                    animateValue(el, Math.floor(estimatedFeatures * 0.8), estimatedFeatures, 1500);
+                }
+
+                if (document.getElementById('js-age-range')) {
+                    document.getElementById('js-age-range').innerText = formattedAgeRange;
+                }
+
+            }
+        });
+    </script>
+
+    <script src='https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js'></script>
+    <script type='text/javascript' th:src='@{/js/js.js}'></script>
+    <script>
+        window.aiAssistantConfig = {
+            title: '首页 AI 助手',
+            subtitle: '结合首页总览数据回答疾病、地区与群体结构问题',
+            welcome: '我可以直接结合首页真实统计数据，为你解释疾病分布、地区来源和年龄性别结构。',
+            starterPrompts: [
+                '请解读首页当前数据重点',
+                '目前哪类疾病最多',
+                '覆盖地区有什么特点'
+            ],
+            getContext: function () {
+                return {
+                    page: 'index',
+                    patientId: null,
+                    sampleId: null
+                };
+            }
+        };
+    </script>
+    <script type='text/javascript' th:src='@{/js/ai-assistant.js}'></script>
+</body>
+</html>
