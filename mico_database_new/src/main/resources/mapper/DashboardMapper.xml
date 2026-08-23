@@ -5,13 +5,72 @@
 
 <mapper namespace="com.database.mico_database.mapper.DashboardMapper">
 
+    <!--
+      patients.disease is the source label and may contain several diseases
+      separated by comma/semicolon.  This CTE splits those labels, removes
+      health/control cohorts, and folds only explicit aliases into one
+      canonical disease name.  The raw value remains untouched in patients.
+    -->
+    <sql id="normalizedDiseaseCte">
+        WITH RECURSIVE raw_disease AS (
+            SELECT patient_id,
+                   TRIM(REPLACE(disease, ';', ',')) AS remaining
+            FROM patients
+            WHERE disease IS NOT NULL AND TRIM(disease) &lt;&gt; ''
+        ), split_disease AS (
+            SELECT patient_id,
+                   TRIM(SUBSTRING_INDEX(remaining, ',', 1)) AS token,
+                   CASE WHEN INSTR(remaining, ',') = 0 THEN ''
+                        ELSE SUBSTRING(remaining, INSTR(remaining, ',') + 1) END AS remaining
+            FROM raw_disease
+            UNION ALL
+            SELECT patient_id,
+                   TRIM(SUBSTRING_INDEX(remaining, ',', 1)) AS token,
+                   CASE WHEN INSTR(remaining, ',') = 0 THEN ''
+                        ELSE SUBSTRING(remaining, INSTR(remaining, ',') + 1) END AS remaining
+            FROM split_disease
+            WHERE remaining &lt;&gt; ''
+        ), canonical_disease AS (
+            SELECT patient_id,
+                   CASE LOWER(token)
+                       WHEN 'healthy' THEN NULL
+                       WHEN 'health' THEN NULL
+                       WHEN 'healthy subject study' THEN NULL
+                       WHEN 'control' THEN NULL
+                       WHEN 'nc' THEN NULL
+                       WHEN 'normal control' THEN NULL
+                       WHEN 'ibd' THEN 'inflammatory bowel disease'
+                       WHEN 't2d' THEN 'type 2 diabetes'
+                       WHEN 'type 2 diabetes' THEN 'type 2 diabetes'
+                       WHEN 'crc' THEN 'colorectal cancer'
+                       WHEN 'pd' THEN 'parkinson disease'
+                       WHEN 'parkinsons disease' THEN 'parkinson disease'
+                       WHEN 'ms' THEN 'multiple sclerosis'
+                       WHEN 'ad' THEN 'alzheimer disease'
+                       WHEN 'alzheimers' THEN 'alzheimer disease'
+                       WHEN 'mci' THEN 'mild cognitive impairment'
+                       WHEN 'cad' THEN 'coronary artery disease'
+                       WHEN 'hf' THEN 'heart failure'
+                       WHEN 'fatty_liver' THEN 'fatty liver'
+                       WHEN 'perianal_fistula' THEN 'perianal fistula'
+                       WHEN 'cholesterolemia' THEN 'hypercholesterolemia'
+                       WHEN 'premature born' THEN 'prematurity'
+                       ELSE LOWER(TRIM(REPLACE(token, '_', ' ')))
+                   END AS disease
+            FROM split_disease
+            WHERE token &lt;&gt; ''
+        ), normalized_diseases AS (
+            SELECT DISTINCT patient_id, disease
+            FROM canonical_disease
+            WHERE disease IS NOT NULL AND TRIM(disease) &lt;&gt; ''
+        )
+    </sql>
+
     <select id="getDiseaseDistribution" resultType="com.database.mico_database.model.DiseaseCount">
-        SELECT
-            D.disease_name AS disease,
-            COUNT(PD.patient_id) AS count,
-            COUNT(PD.patient_id) AS percentage
-        FROM `diseases` D JOIN `patient_diseases` PD ON D.disease_id = PD.disease_id
-        GROUP BY D.disease_name
+        <include refid="normalizedDiseaseCte"/>
+        SELECT disease AS disease, COUNT(*) AS count, COUNT(*) AS percentage
+        FROM normalized_diseases
+        GROUP BY disease
         ORDER BY count DESC
             LIMIT 10;
     </select>
@@ -21,19 +80,55 @@
     </select>
 
     <select id="getMostCommonDisease" resultType="java.util.Map">
-        SELECT D.disease_name as disease_name, COUNT(PD.patient_id) AS patient_count FROM `patient_diseases` PD
-                                                                                              JOIN `diseases` D ON PD.disease_id = D.disease_id
-        GROUP BY D.disease_name ORDER BY patient_count DESC LIMIT 1;
+        <include refid="normalizedDiseaseCte"/>
+        SELECT disease AS disease_name, COUNT(*) AS patient_count
+        FROM normalized_diseases
+        GROUP BY disease
+        ORDER BY patient_count DESC
+        LIMIT 1;
     </select>
 
     <select id="getMinMaxPatientAge" resultType="java.util.Map">
-        SELECT MIN(age) AS min_age, MAX(age) AS max_age FROM `patients`;
+        SELECT MIN(age) AS min_age, MAX(age) AS max_age
+        FROM `patients`
+        WHERE age BETWEEN 1 AND 120;
+    </select>
+
+    <select id="getDashboardSummaryMetrics" resultType="java.util.Map">
+        <include refid="normalizedDiseaseCte"/>
+        SELECT
+            (
+                SELECT COUNT(DISTINCT disease)
+                FROM normalized_diseases
+            ) AS disease_category_count,
+            (
+                SELECT COUNT(DISTINCT country)
+                FROM patients
+                WHERE country IS NOT NULL AND TRIM(country) != ''
+            ) AS region_count,
+            (
+                SELECT COUNT(*)
+                FROM patients
+                WHERE LOWER(TRIM(disease)) IN ('healthy', 'health', 'healthy subject study')
+            ) AS healthy_patient_count,
+            (
+                SELECT ROUND(100.0 * SUM(LOWER(TRIM(disease)) IN ('healthy', 'health', 'healthy subject study')) / COUNT(*), 1)
+                FROM patients
+            ) AS healthy_ratio,
+            (
+                SELECT COUNT(DISTINCT microbe_name_hash)
+                FROM microbe_abundance_standard
+            ) AS species_feature_count,
+            (
+                SELECT COUNT(*)
+                FROM microbe_abundance_standard
+            ) AS standard_abundance_record_count
     </select>
 
     <select id="getAgeGenderDistribution" resultType="com.database.mico_database.model.AgeGenderCount">
         SELECT
             CASE
-                WHEN age BETWEEN 0 AND 10 THEN '0-10'
+                WHEN age BETWEEN 1 AND 10 THEN '1-10'
                 WHEN age BETWEEN 11 AND 20 THEN '11-20'
                 WHEN age BETWEEN 21 AND 30 THEN '21-30'
                 WHEN age BETWEEN 31 AND 40 THEN '31-40'
@@ -45,7 +140,7 @@
             COUNT(*) as count
         FROM
             patients
-        WHERE gender IS NOT NULL
+        WHERE gender IS NOT NULL AND age BETWEEN 1 AND 120
         GROUP BY
             age_group, gender;
     </select>

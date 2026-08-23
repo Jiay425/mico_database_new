@@ -1,0 +1,33 @@
+services:
+  mico-knowledge-postgres:
+    image: pgvector/pgvector:pg16
+    container_name: mico-knowledge-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${MICO_KNOWLEDGE_POSTGRES_DB:?set MICO_KNOWLEDGE_POSTGRES_DB}
+      POSTGRES_USER: ${MICO_KNOWLEDGE_POSTGRES_USER:?set MICO_KNOWLEDGE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${MICO_KNOWLEDGE_POSTGRES_PASSWORD:?set MICO_KNOWLEDGE_POSTGRES_PASSWORD}
+    ports:
+      - "127.0.0.1:${MICO_KNOWLEDGE_POSTGRES_PORT:?set MICO_KNOWLEDGE_POSTGRES_PORT}:5432"
+    volumes:
+      - mico_knowledge_postgres_data:/var/lib/postgresql/data
+
+  mico-knowledge-neo4j:
+    image: neo4j:5-community
+    container_name: mico-knowledge-neo4j
+    restart: unless-stopped
+    environment:
+      NEO4J_AUTH: ${MICO_KNOWLEDGE_NEO4J_AUTH:?set MICO_KNOWLEDGE_NEO4J_AUTH}
+      NEO4J_server_memory_heap_initial__size: 512m
+      NEO4J_server_memory_heap_max__size: 1G
+    ports:
+      - "127.0.0.1:${MICO_KNOWLEDGE_NEO4J_HTTP_PORT:?set MICO_KNOWLEDGE_NEO4J_HTTP_PORT}:7474"
+      - "127.0.0.1:${MICO_KNOWLEDGE_NEO4J_BOLT_PORT:?set MICO_KNOWLEDGE_NEO4J_BOLT_PORT}:7687"
+    volumes:
+      - mico_knowledge_neo4j_data:/data
+      - mico_knowledge_neo4j_logs:/logs
+
+volumes:
+  mico_knowledge_postgres_data:
+  mico_knowledge_neo4j_data:
+  mico_knowledge_neo4j_logs:

@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mico.example.invalid/contracts/p3-differential-analysis-report-v1.json",
+  "title": "Mico P3 Differential Analysis Report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "status", "comparisonId", "method", "evidence", "taxonomyVersion",
+    "featureVersion", "sourceBatch", "caseSampleRecordCount",
+    "controlSampleRecordCount", "analyzedCaseSampleCount",
+    "analyzedControlSampleCount", "testedFeatureCount",
+    "significantFeatureCount", "results", "limitationCodes",
+    "subjectLinkStatus", "nonDiagnostic", "matchedCaseSampleRecordCount",
+    "matchedControlSampleRecordCount", "excludedMissingCovariateCaseCount",
+    "excludedMissingCovariateControlCount", "matchingMethod", "ageCaliperYears"
+  ],
+  "properties": {
+    "status": {"const": "COMPLETED"},
+    "comparisonId": {"const": "t2d_vs_healthy_v1"},
+    "method": {"const": "mann_whitney_u_bh_fdr_v1"},
+    "evidence": {
+      "type": "array", "minItems": 1, "maxItems": 128,
+      "items": {"$ref": "#/$defs/evidence"}
+    },
+    "taxonomyVersion": {"type": "string", "minLength": 1, "maxLength": 256},
+    "featureVersion": {"type": "string", "minLength": 1, "maxLength": 256},
+    "sourceBatch": {"type": "string", "minLength": 1, "maxLength": 256},
+    "caseSampleRecordCount": {"type": "integer", "minimum": 0},
+    "controlSampleRecordCount": {"type": "integer", "minimum": 0},
+    "analyzedCaseSampleCount": {"type": "integer", "minimum": 0},
+    "analyzedControlSampleCount": {"type": "integer", "minimum": 0},
+    "matchedCaseSampleRecordCount": {"type": "integer", "minimum": 0},
+    "matchedControlSampleRecordCount": {"type": "integer", "minimum": 0},
+    "excludedMissingCovariateCaseCount": {"type": "integer", "minimum": 0},
+    "excludedMissingCovariateControlCount": {"type": "integer", "minimum": 0},
+    "matchingMethod": {"const": "exact_covariates_age_caliper_v1"},
+    "ageCaliperYears": {"const": 5},
+    "testedFeatureCount": {"type": "integer", "minimum": 0},
+    "significantFeatureCount": {"type": "integer", "minimum": 0},
+    "results": {
+      "type": "array", "maxItems": 20,
+      "items": {"$ref": "#/$defs/result"}
+    },
+    "limitationCodes": {
+      "type": "array", "minItems": 1,
+      "items": {"enum": [
+        "bounded_analysis_dataset",
+        "sample_records_not_independent_subjects",
+        "subject_link_unverified",
+        "transient_evidence_not_replayable",
+        "no_causal_or_clinical_interpretation"
+      ]}
+    },
+    "subjectLinkStatus": {"const": "unverified"},
+    "nonDiagnostic": {"const": "not_clinical_diagnostic_or_treatment_advice"}
+  },
+  "$defs": {
+    "evidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source", "dataSnapshotId", "snapshotPersistence", "replayable", "queryHash", "rowCount", "generatedAt"],
+      "properties": {
+        "source": {"const": "java_agent_read_model"},
+        "dataSnapshotId": {"type": "string", "pattern": "^transient-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"},
+        "snapshotPersistence": {"const": "transient"},
+        "replayable": {"const": false},
+        "queryHash": {"type": "string", "pattern": "^(?:sha256:)?[0-9a-f]{64}$"},
+        "rowCount": {"type": "integer", "minimum": 0},
+        "generatedAt": {"type": "string", "format": "date-time"},
+        "schemaVersion": {"type": ["string", "null"]},
+        "diseaseMappingVersion": {"type": ["string", "null"]},
+        "taxonomyVersion": {"type": ["string", "null"]},
+        "featureVersion": {"type": ["string", "null"]},
+        "sourceBatch": {"type": ["string", "null"]}
+      }
+    },
+    "result": {
+      "type": "object", "additionalProperties": false,
+      "required": ["taxonName", "caseSampleCount", "controlSampleCount", "caseMedian", "controlMedian", "log2FoldChange", "pValue", "qValue"],
+      "properties": {
+        "taxonName": {"type": "string", "minLength": 1, "maxLength": 512},
+        "caseSampleCount": {"type": "integer", "minimum": 0},
+        "controlSampleCount": {"type": "integer", "minimum": 0},
+        "caseMedian": {"type": "number"},
+        "controlMedian": {"type": "number"},
+        "log2FoldChange": {"type": "number"},
+        "pValue": {"type": "number", "minimum": 0, "maximum": 1},
+        "qValue": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    }
+  }
+}

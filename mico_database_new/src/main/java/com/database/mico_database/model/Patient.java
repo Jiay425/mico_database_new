@@ -7,6 +7,10 @@ import java.util.List;
 public class Patient {
     private String patientId;
     private String patientName;
+    /** Display-only sample name. patientName remains the immutable source key. */
+    private String sampleName;
+    /** Meta2DB project/study name, kept separate from the sample name. */
+    private String projectName;
     private String group;
     private Integer age;
     private String gender;
@@ -14,6 +18,9 @@ public class Patient {
     private Double bmi;
     private String bodySite;
     private String sequencingPlatform;
+    /** Immutable source label from the database, retained for audit. */
+    private String rawDisease;
+    /** Normalized display label; source data remains in rawDisease/database. */
     private String disease;
     private List<MicrobeAbundance> microbialAbundanceData;
     private List<CytokineData> cytokineData;

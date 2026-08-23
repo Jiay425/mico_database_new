@@ -1,0 +1,12 @@
+{
+  "indexVersion": "fulltext-gemini-embedding-v1",
+  "model": "gemini-embedding-2",
+  "evidenceTier": "fulltext",
+  "documentCount": 2,
+  "dimension": 3072,
+  "corpusHash": "sha256:16b05db4f35b7fade62263fc77af9d0ec30b23408980e94c262d0288e1e6c241",
+  "documentInputFormat": "title: {title} | text: {content}",
+  "queryInputFormat": "task: search result | query: {content}",
+  "createdAt": "2026-08-22T10:21:14.065195+00:00",
+  "completeCorpus": false
+}

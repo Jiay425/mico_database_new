@@ -1,0 +1,211 @@
+openapi: 3.0.3
+info:
+  title: Mico Internal Agent Tool API
+  version: v1
+  description: >-
+    Default-closed internal M2M boundary. Java binds the service identity and
+    effective read scopes; clients cannot submit SQL, table selectors,
+    requesterId, or requestedScopes.
+paths:
+  /internal/agent/tools/execute:
+    post:
+      summary: Execute one Java-controlled read-only Agent Tool
+      operationId: executeInternalAgentTool
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentExecuteRequest'
+      responses:
+        '200':
+          description: Authenticated tool response; inspect AgentToolResponse.status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentToolResponse'
+        '400':
+          description: Closed JSON shape or JSON type failure.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentTransportError'
+        '401':
+          description: Missing or invalid service token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentTransportError'
+        '503':
+          description: Endpoint is disabled by default.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentTransportError'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: service-token-from-MICO_AGENT_INTERNAL_TOKEN
+  schemas:
+    AgentExecuteRequest:
+      type: object
+      additionalProperties: false
+      required: [toolName, runId, toolCallId, arguments]
+      properties:
+        toolName:
+          type: string
+          enum:
+            - resolve_study
+            - resolve_sample
+            - get_sample
+            - list_sample_profiles
+            - get_abundance_summary
+            - resolve_disease
+            - build_cohort
+            - get_data_snapshot
+            - get_quality_summary
+        runId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        toolCallId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        arguments:
+          description: Closed tool-specific JSON object; see the fixed schemas below.
+          anyOf:
+            - $ref: '#/components/schemas/ResolveStudyArguments'
+            - $ref: '#/components/schemas/ResolveSampleArguments'
+            - $ref: '#/components/schemas/ExactSampleArguments'
+            - $ref: '#/components/schemas/VersionedProfileArguments'
+            - $ref: '#/components/schemas/AbundanceSummaryArguments'
+            - $ref: '#/components/schemas/ResolveDiseaseArguments'
+            - $ref: '#/components/schemas/BuildCohortArguments'
+            - $ref: '#/components/schemas/SnapshotIdArguments'
+    ResolveStudyArguments:
+      type: object
+      additionalProperties: false
+      required: [studyKey]
+      properties:
+        studyKey: {type: string, minLength: 1}
+    ResolveSampleArguments:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      anyOf:
+        - required: [sampleAccession]
+        - required: [sourceSampleId]
+      properties:
+        sampleAccession: {type: string, minLength: 1}
+        sourceSampleId: {type: string, minLength: 1}
+        studyKey: {type: string, minLength: 1}
+        limit: {type: integer, minimum: 1, maximum: 20}
+    ExactSampleArguments:
+      type: object
+      additionalProperties: false
+      required: [recordProfileLocator]
+      properties:
+        recordProfileLocator:
+          $ref: '#/components/schemas/RecordProfileLocator'
+    VersionedProfileArguments:
+      type: object
+      additionalProperties: false
+      required: [recordProfileLocator, taxonomyVersion, featureVersion, sourceBatch]
+      properties:
+        recordProfileLocator:
+          $ref: '#/components/schemas/RecordProfileLocator'
+        taxonomyVersion: {type: string, minLength: 1}
+        featureVersion: {type: string, minLength: 1}
+        sourceBatch: {type: string, minLength: 1}
+    AbundanceSummaryArguments:
+      type: object
+      additionalProperties: false
+      required: [recordProfileLocator, taxonomyVersion, featureVersion, sourceBatch]
+      properties:
+        recordProfileLocator:
+          $ref: '#/components/schemas/RecordProfileLocator'
+        taxonomyVersion: {type: string, minLength: 1}
+        featureVersion: {type: string, minLength: 1}
+        sourceBatch: {type: string, minLength: 1}
+        limit: {type: integer, minimum: 1, maximum: 100}
+    ResolveDiseaseArguments:
+      type: object
+      additionalProperties: false
+      required: [rawLabel]
+      properties:
+        rawLabel: {type: string, minLength: 1, maxLength: 4096}
+    BuildCohortArguments:
+      type: object
+      additionalProperties: false
+      required: [comparisonId]
+      properties:
+        comparisonId: {type: string, enum: [t2d_vs_healthy_v1]}
+    SnapshotIdArguments:
+      type: object
+      additionalProperties: false
+      required: [dataSnapshotId]
+      properties:
+        dataSnapshotId: {type: string, minLength: 1}
+    RecordProfileLocator:
+      type: object
+      additionalProperties: false
+      required: [internalRecordId, sourceSampleId]
+      properties:
+        internalRecordId: {type: integer, minimum: 1}
+        sourceSampleId: {type: string, minLength: 1, maxLength: 4096}
+    AgentToolResponse:
+      type: object
+      properties:
+        toolCallId: {type: string}
+        runId: {type: string}
+        status: {type: string, enum: [COMPLETED, REJECTED, FAILED, NOT_IMPLEMENTED]}
+        source: {type: string}
+        rowCount: {type: integer, format: int64, nullable: true}
+        schemaVersion: {type: string}
+        generatedAt: {type: string, format: date-time}
+        dataSnapshot:
+          allOf:
+            - $ref: '#/components/schemas/TransientDataSnapshot'
+          nullable: true
+        qualitySummary:
+          $ref: '#/components/schemas/QualitySummary'
+        data: {}
+        error:
+          nullable: true
+          type: object
+    TransientDataSnapshot:
+      type: object
+      required: [dataSnapshotId, dataSource, queryHash, rowCount, generatedAt, snapshotPersistence]
+      properties:
+        dataSnapshotId: {type: string}
+        dataSource: {type: string}
+        importBatch: {type: string, nullable: true}
+        diseaseMappingVersion: {type: string, nullable: true}
+        taxonomyVersion: {type: string, nullable: true}
+        featureVersion: {type: string, nullable: true}
+        sourceBatch: {type: string, nullable: true}
+        cohortCondition: {type: string, nullable: true}
+        queryHash: {type: string}
+        rowCount: {type: integer, format: int64}
+        generatedAt: {type: string, format: date-time}
+        snapshotPersistence: {type: string, enum: [transient]}
+    QualitySummary:
+      type: object
+      properties:
+        subjectLinkStatus: {type: string, enum: [unverified]}
+        missingCounts: {type: object, additionalProperties: {type: integer, format: int64}}
+        duplicateCount: {type: integer, format: int64, nullable: true}
+        orphanCount: {type: integer, format: int64, nullable: true}
+        warnings: {type: array, items: {type: string}}
+    AgentTransportError:
+      type: object
+      required: [code, message]
+      additionalProperties: false
+      properties:
+        code: {type: string}
+        message: {type: string}

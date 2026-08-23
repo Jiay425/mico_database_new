@@ -1,0 +1,5 @@
+{"caseId":"semantic_t2d_microbiome","question":"type 2 diabetes gut microbiome composition evidence","retrievalMode":"vector"}
+{"caseId":"mechanism_t2d_microbiome","question":"type 2 diabetes gut microbiome mechanism relationship","retrievalMode":"graph"}
+{"caseId":"hybrid_dysbiosis","question":"gut dysbiosis metabolic disease evidence and mechanism","retrievalMode":"hybrid"}
+{"caseId":"semantic_cirrhosis_microbiota","question":"cirrhosis intestinal microbiota evidence","retrievalMode":"vector"}
+{"caseId":"mechanism_short_chain_fatty_acid","question":"short chain fatty acid microbiome pathway relationship","retrievalMode":"graph"}

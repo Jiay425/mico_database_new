@@ -1,0 +1,13 @@
+raw_alias,canonical_disease_id,canonical_name_zh,mapping_status,mapping_confidence
+t2d,type_2_diabetes,2型糖尿病,mapped,1.0
+type 2 diabetes,type_2_diabetes,2型糖尿病,mapped,1.0
+type 2 diabetes mellitus,type_2_diabetes,2型糖尿病,mapped,1.0
+type ii diabetes,type_2_diabetes,2型糖尿病,mapped,1.0
+type ii diabetes mellitus,type_2_diabetes,2型糖尿病,mapped,1.0
+healthy,healthy_control,健康对照,mapped,1.0
+healthy control,healthy_control,健康对照,mapped,1.0
+healthy controls,healthy_control,健康对照,mapped,1.0
+healthy subject,healthy_control,健康对照,mapped,1.0
+healthy subjects,healthy_control,健康对照,mapped,1.0
+control,healthy_control,健康对照,mapped,1.0
+controls,healthy_control,健康对照,mapped,1.0

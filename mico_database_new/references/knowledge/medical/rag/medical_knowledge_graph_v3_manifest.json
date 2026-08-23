@@ -1,0 +1,36 @@
+{
+  "graphVersion": "fulltext-provenance-graphrag-v3",
+  "createdAt": "2026-08-22T15:06:59.841012+00:00",
+  "corpusScope": "fulltext_only",
+  "evidenceTier": "fulltext",
+  "paperCount": 65,
+  "chunkCount": 3617,
+  "nodeCount": 5238,
+  "edgeCount": 24341,
+  "semanticRelationCount": 2135,
+  "semanticRelationChunks": 1369,
+  "lowConfidenceRelationsRejected": 0,
+  "assertionCounts": {
+    "asserted": 1763,
+    "speculative": 297,
+    "negated": 75
+  },
+  "relationCounts": {
+    "mediates": 567,
+    "increased_in": 393,
+    "causes": 444,
+    "associated_with": 331,
+    "decreased_in": 201,
+    "promotes": 164,
+    "inhibits": 35
+  },
+  "output": "medical_knowledge_graph_v3.jsonl",
+  "rules": {
+    "entityNormalization": "stable v3 canonical IDs with aliases",
+    "relationExtraction": "same-sentence explicit relation cue",
+    "minimumRelationConfidence": 0.65,
+    "evidenceRequirement": "every edge has evidenceChunkId and evidenceText",
+    "candidateTaxonPolicy": "candidate_taxon normalization status remains speculative",
+    "medicalClaimPolicy": "no clinical or causal conclusion is generated from extraction alone"
+  }
+}

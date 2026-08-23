@@ -68,6 +68,8 @@ public class AgentApiController {
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("patientId", patient.getPatientId());
         data.put("patientName", patient.getPatientName());
+        data.put("sampleName", patient.getSampleName());
+        data.put("projectName", patient.getProjectName());
         data.put("group", patient.getGroup());
         data.put("disease", patient.getDisease());
         data.put("age", patient.getAge());

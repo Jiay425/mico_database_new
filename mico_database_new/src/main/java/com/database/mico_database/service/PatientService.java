@@ -31,7 +31,9 @@ import java.util.stream.Collectors;
 @Slf4j
 public class PatientService {
 
-    private static final String SEARCH_CACHE_VERSION = "v2-standard";
+    private static final String SEARCH_CACHE_VERSION = "v6-normalized-disease-display";
+
+    private static final Map<String, String> DISEASE_DISPLAY_ALIASES = createDiseaseDisplayAliases();
 
     @Autowired
     private PatientMapper patientMapper;
@@ -54,6 +56,7 @@ public class PatientService {
     private Patient getFullPatientData(String patientId) {
         Patient patient = patientMapper.findById(patientId);
         if (patient != null) {
+            normalizeDiseaseDisplay(patient);
             patient.setMicrobialAbundanceData(loadStandardMicrobes(patientId));
             patient.setCytokineData(patientMapper.findCytokinesByPatientId(patientId));
         }
@@ -67,6 +70,7 @@ public class PatientService {
     public PageInfo<Patient> searchPatientsLite(String queryType, String queryValue, int pageNum, int pageSize) {
         PageHelper.startPage(pageNum, pageSize);
         List<Patient> list = patientMapper.searchPatients(queryType, queryValue);
+        normalizeDiseaseDisplays(list);
         return new PageInfo<>(list);
     }
 
@@ -76,6 +80,7 @@ public class PatientService {
                     Map<String, Object> sample = new LinkedHashMap<>();
                     sample.put("patientId", String.valueOf(item.get("patient_id")));
                     sample.put("sampleId", item.get("sample_id"));
+                    sample.put("sampleName", item.get("sample_name"));
                     sample.put("sampleDate", item.get("sample_date"));
                     sample.put("featureCount", item.get("feature_count"));
                     sample.put("abundanceTotal", item.get("abundance_total"));
@@ -91,9 +96,11 @@ public class PatientService {
         }
 
         Patient patient = patientMapper.findById(patientId);
+        normalizeDiseaseDisplay(patient);
         Map<String, Object> sample = new LinkedHashMap<>();
         sample.put("patientId", patientId);
         sample.put("sampleId", sampleId);
+        sample.put("sampleName", microbes.get(0).getSampleName());
         sample.put("sampleDate", microbes.get(0).getSampleDate());
         sample.put("featureCount", microbes.size());
         sample.put("unit", microbes.get(0).getUnit());
@@ -325,6 +332,7 @@ public class PatientService {
         List<Patient> list = patientMapper.searchPatients(queryType, queryValue);
 
         for (Patient patient : list) {
+            normalizeDiseaseDisplay(patient);
             String linkKey = patient.getPatientId();
             if (linkKey != null) {
                 patient.setMicrobialAbundanceData(loadStandardMicrobes(linkKey));
@@ -343,6 +351,55 @@ public class PatientService {
         }
 
         return pageInfo;
+    }
+
+    private static Map<String, String> createDiseaseDisplayAliases() {
+        Map<String, String> aliases = new HashMap<>();
+        aliases.put("ad", "alzheimer disease");
+        aliases.put("alzheimers", "alzheimer disease");
+        aliases.put("cad", "coronary artery disease");
+        aliases.put("cholesterolemia", "hypercholesterolemia");
+        aliases.put("crc", "colorectal cancer");
+        aliases.put("fatty_liver", "fatty liver");
+        aliases.put("hf", "heart failure");
+        aliases.put("ibd", "inflammatory bowel disease");
+        aliases.put("mci", "mild cognitive impairment");
+        aliases.put("ms", "multiple sclerosis");
+        aliases.put("parkinsons disease", "parkinson disease");
+        aliases.put("pd", "parkinson disease");
+        aliases.put("perianal_fistula", "perianal fistula");
+        aliases.put("premature born", "prematurity");
+        aliases.put("t2d", "type 2 diabetes");
+        return Collections.unmodifiableMap(aliases);
+    }
+
+    private void normalizeDiseaseDisplays(List<Patient> patients) {
+        if (patients == null) {
+            return;
+        }
+        for (Patient patient : patients) {
+            normalizeDiseaseDisplay(patient);
+        }
+    }
+
+    private void normalizeDiseaseDisplay(Patient patient) {
+        if (patient == null || !hasText(patient.getDisease())) {
+            return;
+        }
+        String rawDisease = patient.getDisease();
+        if (!hasText(patient.getRawDisease())) {
+            patient.setRawDisease(rawDisease);
+        }
+
+        Set<String> normalized = new LinkedHashSet<>();
+        for (String token : rawDisease.split("[,;]")) {
+            String key = token == null ? "" : token.trim().toLowerCase(Locale.ROOT);
+            if (key.isEmpty()) {
+                continue;
+            }
+            normalized.add(DISEASE_DISPLAY_ALIASES.getOrDefault(key, key.replace('_', ' ')));
+        }
+        patient.setDisease(String.join("; ", normalized));
     }
 
     private long safeLong(Object value) {

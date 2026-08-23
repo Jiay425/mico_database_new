@@ -8,6 +8,8 @@ public class MicrobeAbundance {
     private Integer abundanceId;
     private String patientId;
     private String sampleId;
+    /** Human-readable sample name; sampleId remains the internal query key. */
+    private String sampleName;
     private Date sampleDate;
     private String microbeName;
     private Double abundanceValue;
@@ -26,6 +28,9 @@ public class MicrobeAbundance {
 
     public String getSampleId() { return sampleId; }
     public void setSampleId(String sampleId) { this.sampleId = sampleId; }
+
+    public String getSampleName() { return sampleName; }
+    public void setSampleName(String sampleName) { this.sampleName = sampleName; }
 
     public Date getSampleDate() { return sampleDate; }
     public void setSampleDate(Date sampleDate) { this.sampleDate = sampleDate; }

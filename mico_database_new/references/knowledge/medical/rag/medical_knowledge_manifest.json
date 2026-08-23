@@ -1,0 +1,34 @@
+{
+  "indexVersion": "fulltext-knowledge-index-v2",
+  "graphVersion": "fulltext-provenance-graphrag-v2",
+  "createdAt": "2026-08-22T13:25:07.819316+00:00",
+  "corpusScope": "fulltext_only",
+  "evidenceTier": "fulltext",
+  "paperCount": 65,
+  "chunkCount": 3617,
+  "vector": {
+    "indexVersion": "fulltext-tfidf-cosine-v1",
+    "documentCount": 3617,
+    "vocabularySize": 22649,
+    "path": "E:\\DeskTop\\java_project\\mico_database_new\\mico_database_new\\references\\knowledge\\medical\\rag\\medical_vector_index.jsonl"
+  },
+  "graph": {
+    "path": "E:\\DeskTop\\java_project\\mico_database_new\\mico_database_new\\references\\knowledge\\medical\\rag\\medical_knowledge_graph.jsonl",
+    "recordCount": 91357,
+    "nodeCount": 9998,
+    "edgeCount": 81359,
+    "graphVersion": "fulltext-provenance-graphrag-v2",
+    "relationChunks": 3411,
+    "controlledMentionCount": 10437,
+    "candidateMentionCount": 15269,
+    "coveredChunkCount": 3617,
+    "chunkSourceCoverage": 1.0,
+    "sourceCoverage": 1.0
+  },
+  "limitations": [
+    "vector_index_is_deterministic_tfidf_not_dense_semantic_embedding",
+    "graph_contains_source_local_associations_not_a_complete_biomedical_ontology",
+    "candidate_taxon_edges_require_review_before_claim_level_generation",
+    "multi_hop_paths_are_bounded_to_three_hops"
+  ]
+}

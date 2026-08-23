@@ -19,6 +19,8 @@ public interface DashboardMapper {
 
     Map<String, Object> getMinMaxPatientAge();
 
+    Map<String, Object> getDashboardSummaryMetrics();
+
     List<AgeGenderCount> getAgeGenderDistribution();
 
     List<CountryCount> getPatientOriginDistribution();

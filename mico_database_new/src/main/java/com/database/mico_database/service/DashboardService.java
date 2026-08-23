@@ -19,7 +19,7 @@ public class DashboardService {
     @Autowired
     private DashboardMapper dashboardMapper;
 
-    @Cacheable(value = "dashboard_stats", key = "'homepage_data'")
+    @Cacheable(value = "dashboard_stats", key = "'remote_dashboard_metrics_v5_detailed_disease_exclude_controls'")
     public Map<String, Object> getDashboardData() {
         return buildDashboardData();
     }
@@ -42,13 +42,18 @@ public class DashboardService {
         overviewStats.put("min_age", ageRange != null ? ageRange.get("min_age") : "N/A");
         overviewStats.put("max_age", ageRange != null ? ageRange.get("max_age") : "N/A");
 
+        Map<String, Object> summaryMetrics = dashboardMapper.getDashboardSummaryMetrics();
+        if (summaryMetrics != null) {
+            overviewStats.putAll(summaryMetrics);
+        }
+
         return overviewStats;
     }
 
     private Map<String, Object> processAgeGenderData() {
         List<AgeGenderCount> rawData = dashboardMapper.getAgeGenderDistribution();
 
-        List<String> ageBrackets = Arrays.asList("0-10", "11-20", "21-30", "31-40", "41-50", "51-60", "60+");
+        List<String> ageBrackets = Arrays.asList("1-10", "11-20", "21-30", "31-40", "41-50", "51-60", "60+");
         Map<String, Integer> maleMap = new LinkedHashMap<>();
         Map<String, Integer> femaleMap = new LinkedHashMap<>();
 

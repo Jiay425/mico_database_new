@@ -1,0 +1,40 @@
+{
+  "graphVersion": "fulltext-provenance-graphrag-v4",
+  "buildRunId": "graph-build-4da7c19caeda5a38df346e77a9d7d2c6",
+  "status": "review_pending",
+  "createdAt": "2026-08-22T16:07:45.328116+00:00",
+  "publishedAt": null,
+  "approvedAt": null,
+  "approvedBy": null,
+  "publicationApprovalHash": null,
+  "corpusScope": "fulltext_only",
+  "evidenceTier": "fulltext",
+  "inputAsset": "medical_chunks.jsonl",
+  "inputFingerprint": "sha256:2d389d9ce2854271cac670aedb1fd728570bde743e6897ce3820e03cb4d0b606",
+  "paperCount": 65,
+  "chunkCount": 3617,
+  "nodeCount": 5238,
+  "edgeCount": 24341,
+  "semanticRelationCount": 2122,
+  "resolvedEntityCount": 22,
+  "candidateEntityCount": 295,
+  "unmappedEntityCount": 0,
+  "reviewRequiredRelationCount": 280,
+  "rejectedRecordCount": 0,
+  "relationCounts": {
+    "ASSOCIATED_WITH": 331,
+    "CAUSES": 443,
+    "DECREASED_IN": 201,
+    "INCREASED_IN": 388,
+    "INHIBITS": 35,
+    "MEDIATES": 560,
+    "PROMOTES": 164
+  },
+  "assertionCounts": {
+    "asserted": 1564,
+    "conflicted": 280,
+    "negated": 24,
+    "speculative": 254
+  },
+  "qualityIssueCounts": {}
+}

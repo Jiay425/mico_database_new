@@ -83,10 +83,10 @@
                 </div>
             </div>
 
-            <!-- 高频疾病 -->
+            <!-- 高频非健康疾病 -->
             <div class='idx-bento-item'>
                 <div class='bento-icon-sm alert-icon'><i class='bi bi-virus'></i></div>
-                <div class='bento-label'>高频疾病</div>
+                <div class='bento-label'>高频疾病（非健康）</div>
                 <div class='bento-value skeleton' id='js-common-disease'>加载中...</div>
                 <div class='bento-pill warn'>
                     <i class='bi bi-exclamation-diamond'></i>重点关注
@@ -120,7 +120,7 @@
                 <div class='idx-panel-head'>
                     <div class='idx-panel-kicker'><i class='bi bi-bar-chart-line'></i>类别对比</div>
                     <h2 class='idx-panel-title'>疾病患者数量</h2>
-                    <p class='idx-panel-sub'>基于当前数据库统计</p>
+                    <p class='idx-panel-sub'>拆分复合标签并合并明确同义词；同一患者可计入多个疾病</p>
                 </div>
                 <div class='idx-panel-body'>
                     <div id='echarts2' class='idx-chart'></div>
@@ -136,8 +136,8 @@
                 <div class='idx-summary-body'>
                     <div class='idx-summary-row featured'>
                         <div class='idx-summary-label'>
-                            疾病类别数
-                            <small>已纳入统计病种</small>
+                            去重疾病名称数
+                            <small>拆分复合疾病；排除健康/对照标签</small>
                         </div>
                         <div class='idx-summary-val skeleton' id='js-summary-disease-kinds'>00</div>
                     </div>
@@ -151,14 +151,14 @@
                     <div class='idx-summary-row'>
                         <div class='idx-summary-label'>
                             健康人群比
-                            <small>对比疾病组比例</small>
+                            <small>healthy / health / healthy subject study</small>
                         </div>
                         <div class='idx-summary-val skeleton' id='js-summary-healthy-ratio'>00%</div>
                     </div>
                     <div class='idx-summary-row'>
                         <div class='idx-summary-label'>
-                            特征总数
-                            <small>全库提取特征向量</small>
+                            物种级特征数
+                            <small id='js-summary-feature-note'>标准丰度表去重特征</small>
                         </div>
                         <div class='idx-summary-val skeleton' id='js-summary-feature-count'>00,000</div>
                     </div>
@@ -213,6 +213,25 @@
             <button type='button' class='idx-action-btn ai-btn ai-assistant-open' data-ai-message='请解读首页当前数据重点'>
                 <i class='bi bi-stars'></i>AI 助手
             </button>
+        </section>
+
+        <section id='agent-research-card' class='mt-4 p-4 rounded-4 border bg-white shadow-sm'
+                 aria-labelledby='agent-research-title'>
+            <div class='d-flex flex-wrap justify-content-between align-items-start gap-3'>
+                <div class='flex-grow-1'>
+                    <div class='text-uppercase small text-primary fw-semibold'>LangGraph 科研 Agent</div>
+                    <h2 id='agent-research-title' class='h4 mt-2 mb-2'>科研数据问题分析</h2>
+                    <p class='text-muted mb-2'>模型仅识别科研意图并选择受控工作流；Java 负责最终只读查询和事实校验。</p>
+                    <label class='visually-hidden' for='agent-research-question'>科研问题</label>
+                    <textarea id='agent-research-question' class='form-control' rows='2' maxlength='4096'
+                              placeholder='例如：比较某种疾病与健康对照的微生物丰度差异'></textarea>
+                </div>
+                <button id='agent-research-run' type='button' class='btn btn-outline-primary rounded-pill px-4'>
+                    运行科研分析
+                </button>
+            </div>
+            <div id='agent-research-status' class='small text-muted mt-3' aria-live='polite'>尚未运行</div>
+            <div id='agent-research-result' class='mt-3 d-none'></div>
         </section>
 
     </main>
@@ -300,14 +319,14 @@
                 if (document.getElementById('js-summary-disease-kinds')) {
                     const el = document.getElementById('js-summary-disease-kinds');
                     el.classList.remove('skeleton');
-                    const val = (window.diseaseDataFromFlask || []).length || 0;
+                    const val = Number(window.overviewStats.disease_category_count) || 0;
                     animateValue(el, 0, val, 1000);
                 }
 
                 if (document.getElementById('js-summary-region-count')) {
                     const el = document.getElementById('js-summary-region-count');
                     el.classList.remove('skeleton');
-                    const val = (window.patientOriginData || []).length || 0;
+                    const val = Number(window.overviewStats.region_count) || 0;
                     animateValue(el, 0, val, 1000);
                 }
 
@@ -315,10 +334,7 @@
                     const el = document.getElementById('js-summary-healthy-ratio');
                     el.classList.remove('skeleton');
                     
-                    const diseases = window.diseaseDataFromFlask || [];
-                    const healthyCount = (diseases.find(d => String(d.disease).toLowerCase() === 'healthy') || {}).count || 0;
-                    const totalCount = parseInt(window.overviewStats.total_patients) || 1;
-                    const ratio = Math.round((healthyCount / totalCount) * 100);
+                    const ratio = Number(window.overviewStats.healthy_ratio) || 0;
                     
                     animateValue(el, 0, ratio, 1000);
                     setTimeout(() => { if (!isNaN(ratio)) el.innerText = ratio + '%'; }, 1050);
@@ -327,9 +343,13 @@
                 if (document.getElementById('js-summary-feature-count')) {
                     const el = document.getElementById('js-summary-feature-count');
                     el.classList.remove('skeleton');
-                    const baseCount = parseInt(window.overviewStats.total_patients) || 0;
-                    const estimatedFeatures = baseCount * 120;
-                    animateValue(el, Math.floor(estimatedFeatures * 0.8), estimatedFeatures, 1500);
+                    const featureCount = Number(window.overviewStats.species_feature_count) || 0;
+                    animateValue(el, Math.floor(featureCount * 0.8), featureCount, 1500);
+                    const note = document.getElementById('js-summary-feature-note');
+                    if (note) {
+                        const recordCount = Number(window.overviewStats.standard_abundance_record_count) || 0;
+                        note.innerText = '标准丰度表去重；丰度记录 ' + recordCount.toLocaleString('zh-CN');
+                    }
                 }
 
                 if (document.getElementById('js-age-range')) {
@@ -342,6 +362,101 @@
 
     <script src='https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js'></script>
     <script type='text/javascript' th:src='@{/js/js.js}'></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var runButton = document.getElementById('agent-research-run');
+            var questionNode = document.getElementById('agent-research-question');
+            var statusNode = document.getElementById('agent-research-status');
+            var resultNode = document.getElementById('agent-research-result');
+            if (!runButton || !questionNode || !statusNode || !resultNode) return;
+
+            function escapeHtml(value) {
+                return String(value == null ? '--' : value)
+                    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
+
+            function number(value) {
+                return Number(value || 0).toLocaleString('zh-CN');
+            }
+
+            function renderReport(report) {
+                var generated = report.generatedAnalysis || {};
+                var references = Array.isArray(report.references) ? report.references.slice(0, 10) : [];
+                var metrics = generated.metrics && typeof generated.metrics === 'object'
+                    ? Object.keys(generated.metrics).slice(0, 32).map(function (key) {
+                        return '<span class="me-3"><strong>' + escapeHtml(key) + '：</strong>'
+                            + escapeHtml(generated.metrics[key]) + '</span>';
+                    }).join('') : '';
+                var rows = Array.isArray(generated.topFeatures)
+                    ? generated.topFeatures.slice(0, 20).map(function (item) {
+                        return '<tr><td>' + escapeHtml(item.featureName) + '</td>'
+                            + '<td>' + escapeHtml(item.metricName) + '</td>'
+                            + '<td>' + escapeHtml(item.metricValue) + '</td></tr>';
+                    }).join('') : '';
+                var table = rows
+                    ? '<div class="table-responsive"><table class="table table-sm">'
+                        + '<thead><tr><th>特征</th><th>指标</th><th>数值</th></tr></thead>'
+                        + '<tbody>' + rows + '</tbody></table></div>' : '';
+                var evidenceRows = references.map(function (item) {
+                    return '<tr><td>' + escapeHtml(item.title) + '</td>'
+                        + '<td>' + escapeHtml(item.publicationYear) + '</td>'
+                        + '<td>' + escapeHtml(item.evidenceTier || 'fulltext') + '</td>'
+                        + '<td>' + escapeHtml(item.retrievalRoute || '--') + '</td></tr>';
+                }).join('');
+                var evidenceTable = evidenceRows
+                    ? '<div class="mt-3"><strong>全文证据：</strong><div class="table-responsive">'
+                        + '<table class="table table-sm"><thead><tr><th>文献</th><th>年份</th>'
+                        + '<th>证据等级</th><th>检索路径</th></tr></thead><tbody>'
+                        + evidenceRows + '</tbody></table></div></div>' : '';
+                resultNode.innerHTML = '<div class="row g-2 small">'
+                    + '<div class="col-md-4"><strong>工作流：</strong>' + escapeHtml(report.workflow || 'knowledge_retrieval') + '</div>'
+                    + '<div class="col-md-4"><strong>来源：</strong>' + escapeHtml(report.source || 'internal_knowledge') + '</div>'
+                    + '<div class="col-md-4"><strong>结果数：</strong>' + number(report.rowCount || references.length) + '</div>'
+                    + '<div class="col-12 mt-2">' + metrics + '</div></div>'
+                    + table
+                    + evidenceTable
+                    + '<div class="alert alert-light border mt-3 mb-0 small">'
+                    + '科研支持，非临床诊断、治疗或因果结论。数据快照为瞬态证据，不支持跨进程回放。'
+                    + '</div>';
+                resultNode.classList.remove('d-none');
+            }
+
+            runButton.addEventListener('click', function () {
+                var question = questionNode.value.trim();
+                if (!question) {
+                    statusNode.textContent = '请输入科研问题';
+                    return;
+                }
+                runButton.disabled = true;
+                statusNode.textContent = 'LangGraph 正在识别意图、召回全文证据或查询数据…';
+                resultNode.classList.add('d-none');
+                fetch('/agent/research', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({question: question})
+                }).then(function (response) {
+                    return response.json().then(function (body) {
+                        return {ok: response.ok, body: body};
+                    });
+                }).then(function (result) {
+                    if (!result.ok || !result.body || result.body.status !== 'COMPLETED' || !result.body.report) {
+                        statusNode.textContent = '分析未完成：' + ((result.body && (result.body.code || result.body.errorCode))
+                            || 'AGENT_REQUEST_FAILED');
+                        return;
+                    }
+                    statusNode.textContent = '分析完成：仅展示经过来源标记的全文证据或 Java 校验数据';
+                    renderReport(result.body.report);
+                }).catch(function () {
+                    statusNode.textContent = '分析未完成：AGENT_NETWORK_FAILED';
+                }).finally(function () {
+                    runButton.disabled = false;
+                });
+            });
+        });
+    </script>
     <script>
         window.aiAssistantConfig = {
             title: '首页 AI 助手',

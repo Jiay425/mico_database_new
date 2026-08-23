@@ -1,0 +1,14 @@
+{
+  "indexVersion": "fulltext-gemini-paper-embedding-v1",
+  "model": "gemini-embedding-2",
+  "granularity": "paper",
+  "evidenceTier": "fulltext",
+  "documentCount": 65,
+  "chunkCount": 3617,
+  "dimension": 3072,
+  "corpusHash": "sha256:f20ae0b56a949e6db3bed16a339f1d7db43b7e56a2f73ae8a2b1428399ab0ea8",
+  "documentInputFormat": "title: {title} | text: {fulltext_content_truncated_to_12000_chars}",
+  "queryInputFormat": "task: search result | query: {content}",
+  "createdAt": "2026-08-22T13:06:25.704683+00:00",
+  "completeCorpus": true
+}

@@ -1,0 +1,13 @@
+{
+  "vector": {
+    "documents": 65,
+    "chunks": 3617
+  },
+  "graph": {
+    "graphVersion": "fulltext-provenance-graphrag-v3",
+    "nodes": 5238,
+    "edges": 24341
+  },
+  "indexVersion": "fulltext-gemini-paper-embedding-v1",
+  "graphVersion": "fulltext-provenance-graphrag-v3"
+}

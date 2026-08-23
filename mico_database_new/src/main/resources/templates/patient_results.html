@@ -10,6 +10,11 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <link rel="stylesheet" th:href="@{/css/comon0.css}">
+    <style>
+        /* Long Meta2DB sample identifiers remain readable instead of colliding with the metric cards. */
+        .profile-heading { font-size: clamp(1.55rem, 2.7vw, 2.7rem); line-height: 1.1; max-width: 100%; overflow-wrap: anywhere; word-break: break-word; }
+        .profile-lead > div:last-child { min-width: 0; }
+    </style>
 
     <script type="text/javascript" th:src="@{/js/jquery.js}"></script>
     <script type="text/javascript" th:src="@{/js/echarts.min.js}"></script>
@@ -78,7 +83,10 @@
                         <tbody>
                             <tr th:each="patient : ${patients_by_disease}">
                                 <td class="ps-4"><span class="table-badge" th:text="${patient.patientId}"></span></td>
-                                <td class="fw-bold" th:text="${patient.patientName}"></td>
+                                <td class="fw-bold">
+                                    <div th:text="${patient.sampleName != null ? patient.sampleName : patient.patientName}"></div>
+                                    <small class="text-muted" th:if="${patient.projectName != null and !#strings.isEmpty(patient.projectName)}" th:text="${'项目：' + patient.projectName}"></small>
+                                </td>
                                 <td>
                                     <span th:if="${#strings.equalsIgnoreCase(patient.gender, 'Male') or #strings.equalsIgnoreCase(patient.gender, 'M')}"><i class="bi bi-gender-male text-primary"></i> 男</span>
                                     <span th:if="${#strings.equalsIgnoreCase(patient.gender, 'Female') or #strings.equalsIgnoreCase(patient.gender, 'F')}"><i class="bi bi-gender-female text-danger"></i> 女</span>
@@ -108,10 +116,11 @@
                                 <i class="bi bi-person-fill"></i>
                             </div>
                             <div>
-                                <h1 class="profile-heading" th:text="${patient_data.patientName}">患者姓名</h1>
+                                <h1 class="profile-heading" th:text="${patient_data.sampleName != null ? patient_data.sampleName : patient_data.patientName}">样本名称</h1>
                                 <div class="profile-subline">
                                     <span><i class="bi bi-upc-scan me-1"></i><span th:text="${patient_data.patientId}"></span></span>
                                     <span><i class="bi bi-geo-alt me-1"></i><span th:text="${patient_data.country != null and !#strings.isEmpty(patient_data.country) ? patient_data.country : '地区未录入'}"></span></span>
+                                    <span th:if="${patient_data.projectName != null and !#strings.isEmpty(patient_data.projectName)}"><i class="bi bi-folder2-open me-1"></i>项目：<span th:text="${patient_data.projectName}"></span></span>
                                 </div>
                             </div>
                         </div>
@@ -200,7 +209,7 @@
                                         <td class="ps-4 fw-medium text-truncate" style="max-width: 150px;" th:text="${microbe.microbeName}" th:title="${microbe.microbeName}"></td>
                                         <td class="fw-bold text-primary" th:text="${microbe.abundanceValue}"></td>
                                         <td class="text-muted small" th:text="${microbe.unit}"></td>
-                                        <td class="text-muted small" th:text="${microbe.sampleId}"></td>
+                                        <td class="text-muted small" th:text="${microbe.sampleName != null ? microbe.sampleName : microbe.sampleId}"></td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -309,13 +318,17 @@
                 let microbeChart = null;
                 window.__patientAssistantState = window.__patientAssistantState || {};
                 window.__patientAssistantState.patientId = patientData.patientId || null;
-                window.__patientAssistantState.patientName = patientData.patientName || null;
+                window.__patientAssistantState.patientName = patientData.sampleName || patientData.patientName || null;
                 window.__patientAssistantState.sampleId = null;
+                const sampleDisplayNames = new Map();
 
                 function groupBySample(items) {
                     const groups = new Map();
                     items.forEach(function (item) {
                         const sampleId = item.sampleId || '未标注样本';
+                        if (!sampleDisplayNames.has(sampleId)) {
+                            sampleDisplayNames.set(sampleId, item.sampleName || sampleId);
+                        }
                         if (!groups.has(sampleId)) {
                             groups.set(sampleId, []);
                         }
@@ -337,7 +350,7 @@
                             + '<td class="ps-4 fw-medium text-truncate" style="max-width: 150px;" title="' + (microbe.microbeName || '') + '">' + (microbe.microbeName || '-') + '</td>'
                             + '<td class="fw-bold text-primary">' + (microbe.abundanceValue != null ? microbe.abundanceValue : '-') + '</td>'
                             + '<td class="text-muted small">' + (microbe.unit || '-') + '</td>'
-                            + '<td class="text-muted small">' + (microbe.sampleId || '-') + '</td>'
+                            + '<td class="text-muted small">' + (microbe.sampleName || microbe.sampleId || '-') + '</td>'
                             + '</tr>';
                     }).join('');
                 }
@@ -369,7 +382,7 @@
                     const activeMicrobes = sampleGroups.get(sampleId) || [];
                     activeSampleId = sampleId;
                     window.__patientAssistantState.sampleId = sampleId || null;
-                    if (sampleLabel) sampleLabel.textContent = sampleId || '未标注样本';
+                    if (sampleLabel) sampleLabel.textContent = sampleDisplayNames.get(sampleId) || sampleId || '未标注样本';
                     if (sampleMeta) sampleMeta.textContent = '采样日期：' + formatSampleDate(activeMicrobes) + '，当前仅展示该样本的标准丰度。';
                     if (sampleFeatureChip) sampleFeatureChip.textContent = activeMicrobes.length + ' 个非零特征';
                     renderMicrobeTable(activeMicrobes);
@@ -427,7 +440,7 @@
                 if (sampleIds.length > 0 && sampleSelector && sampleSwitcher) {
                     sampleSwitcher.style.display = 'flex';
                     sampleSelector.innerHTML = sampleIds.map(function (sampleId) {
-                        return '<option value="' + sampleId + '">' + sampleId + '</option>';
+                        return '<option value="' + sampleId + '">' + (sampleDisplayNames.get(sampleId) || sampleId) + '</option>';
                     }).join('');
                     sampleSelector.value = activeSampleId;
                     sampleSelector.addEventListener('change', function () {
