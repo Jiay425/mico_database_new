@@ -1,2 +1,16 @@
 
 mico_database_new/model/merged_abundance.csv
+
+# Local runtime configuration and credentials.
+/mico-agent-runtime/**/.env*
+/mico-agent-runtime/**/application*.properties
+
+# Local-only training data, model checkpoints and experiment outputs.
+/mico-agent-runtime/sft-data/
+/mico-agent-runtime/sft-runs/
+/mico-agent-runtime/evals/**/*.json
+/mico-agent-runtime/evals/**/*.jsonl
+/mico-agent-runtime/evals/**/*.log
+/mico-agent-runtime/docs/p2j4-*.md
+/mico-agent-runtime/logs/
+/mico-agent-runtime/data/
