@@ -9,8 +9,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class AgentResearchBffResponse {
     private String runId;
+    private String taskId;
+    private String traceId;
     private String status;
     private String workflow;
     private String errorCode;
+    private String plannerMode;
+    private Integer actionCount;
     private JsonNode report;
 }

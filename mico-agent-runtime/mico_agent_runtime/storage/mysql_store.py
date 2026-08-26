@@ -19,6 +19,8 @@ from .models import (
     ApprovalStatus,
     RuntimeStatus,
     ToolAuditRecord,
+    SnapshotMetadata,
+    UnifiedEvidencePersistenceProjection,
 )
 from .ports import (
     DuplicateRecordError,
@@ -76,6 +78,42 @@ def _utc_aware(value: datetime) -> datetime:
     if value.tzinfo is None or value.utcoffset() is None:
         return value.replace(tzinfo=timezone.utc)
     return value.astimezone(timezone.utc)
+
+
+def _trace_metadata_to_json(
+    snapshot: SnapshotMetadata | None,
+    projection: UnifiedEvidencePersistenceProjection | None,
+) -> dict[str, Any] | None:
+    """Encode only typed trace metadata into the existing JSON column."""
+
+    if snapshot is None and projection is None:
+        return None
+    value: dict[str, Any] = (
+        snapshot.model_dump(mode="json") if snapshot is not None else {}
+    )
+    if projection is not None:
+        value["evidenceProjection"] = projection.model_dump(mode="json")
+    return value
+
+
+def _trace_metadata_from_json(
+    value: dict[str, Any] | None,
+) -> tuple[SnapshotMetadata | None, UnifiedEvidencePersistenceProjection | None]:
+    """Decode legacy snapshot JSON plus the additive safe projection."""
+
+    if value is None:
+        return None, None
+    if not isinstance(value, dict):
+        raise RuntimeStoreError("RUNTIME_TRACE_METADATA_INVALID")
+    snapshot_value = dict(value)
+    projection_value = snapshot_value.pop("evidenceProjection", None)
+    snapshot = SnapshotMetadata.model_validate(snapshot_value) if snapshot_value else None
+    projection = (
+        UnifiedEvidencePersistenceProjection.model_validate(projection_value)
+        if projection_value is not None
+        else None
+    )
+    return snapshot, projection
 
 
 class AgentRunRow(RuntimeOrmBase):
@@ -182,7 +220,27 @@ class AgentStepRow(RuntimeOrmBase):
             error_code=value.errorCode,
             safe_input_code=value.safeInputCode,
             safe_output_code=value.safeOutputCode,
-            snapshot_metadata=value.snapshotMetadata.model_dump(mode="json") if value.snapshotMetadata else None,
+            snapshot_metadata=_trace_metadata_to_json(
+                value.snapshotMetadata, value.evidenceProjection
+            ),
+        )
+
+    def to_model(self) -> AgentStepRecord:
+        snapshot, projection = _trace_metadata_from_json(self.snapshot_metadata)
+        return AgentStepRecord(
+            dataContractVersion=self.data_contract_version,
+            stepId=self.step_id,
+            runId=self.run_id,
+            nodeName=self.node_name,
+            attemptNumber=self.attempt_number,
+            status=RuntimeStatus(self.status),
+            startedAt=_utc_aware(self.started_at),
+            endedAt=_utc_aware(self.ended_at) if self.ended_at else None,
+            errorCode=self.error_code,
+            safeInputCode=self.safe_input_code,
+            safeOutputCode=self.safe_output_code,
+            snapshotMetadata=snapshot,
+            evidenceProjection=projection,
         )
 
 
@@ -323,8 +381,27 @@ class ToolAuditRow(RuntimeOrmBase):
             status=value.status,
             duration_ms=value.durationMs,
             error_code=value.errorCode,
-            snapshot_metadata=value.snapshotMetadata.model_dump(mode="json") if value.snapshotMetadata else None,
+            snapshot_metadata=_trace_metadata_to_json(
+                value.snapshotMetadata, value.evidenceProjection
+            ),
             created_at=_utc_naive(value.createdAt),
+        )
+
+    def to_model(self) -> ToolAuditRecord:
+        snapshot, projection = _trace_metadata_from_json(self.snapshot_metadata)
+        return ToolAuditRecord(
+            dataContractVersion=self.data_contract_version,
+            auditId=self.audit_id,
+            runId=self.run_id,
+            traceId=self.trace_id,
+            toolName=self.tool_name,
+            toolCallId=self.tool_call_id,
+            status=self.status,
+            durationMs=self.duration_ms,
+            errorCode=self.error_code,
+            snapshotMetadata=snapshot,
+            evidenceProjection=projection,
+            createdAt=_utc_aware(self.created_at),
         )
 
 

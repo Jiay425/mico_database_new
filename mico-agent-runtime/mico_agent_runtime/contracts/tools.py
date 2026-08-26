@@ -11,7 +11,7 @@ from .base import ClosedModel, Identifier, NonEmptyText
 # Java tool calls are intentionally reduced to the one dynamic read tool. The
 # literature audit label is retained only for the separate evidence port; it is
 # not a Java executable tool.
-AllowedToolName = Literal["execute_read_query", "literature_evidence"]
+AllowedToolName = Literal["execute_read_query", "describe_read_schema", "literature_evidence"]
 AllowedScope = Literal["mico:query:read", "mico:evidence:read"]
 ToolStatus = Literal[
     "COMPLETED", "REJECTED", "FAILED", "NOT_IMPLEMENTED", "WAITING_APPROVAL"
@@ -68,7 +68,16 @@ class ExecuteReadQueryJavaToolCall(JavaToolCallBase):
     arguments: ExecuteReadQueryArguments
 
 
-JavaToolCall = ExecuteReadQueryJavaToolCall
+class DescribeReadSchemaArguments(ClosedModel):
+    """The Java schema catalog has no business-data arguments."""
+
+
+class DescribeReadSchemaJavaToolCall(JavaToolCallBase):
+    toolName: Literal["describe_read_schema"]
+    arguments: DescribeReadSchemaArguments
+
+
+JavaToolCall = ExecuteReadQueryJavaToolCall | DescribeReadSchemaJavaToolCall
 JavaToolCallAdapter = TypeAdapter(JavaToolCall)
 
 

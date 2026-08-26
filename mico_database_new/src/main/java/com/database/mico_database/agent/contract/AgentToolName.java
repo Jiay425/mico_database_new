@@ -1,8 +1,9 @@
 package com.database.mico_database.agent.contract;
 
-/** The only executable Java Agent tool in the dynamic core. */
+/** Fixed Java capability names; business questions remain dynamic. */
 public enum AgentToolName {
-    EXECUTE_READ_QUERY("execute_read_query");
+    EXECUTE_READ_QUERY("execute_read_query"),
+    DESCRIBE_READ_SCHEMA("describe_read_schema");
 
     private final String wireName;
 

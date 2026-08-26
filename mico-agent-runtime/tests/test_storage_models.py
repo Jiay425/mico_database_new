@@ -13,6 +13,7 @@ from mico_agent_runtime.storage.models import (
     ApprovalTicketRecord,
     SnapshotMetadata,
     ToolAuditRecord,
+    UnifiedEvidencePersistenceProjection,
 )
 from tests.storage_fixtures import (
     ARTIFACT_ID,
@@ -126,6 +127,47 @@ def test_step_codes_accept_only_runtime_owned_finite_codes() -> None:
     assert value.safeInputCode == "TASK_CONTRACT_VALIDATED"
     with pytest.raises(ValidationError):
         AgentStepRecord.model_validate({**value.model_dump(), "safeOutputCode": "UPSTREAM_WARNING"})
+
+
+def test_unified_evidence_projection_is_closed_and_metadata_only() -> None:
+    projection = UnifiedEvidencePersistenceProjection(
+        candidateCount=3,
+        vectorCandidateCount=1,
+        graphCandidateCount=1,
+        javaCandidateCount=1,
+        sourceRoutes=["vector", "graph", "java"],
+        sourceBindingCount=3,
+        reasoningPathCount=2,
+        conflictedPathCount=1,
+        transientSnapshotCount=1,
+        generatedAt=NOW,
+    )
+    step = AgentStepRecord(
+        dataContractVersion="v1",
+        stepId=STEP_ID,
+        runId=RUN_ID,
+        nodeName="execute_tool",
+        attemptNumber=1,
+        status="COMPLETED",
+        startedAt=NOW,
+        evidenceProjection=projection,
+    )
+    assert step.evidenceProjection is not None
+    assert step.evidenceProjection.sourceBindingCount == 3
+    dumped = step.model_dump_json()
+    for forbidden in (
+        "sourceSampleId",
+        "internalRecordId",
+        "cohortCondition",
+        "java payload",
+        "free warning",
+    ):
+        assert forbidden.lower() not in dumped.lower()
+    with pytest.raises(ValidationError):
+        UnifiedEvidencePersistenceProjection.model_validate({
+            **projection.model_dump(),
+            "sourceRoutes": ["vector", "vector"],
+        })
 
 
 @pytest.mark.parametrize("bad_code", ["SRR9999999", "MV_FEI1_t1Q14", "2015_Castro-NallarE", "warning_free_text"])

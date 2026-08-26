@@ -18,11 +18,14 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-/** Java-to-Python client for the closed intent and knowledge execution endpoint. */
+/** Java-to-Python client for the closed intent or Scientific Agent endpoint. */
 public final class AgentResearchRuntimeClient {
 
     private static final Set<String> ROOT_FIELDS = new HashSet<>(Arrays.asList(
             "status", "workflow", "errorCode", "report"));
+    private static final Set<String> SCIENTIFIC_ROOT_FIELDS = new HashSet<>(Arrays.asList(
+            "runId", "taskId", "traceId", "status", "errorCode", "plannerMode",
+            "actionCount", "report"));
     private static final Set<String> FORBIDDEN_FIELDS = new HashSet<>(Arrays.asList(
             "sourcesampleid", "internalrecordid", "cohortcondition", "patientid",
             "subjectid", "samplekey", "sql", "rawsql", "query", "where",
@@ -64,9 +67,26 @@ public final class AgentResearchRuntimeClient {
         payload.putArray("requestedScopes")
                 .add("mico:query:read")
                 .add("mico:evidence:read");
-        payload.putArray("allowedWorkflows")
-                .add("dynamic_read_query")
-                .add("knowledge_retrieval");
+        if (properties.isScientificEndpoint()) {
+            payload.withArray("requestedScopes").add("mico:research:read");
+            payload.put("intent", "scientific_exploration");
+            payload.putArray("allowedActions")
+                    .add("execute_read_query")
+                    .add("inspect_cohort")
+                    .add("compare_groups")
+                    .add("stratified_analysis")
+                    .add("adjust_confounders")
+                    .add("cross_project_validate")
+                    .add("cross_disease_validate")
+                    .add("retrieve_evidence")
+                    .add("analyze_projection")
+                    .add("finish");
+            payload.put("maxActions", 6);
+        } else {
+            payload.putArray("allowedWorkflows")
+                    .add("dynamic_read_query")
+                    .add("knowledge_retrieval");
+        }
         payload.put("createdAt", java.time.Instant.now().toString());
         payload.put("traceId", traceId);
 
@@ -105,13 +125,13 @@ public final class AgentResearchRuntimeClient {
     private AgentResearchBffResponse parseSafeResponse(String body) {
         try {
             JsonNode root = objectMapper.readTree(body == null ? "" : body);
-            rejectUnknown(root, ROOT_FIELDS);
+            rejectUnknown(root, properties.isScientificEndpoint() ? SCIENTIFIC_ROOT_FIELDS : ROOT_FIELDS);
             String status = text(root, "status");
             if (!STATUSES.contains(status)) {
                 throw new IllegalArgumentException("status is invalid");
             }
             String workflow = text(root, "workflow");
-            if (workflow != null && !WORKFLOWS.contains(workflow)) {
+            if (!properties.isScientificEndpoint() && workflow != null && !WORKFLOWS.contains(workflow)) {
                 throw new IllegalArgumentException("workflow is invalid");
             }
             rejectUnsafeContent(root.get("report"));

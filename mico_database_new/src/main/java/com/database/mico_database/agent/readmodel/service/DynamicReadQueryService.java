@@ -31,7 +31,12 @@ public class DynamicReadQueryService {
 
     public static final String SOURCE = "java_agent_read_model";
     private static final String EXPECTED_CATALOG = "patient_data_manager";
-    private static final int QUERY_TIMEOUT_SECONDS = 10;
+    // A 20M-row abundance aggregation can legitimately exceed the former
+    // ten-second cap over the SSH-backed local development database.  The
+    // query is still a single Java-validated SELECT, read-only, and bounded
+    // to at most 1,000 returned rows; this simply keeps the timeout finite
+    // while allowing one controlled aggregate to complete.
+    private static final int QUERY_TIMEOUT_SECONDS = 180;
     private static final int MAX_CELL_TEXT_LENGTH = 4096;
 
     private final DataSource dataSource;

@@ -9,6 +9,10 @@ from .base import ClosedModel
 
 SafeAnalysisText = Annotated[str, StringConstraints(min_length=1, max_length=256)]
 AnalysisCodeText = Annotated[str, StringConstraints(min_length=1, max_length=12000)]
+AnalysisFeedbackCode = Annotated[
+    str,
+    StringConstraints(pattern=r"^[A-Z][A-Z0-9_]{2,95}$", max_length=96),
+]
 
 
 class AnalysisPlannerContext(ClosedModel):
@@ -20,6 +24,16 @@ class AnalysisPlannerContext(ClosedModel):
         max_length=64
     )
     previewRows: list[dict[str, object]] = Field(max_length=20)
+    # Opaque Runtime feedback after a sandbox rejection.  It is never source
+    # code, a data value, an exception message, or an execution environment.
+    executionFeedback: list[AnalysisFeedbackCode] = Field(default_factory=list, max_length=3)
+
+    @field_validator("executionFeedback")
+    @classmethod
+    def reject_duplicate_feedback(cls, value: list[str]) -> list[str]:
+        if len(value) != len(set(value)):
+            raise ValueError("duplicate analysis feedback is not allowed")
+        return value
 
 
 class GeneratedAnalysisPlan(ClosedModel):

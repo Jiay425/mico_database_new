@@ -58,6 +58,18 @@ STOPWORDS = {
 # normalization only: it does not classify a disease, create a cohort, or
 # assert an ontology relationship.
 QUERY_TERM_ALIASES: dict[str, tuple[str, ...]] = {
+    # Disease abbreviations appear frequently in planner-produced topics while
+    # the provenance graph stores the canonical disease label.  Expand only
+    # to canonical lexical terms here; this is retrieval normalization, not
+    # a diagnostic or causal assertion.
+    "asd": ("autism", "spectrum", "disorder"),
+    "自闭症": ("autism", "spectrum", "disorder"),
+    "孤独症": ("autism", "spectrum", "disorder"),
+    "nafld": ("nonalcoholic", "fatty", "liver", "disease"),
+    "非酒精性脂肪性肝病": ("nonalcoholic", "fatty", "liver", "disease"),
+    "t2d": ("type", "diabetes"),
+    "ibd": ("inflammatory", "bowel", "disease"),
+    "炎症性肠病": ("inflammatory", "bowel", "disease"),
     "糖尿病": ("diabetes", "diabetic"),
     "2型糖尿病": ("type", "diabetes"),
     "微生物组": ("microbiome", "microbiota"),

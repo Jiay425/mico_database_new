@@ -13,6 +13,7 @@ import com.database.mico_database.agent.contract.QualitySummary;
 import com.database.mico_database.agent.readmodel.DynamicQueryReadModel;
 import com.database.mico_database.agent.readmodel.ReadModelResult;
 import com.database.mico_database.agent.readmodel.ReadReceipt;
+import com.database.mico_database.agent.readmodel.SchemaSemanticCatalogReadModel;
 import com.database.mico_database.agent.readmodel.service.DynamicReadQueryService;
 
 import java.util.ArrayList;
@@ -22,9 +23,9 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * The only executable Java Agent boundary: model-proposed read SQL is still
- * validated and executed by Java. No fixed cohort or differential workflow is
- * dispatched here.
+ * Java executable boundary: model-proposed read SQL is still validated and
+ * executed by Java. Schema description is metadata-only; no fixed cohort or
+ * differential workflow is dispatched here.
  */
 public final class AgentReadOnlyToolExecutor implements AgentToolExecutorPort {
 
@@ -48,6 +49,13 @@ public final class AgentReadOnlyToolExecutor implements AgentToolExecutorPort {
                     ? AgentToolError.of("INVALID_REQUEST", "Tool request was rejected", null, false,
                     "The request did not satisfy the closed Java tool contract")
                     : validation.getErrors().get(0));
+        }
+        if (AgentToolName.DESCRIBE_READ_SCHEMA.getWireName().equals(request.getToolName())) {
+            SchemaSemanticCatalogReadModel catalog = SchemaSemanticCatalogReadModel.current();
+            return AgentToolResponse.metadataCompleted(
+                    request.getToolCallId(), request.getRunId(),
+                    SchemaSemanticCatalogReadModel.SOURCE,
+                    (long) catalog.getEntityCount(), catalog);
         }
         if (!AgentToolName.EXECUTE_READ_QUERY.getWireName().equals(request.getToolName())) {
             return AgentToolResponse.notImplemented(request.getToolCallId(), request.getRunId());

@@ -55,6 +55,16 @@ public class AgentToolResponse<T> {
         return response;
     }
 
+    /** Completed metadata response that is not a data snapshot. */
+    public static <T> AgentToolResponse<T> metadataCompleted(String toolCallId, String runId,
+                                                              String source, Long rowCount, T data) {
+        AgentToolResponse<T> response = base(toolCallId, runId, AgentToolStatus.COMPLETED);
+        response.source = source;
+        response.rowCount = rowCount;
+        response.data = data;
+        return response;
+    }
+
     private static <T> AgentToolResponse<T> base(String toolCallId, String runId, AgentToolStatus status) {
         AgentToolResponse<T> response = new AgentToolResponse<>();
         response.toolCallId = toolCallId;

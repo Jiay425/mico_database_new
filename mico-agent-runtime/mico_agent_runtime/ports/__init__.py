@@ -7,6 +7,7 @@ from .java_agent import (
     JavaPortTransportError,
     HttpJavaAgentToolPort,
 )
+from .schema_catalog import JavaSchemaCatalogPort, SchemaCatalogPort
 from .research_planner import (
     DeterministicIntentPlanner,
     HttpResearchPlannerPort,
@@ -41,6 +42,8 @@ __all__ = [
     "JavaPortContractError",
     "JavaPortConfigurationError",
     "JavaPortTransportError",
+    "JavaSchemaCatalogPort",
+    "SchemaCatalogPort",
     "DeterministicIntentPlanner",
     "HttpResearchPlannerPort",
     "IntentPlannerPort",

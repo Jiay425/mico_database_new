@@ -7,14 +7,18 @@ from fastapi.testclient import TestClient
 
 from mico_agent_runtime.contracts.audit import AuditEvent
 from mico_agent_runtime.contracts.intent import IntentRunResult, IntentTaskRequest
+from mico_agent_runtime.contracts.research import ResearchExplorationReport
+from mico_agent_runtime.contracts.unified_evidence import merge_unified_evidence
 from mico_agent_runtime.runtime.persistence import (
     RuntimePersistenceConfigurationError,
     RuntimePersistenceCoordinator,
     build_optional_runtime_persistence,
 )
 from mico_agent_runtime.storage.crypto import RuntimeStateCipher
-from mico_agent_runtime.storage.models import RuntimeStatus
+from mico_agent_runtime.storage.models import RuntimeStatus, ToolAuditRecord
+from mico_agent_runtime.storage.mysql_store import AgentStepRow, ToolAuditRow
 from mico_agent_runtime.transport.app import create_app
+from tests.test_unified_evidence import _item, _java_observation
 
 
 RUN = "run-" + "1" * 32
@@ -22,6 +26,7 @@ TASK = "task-" + "2" * 32
 TRACE = "trace-" + "3" * 32
 CALL = "call-" + "4" * 32
 SNAPSHOT = "transient-550e8400-e29b-41d4-a716-446655440000"
+NOW = datetime(2026, 8, 22, tzinfo=timezone.utc)
 
 
 class FakeStore:
@@ -199,6 +204,125 @@ async def test_non_opaque_ids_fail_before_store_write() -> None:
         await coordinator.begin(bad)
     assert str(error.value) == "RUNTIME_PERSISTENCE_ID_INVALID"
     assert store.runs == []
+
+
+@pytest.mark.asyncio
+async def test_unified_evidence_projection_reaches_trace_audit_and_artifact_metadata() -> None:
+    store = FakeStore()
+    coordinator = RuntimePersistenceCoordinator(
+        store, RuntimeStateCipher(b"k" * 32, "runtime-key-1")
+    )
+    evidence = merge_unified_evidence(
+        vector_results=[_item("vector", 0.8)],
+        graph_results=[_item("graph", 0.7)],
+        java_observations=[_java_observation()],
+        limit=5,
+    )
+    report = ResearchExplorationReport(
+        traceId=TRACE,
+        runId=RUN,
+        taskId=TASK,
+        status="COMPLETED",
+        unifiedEvidence=evidence,
+        limitations=["snapshot_is_transient_and_not_replayable"],
+    )
+    events = [
+        AuditEvent(
+            traceId=TRACE,
+            runId=RUN,
+            node="execute_action",
+            toolName="execute_read_query",
+            toolCallId=CALL,
+            status="COMPLETED",
+            occurredAt=NOW,
+        ),
+        AuditEvent(
+            traceId=TRACE,
+            runId=RUN,
+            node="synthesize_report",
+            status="COMPLETED",
+            occurredAt=NOW,
+        ),
+    ]
+    value = IntentRunResult(
+        traceId=TRACE,
+        runId=RUN,
+        taskId=TASK,
+        status="COMPLETED",
+        report=report,
+        auditEvents=events,
+    )
+
+    await coordinator.begin(request())
+    await coordinator.finish(value)
+
+    assert len(store.steps) == 2
+    assert all(step.evidenceProjection is not None for step in store.steps)
+    projection = store.steps[-1].evidenceProjection
+    assert projection is not None
+    assert projection.candidateCount == 2
+    assert projection.sourceRoutes == ["graph", "java", "vector"]
+    assert projection.sourceBindingCount == 3
+    assert projection.transientSnapshotCount == 1
+    assert len(store.audits) == 1
+    assert store.audits[0].evidenceProjection == projection
+    assert len(store.artifacts) == 1
+    assert store.artifacts[0].dataSnapshotId == SNAPSHOT
+
+    for persisted in (*store.steps, *store.audits):
+        dumped = persisted.model_dump_json()
+        for forbidden in ("sourceSampleId", "internalRecordId", "payload", "cohortCondition"):
+            assert forbidden.lower() not in dumped.lower()
+
+
+def test_unified_projection_round_trips_through_existing_json_trace_columns() -> None:
+    from mico_agent_runtime.storage.models import UnifiedEvidencePersistenceProjection
+
+    projection = UnifiedEvidencePersistenceProjection(
+        candidateCount=1,
+        vectorCandidateCount=1,
+        graphCandidateCount=0,
+        javaCandidateCount=0,
+        sourceRoutes=["vector"],
+        sourceBindingCount=1,
+        reasoningPathCount=0,
+        conflictedPathCount=0,
+        transientSnapshotCount=0,
+        generatedAt=NOW,
+    )
+    from mico_agent_runtime.storage.models import AgentStepRecord
+
+    step = AgentStepRecord(
+        dataContractVersion="v1",
+        stepId="step-" + "a" * 32,
+        runId=RUN,
+        nodeName="execute_tool",
+        attemptNumber=1,
+        status="COMPLETED",
+        startedAt=NOW,
+        evidenceProjection=projection,
+    )
+    row = AgentStepRow.from_model(step)
+    restored = row.to_model()
+    assert restored.evidenceProjection == projection
+    assert row.snapshot_metadata is not None
+    assert "evidenceProjection" in row.snapshot_metadata
+
+    audit = ToolAuditRow.from_model(
+        ToolAuditRecord(
+            dataContractVersion="v1",
+            auditId="audit-" + "b" * 32,
+            runId=RUN,
+            traceId=TRACE,
+            toolName="execute_read_query",
+            toolCallId=CALL,
+            status="COMPLETED",
+            durationMs=1,
+            evidenceProjection=projection,
+            createdAt=NOW,
+        )
+    )
+    assert audit.to_model().evidenceProjection == projection
 
 
 def test_persistence_is_disabled_without_explicit_switch() -> None:

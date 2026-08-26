@@ -86,6 +86,43 @@ class AgentResearchBffTest {
     }
 
     @Test
+    void scientificEndpointUsesStateActionContractWhenConfigured() throws Exception {
+        AgentResearchBffProperties scientific = new AgentResearchBffProperties(
+                true, BASE_URL, TOKEN, AgentResearchBffProperties.SCIENTIFIC_ENDPOINT_PATH);
+        AgentResearchRuntimeClient client = new AgentResearchRuntimeClient(restTemplate, objectMapper, scientific);
+        MockMvc scientificMvc = MockMvcBuilders.standaloneSetup(
+                        new AgentResearchBffController(client, scientific, objectMapper))
+                .setMessageConverters(new StringHttpMessageConverter(),
+                        new MappingJackson2HttpMessageConverter(objectMapper))
+                .build();
+
+        server.expect(requestTo(BASE_URL + "/internal/runtime/scientific-runs"))
+                .andExpect(method(HttpMethod.POST))
+                .andExpect(org.springframework.test.web.client.match.MockRestRequestMatchers
+                        .jsonPath("$.intent").value("scientific_exploration"))
+                .andExpect(org.springframework.test.web.client.match.MockRestRequestMatchers
+                        .jsonPath("$.allowedActions[0]").value("execute_read_query"))
+                .andExpect(org.springframework.test.web.client.match.MockRestRequestMatchers
+                        .jsonPath("$.allowedActions[9]").value("finish"))
+                .andExpect(org.springframework.test.web.client.match.MockRestRequestMatchers
+                        .jsonPath("$.requestedScopes[2]").value("mico:research:read"))
+                .andRespond(withSuccess(
+                        "{\"runId\":\"run-r\",\"taskId\":\"task-r\",\"traceId\":\"trace-r\","
+                                + "\"status\":\"COMPLETED\",\"plannerMode\":\"deterministic\","
+                                + "\"actionCount\":2,\"report\":{}}",
+                        MediaType.APPLICATION_JSON));
+
+        scientificMvc.perform(post(AgentResearchBffController.RESEARCH_PATH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"question\":\"探索 T2D 的微生态特征\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("COMPLETED"))
+                .andExpect(jsonPath("$.plannerMode").value("deterministic"))
+                .andExpect(jsonPath("$.actionCount").value(2));
+        server.verify();
+    }
+
+    @Test
     void literatureQuestionCanReturnFullTextEvidenceRoute() throws Exception {
         server.expect(requestTo(BASE_URL + "/internal/runtime/intent-runs"))
                 .andExpect(method(HttpMethod.POST))

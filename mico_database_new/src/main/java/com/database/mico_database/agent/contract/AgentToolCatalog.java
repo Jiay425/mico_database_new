@@ -10,9 +10,9 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * The executable Java catalog contains one dynamic read boundary only.
- * Historical fixed-workflow enum values are not registered and therefore
- * cannot be called through the internal API.
+ * The executable Java catalog exposes one data boundary and one metadata-only
+ * schema-description boundary. It does not encode diseases, cohorts or
+ * analysis methods.
  */
 public final class AgentToolCatalog {
 
@@ -50,6 +50,16 @@ public final class AgentToolCatalog {
                 1000,
                 new AgentArgumentSchema(properties,
                         Collections.singleton("sql"), false)));
+        definitions.put("describe_read_schema", new AgentToolDefinition(
+                AgentToolName.DESCRIBE_READ_SCHEMA,
+                "Return versioned, metadata-only semantics for the approved read surface.",
+                scopes,
+                AgentRiskLevel.LOW,
+                true,
+                false,
+                1,
+                new AgentArgumentSchema(Collections.emptyMap(),
+                        Collections.emptySet(), false)));
         return Collections.unmodifiableMap(definitions);
     }
 }

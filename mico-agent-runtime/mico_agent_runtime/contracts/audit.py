@@ -6,6 +6,7 @@ from typing import Literal
 from pydantic import Field
 
 from .base import ClosedModel, Identifier, NonEmptyText
+from .research import ScientificActionName
 from .tools import JavaDataSnapshot, ToolCallIdentifier, ToolStatus, TransientPersistence, TransientSnapshotId
 
 EvidenceScope = Literal["study", "sample_candidates", "exact_record_profile_locator"]
@@ -17,6 +18,7 @@ class AuditEvent(ClosedModel):
     traceId: Identifier
     runId: Identifier
     node: NonEmptyText
+    actionName: ScientificActionName | None = None
     toolName: NonEmptyText | None = None
     toolCallId: ToolCallIdentifier | None = None
     status: ToolStatus

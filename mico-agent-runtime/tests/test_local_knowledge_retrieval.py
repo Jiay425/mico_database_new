@@ -13,7 +13,9 @@ from mico_agent_runtime.knowledge.local_retriever import (
     LocalKnowledgeIndexConfiguration,
     LocalKnowledgeIndexConfigurationError,
     LocalKnowledgeSearchPort,
+    _query_terms,
 )
+from mico_agent_runtime.knowledge.database_retriever import _query_terms as database_query_terms
 from mico_agent_runtime.transport.app import create_app
 from mico_agent_runtime.runtime.intent_service import IntentRuntime
 from mico_agent_runtime.ports.research_planner import DeterministicIntentPlanner
@@ -75,6 +77,25 @@ def test_local_fulltext_hybrid_search_preserves_provenance(tmp_path) -> None:
     assert results[0].sourceChunkId == "PMC1-A001"
     assert results[0].externalId == "PMCID:PMC1#PMC1-A001"
     assert results[0].sourceExcerpt is None
+
+
+@pytest.mark.parametrize(
+    ("topic", "expected"),
+    [
+        ("ASD candidate evidence", {"autism", "spectrum", "disorder"}),
+        ("核查自闭症候选菌的证据", {"autism", "spectrum", "disorder"}),
+        ("孤独症研究", {"autism", "spectrum", "disorder"}),
+        ("NAFLD candidate evidence", {"nonalcoholic", "fatty", "liver", "disease"}),
+        ("T2D candidate evidence", {"type", "diabetes"}),
+        ("IBD candidate evidence", {"inflammatory", "bowel", "disease"}),
+    ],
+)
+def test_query_terms_normalize_graph_entity_aliases(topic: str, expected: set[str]) -> None:
+    local_terms = _query_terms(topic)
+    database_terms = database_query_terms(topic)
+
+    assert expected.issubset(local_terms)
+    assert expected.issubset(database_terms)
 
 
 def test_graph_retrieval_returns_bounded_source_bound_multi_hop_paths(tmp_path) -> None:

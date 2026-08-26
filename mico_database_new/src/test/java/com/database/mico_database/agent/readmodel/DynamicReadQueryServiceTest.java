@@ -44,7 +44,7 @@ class DynamicReadQueryServiceTest {
         assertEquals(3L, result.getData().getRows().get(0).get("n"));
         verify(connection).setReadOnly(true);
         verify(statement).setMaxRows(10);
-        verify(statement).setQueryTimeout(10);
+        verify(statement).setQueryTimeout(180);
         verify(statement).executeQuery();
     }
 

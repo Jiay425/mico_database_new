@@ -27,6 +27,7 @@ from .models import (
     RuntimeStepCode,
     RuntimeStatus,
     SnapshotMetadata,
+    UnifiedEvidencePersistenceProjection,
     ToolAuditRecord,
 )
 from .ports import RuntimeStore
@@ -93,6 +94,7 @@ __all__ = [
     "RuntimeStore",
     "RuntimeStorageConfigurationError",
     "SnapshotMetadata",
+    "UnifiedEvidencePersistenceProjection",
     "StateBindingContext",
     "ToolAuditRecord",
 ]

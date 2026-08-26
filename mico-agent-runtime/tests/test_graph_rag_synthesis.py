@@ -8,6 +8,7 @@ from mico_agent_runtime.contracts.graph_rag import (
     EvidenceSynthesisContext,
     GraphEvidencePath,
     GraphPathStep,
+    ReasoningPath,
     SynthesisEvidence,
 )
 from mico_agent_runtime.knowledge.synthesis import (
@@ -85,6 +86,44 @@ def test_deepseek_compatible_base_url_uses_chat_completions_endpoint() -> None:
     assert seen == ["https://api.deepseek.com/chat/completions"]
 
 
+def test_gemini_openai_compatible_base_url_uses_chat_completions_endpoint() -> None:
+    seen: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(str(request.url))
+        return httpx.Response(200, json={
+            "choices": [{"message": {"content": json.dumps({
+                "claims": [{
+                    "statement": "The supplied source path is retained as literature evidence.",
+                    "supportStatus": "supported",
+                    "evidenceIds": ["evidence-11111111111111111111111111111111"],
+                    "reasoningPathIds": ["path-11111111111111111111111111111111"],
+                }],
+                "reasoningSteps": [{
+                    "stepIndex": 1,
+                    "description": "The supplied source path is source-bound.",
+                    "supportStatus": "supported",
+                    "evidenceIds": ["evidence-11111111111111111111111111111111"],
+                    "reasoningPathIds": ["path-11111111111111111111111111111111"],
+                }],
+                "conclusion": "No source-bound claim was generated.",
+            })}}],
+        })
+
+    port = HttpGraphRagSynthesisPort(
+        "https://generativelanguage.googleapis.com/v1beta/openai",
+        "gemini-3.5-flash",
+        "test-token",
+        transport=httpx.MockTransport(handler),
+    )
+    result = port.synthesize(context())
+
+    assert result.mode == "model"
+    assert seen == [
+        "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+    ]
+
+
 def test_deterministic_synthesis_is_path_bound() -> None:
     result = DeterministicGraphRagSynthesisPort().synthesize(context())
     assert result.mode == "deterministic"
@@ -93,6 +132,31 @@ def test_deterministic_synthesis_is_path_bound() -> None:
     assert result.claims[0].reasoningPathIds == ["path-11111111111111111111111111111111"]
     assert result.reasoningSteps[0].reasoningPathIds == ["path-11111111111111111111111111111111"]
     assert result.conclusion is not None
+
+
+def test_deterministic_synthesis_preserves_conflict_from_path_hops() -> None:
+    conflicted_path = GraphEvidencePath(
+        pathId="path-22222222222222222222222222222222",
+        status="supported",
+        hops=[GraphPathStep(
+            fromEntity="type_2_diabetes",
+            relation="ASSOCIATED_WITH",
+            toEntity="microbe concept",
+            evidenceChunkId="PMC1-A001",
+            supportStatus="conflicted",
+        )],
+        sourceDocumentIds=["PMCID:PMC1"],
+        confidence=0.4,
+    )
+    conflicted_context = context().model_copy(update={
+        "evidence": [context().evidence[0].model_copy(update={
+            "graphPaths": [conflicted_path],
+            "reasoningPaths": [ReasoningPath.from_graph_path(conflicted_path)],
+        })]
+    })
+    result = DeterministicGraphRagSynthesisPort().synthesize(conflicted_context)
+    assert result.claims[0].supportStatus == "conflicted"
+    assert result.reasoningSteps[0].supportStatus == "conflicted"
 
 
 def test_model_synthesis_accepts_only_known_evidence_and_paths() -> None:

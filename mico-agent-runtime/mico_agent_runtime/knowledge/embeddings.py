@@ -7,6 +7,7 @@ import shutil
 import ssl
 import subprocess
 import tempfile
+import time
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Protocol
@@ -181,16 +182,21 @@ class GeminiEmbeddingPort:
     def _embed(self, content: str) -> list[float]:
         if self._transport == "curl":
             return self._curl_embed(content)
-        try:
-            response = self._client.models.embed_content(
-                model=self.modelName,
-                contents=content,
-            )
-            return extract_embedding(response)
-        except EmbeddingRequestError:
-            raise
-        except Exception as exc:
-            raise EmbeddingRequestError("GEMINI_EMBEDDING_REQUEST_FAILED") from exc
+        last_error: Exception | None = None
+        for attempt in range(4):
+            try:
+                response = self._client.models.embed_content(
+                    model=self.modelName,
+                    contents=content,
+                )
+                return extract_embedding(response)
+            except Exception as exc:
+                last_error = exc
+                if attempt < 3:
+                    time.sleep(0.5 * (attempt + 1))
+        if isinstance(last_error, EmbeddingRequestError):
+            raise last_error
+        raise EmbeddingRequestError("GEMINI_EMBEDDING_REQUEST_FAILED") from last_error
 
     @staticmethod
     def _curl_quote(value: str) -> str:

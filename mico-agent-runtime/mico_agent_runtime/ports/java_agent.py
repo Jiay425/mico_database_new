@@ -54,7 +54,15 @@ class HttpJavaAgentToolPort:
         # but the remote standard-abundance scan is materially slower than a
         # point sample read. Keep a finite transport cap long enough for that
         # controlled operation; this does not widen the tool or SQL surface.
-        self._client = httpx.Client(transport=transport, timeout=120.0)
+        # The Java Agent Tool endpoint is an explicitly configured internal
+        # service. Never route its bearer token or loopback traffic through
+        # ambient HTTP(S)_PROXY settings; proxying can both leak credentials
+        # and turn a healthy local Java response into a transport failure.
+        # Aggregated reads over the remote standard-abundance table have a
+        # finite Java-side 180s query cap. Keep the transport cap above it so
+        # Python reports the Java result instead of masking it as a network
+        # timeout.
+        self._client = httpx.Client(transport=transport, timeout=240.0, trust_env=False)
 
     @classmethod
     def from_environment(

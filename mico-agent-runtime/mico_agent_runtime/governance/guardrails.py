@@ -56,11 +56,40 @@ _PUBLIC_FORBIDDEN_PATTERNS: tuple[re.Pattern[str], ...] = (
 )
 
 
+def _is_negated_boundary(question: str, match_start: int) -> bool:
+    """Return whether a safety term is being explicitly *disclaimed*.
+
+    Scientific requests often state a boundary such as "不作因果解释" or
+    "不输出诊断结论". Those are not attempts to obtain a causal or clinical
+    conclusion and must not be rejected merely because the guarded word is
+    present. The check is deliberately local: a later positive request (for
+    example, "不要诊断，但判断是否患病") still matches independently and is
+    rejected by the normal deny rules.
+    """
+
+    prefix = question[max(0, match_start - 24):match_start]
+    if re.search(r"(?:non[-\s]?|without\s+)$", prefix, re.IGNORECASE):
+        return True
+    return bool(re.search(
+        r"(?:不|不要|不能|勿|避免|禁止|不得|仅|只).{0,16}"
+        r"(?:输出|作出?|做|进行|解释|推断|给出|宣布)?$",
+        prefix,
+        re.IGNORECASE,
+    ))
+
+
 def evaluate_input(question: str) -> GuardrailDecision:
     """Apply the input guardrail without echoing the rejected question."""
 
     for rule, pattern in _DENY_PATTERNS:
-        if pattern.search(question):
+        matched = next((
+            match for match in pattern.finditer(question)
+            if not (
+                rule in {"clinical_request", "causal_claim"}
+                and _is_negated_boundary(question, match.start())
+            )
+        ), None)
+        if matched:
             return GuardrailDecision(
                 verdict="REJECT",
                 layer="input",

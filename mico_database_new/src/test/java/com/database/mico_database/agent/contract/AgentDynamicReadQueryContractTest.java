@@ -15,10 +15,22 @@ class AgentDynamicReadQueryContractTest {
     private final AgentToolRequestValidator validator = new AgentToolRequestValidator();
 
     @Test
-    void catalogExposesOnlyTheDynamicReadBoundary() {
-        assertEquals(1, AgentToolCatalog.all().size());
+    void catalogExposesDynamicReadAndMetadataOnlySchemaBoundaries() {
+        assertEquals(2, AgentToolCatalog.all().size());
         assertTrue(AgentToolCatalog.isRegistered("execute_read_query"));
+        assertTrue(AgentToolCatalog.isRegistered("describe_read_schema"));
         assertFalse(AgentToolCatalog.isRegistered("build_cohort"));
+    }
+
+    @Test
+    void schemaDescriptionAcceptsNoBusinessArguments() {
+        AgentToolRequest request = new AgentToolRequest();
+        request.setToolName("describe_read_schema");
+        request.setRunId("run-schema");
+        request.setToolCallId("call-schema");
+        request.setRequesterId("internal-agent-runtime");
+        request.setRequestedScopes(Collections.singleton(AgentScope.QUERY_READ.getWireName()));
+        assertTrue(validator.validate(request).isValid());
     }
 
     @Test

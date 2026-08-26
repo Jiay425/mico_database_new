@@ -18,7 +18,8 @@ public class AgentResearchBffConfiguration {
             @Value("${mico.agent.bff.enabled:false}") boolean enabled) {
         return new AgentResearchBffProperties(enabled,
                 System.getenv("MICO_AGENT_RUNTIME_BASE_URL"),
-                System.getenv("MICO_RUNTIME_INTERNAL_TOKEN"));
+                System.getenv("MICO_RUNTIME_INTERNAL_TOKEN"),
+                System.getenv("MICO_AGENT_RUNTIME_ENDPOINT_PATH"));
     }
 
     @Bean

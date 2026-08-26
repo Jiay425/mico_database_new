@@ -55,6 +55,19 @@ def _status_can_be_reported(status: str, path_statuses: set[str]) -> bool:
     return True
 
 
+def _effective_path_status(path: object) -> str:
+    """Preserve the strongest uncertainty status across a graph path."""
+
+    statuses = {
+        getattr(path, "status", "supported"),
+        *(getattr(hop, "supportStatus", "supported") for hop in getattr(path, "hops", []) or []),
+    }
+    for status in ("conflicted", "unsupported", "speculative", "partial", "supported"):
+        if status in statuses:
+            return status
+    return "supported"
+
+
 class DeterministicGraphRagSynthesisPort:
     """Structured, source-bound fallback when no generation model is configured."""
 
@@ -70,10 +83,11 @@ class DeterministicGraphRagSynthesisPort:
                     for hop in path.hops
                 )
                 statement = "来源图路径（非医学结论）：" + path_text
+                effective_status = _effective_path_status(path)
                 claims.append(GroundedClaim(
                     claimId=_claim_id(statement, [evidence.evidenceId], [path.pathId]),
                     statement=statement,
-                    supportStatus=path.status,
+                    supportStatus=effective_status,
                     evidenceIds=[evidence.evidenceId],
                     reasoningPathIds=[path.pathId],
                 ))
@@ -84,7 +98,7 @@ class DeterministicGraphRagSynthesisPort:
                             f"{hop.fromEntity} [{hop.relation}] {hop.toEntity}; "
                             "the step is retained only as a source-bound graph assertion."
                         ),
-                        supportStatus=hop.supportStatus,
+                        supportStatus=_effective_path_status(path),
                         evidenceIds=[evidence.evidenceId],
                         reasoningPathIds=[path.pathId],
                     ))
@@ -128,7 +142,12 @@ class HttpGraphRagSynthesisPort:
         if parsed.query or parsed.fragment or not model.strip() or not token.strip():
             raise GraphRagSynthesisError("GRAPHRAG_SYNTHESIS_CONFIGURATION_INVALID")
         base = base_url.rstrip("/")
-        if (parsed.hostname or "").lower().endswith("deepseek.com") or parsed.path.rstrip("/").endswith("/v1"):
+        provider_path = parsed.path.rstrip("/")
+        if (
+            (parsed.hostname or "").lower().endswith("deepseek.com")
+            or provider_path.endswith("/v1")
+            or provider_path.endswith("/openai")
+        ):
             self._endpoint = base + "/chat/completions"
         else:
             self._endpoint = base + "/v1/chat/completions"

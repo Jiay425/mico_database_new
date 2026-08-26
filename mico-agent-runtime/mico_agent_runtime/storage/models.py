@@ -53,6 +53,7 @@ RuntimeControlCode = Annotated[
     StringConstraints(min_length=3, max_length=128, pattern=r"^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+$"),
 ]
 ArtifactType = Literal["evidence_summary"]
+EvidenceRoute = Literal["vector", "graph", "java"]
 RuntimeNodeName = Literal[
     "validate_task",
     "policy_gate",
@@ -141,6 +142,40 @@ class SnapshotMetadata(PersistentSafeModel):
     sourceBatch: SourceBatch | None = None
 
 
+class UnifiedEvidencePersistenceProjection(PersistentSafeModel):
+    """Safe counters for a unified evidence trace.
+
+    This is deliberately a projection rather than a copy of evidence.  It
+    records route/binding/path counts and conflict state only; source text,
+    locator values, Java payloads and literature content remain transient.
+    It is serialized inside the existing JSON metadata columns, so no schema
+    migration is required for this additive trace projection.
+    """
+
+    candidateCount: Annotated[int, Field(strict=True, ge=0, le=50)]
+    vectorCandidateCount: Annotated[int, Field(strict=True, ge=0, le=50)]
+    graphCandidateCount: Annotated[int, Field(strict=True, ge=0, le=50)]
+    javaCandidateCount: Annotated[int, Field(strict=True, ge=0, le=50)]
+    sourceRoutes: list[EvidenceRoute] = Field(default_factory=list, max_length=3)
+    sourceBindingCount: Annotated[int, Field(strict=True, ge=0, le=150)]
+    reasoningPathCount: Annotated[int, Field(strict=True, ge=0, le=200)]
+    conflictedPathCount: Annotated[int, Field(strict=True, ge=0, le=200)]
+    transientSnapshotCount: Annotated[int, Field(strict=True, ge=0, le=50)]
+    generatedAt: datetime
+
+    @model_validator(mode="after")
+    def validate_route_projection(self) -> "UnifiedEvidencePersistenceProjection":
+        if len(self.sourceRoutes) != len(set(self.sourceRoutes)):
+            raise ValueError("source routes must be unique")
+        if self.vectorCandidateCount and "vector" not in self.sourceRoutes:
+            raise ValueError("vector candidates require a vector route")
+        if self.graphCandidateCount and "graph" not in self.sourceRoutes:
+            raise ValueError("graph candidates require a graph route")
+        if self.javaCandidateCount and "java" not in self.sourceRoutes:
+            raise ValueError("Java candidates require a Java route")
+        return self
+
+
 class AgentRunRecord(PersistentSafeModel):
     dataContractVersion: StorageContractVersion
     runId: RunId
@@ -174,6 +209,7 @@ class AgentStepRecord(PersistentSafeModel):
     safeInputCode: RuntimeStepCode | None = None
     safeOutputCode: RuntimeStepCode | None = None
     snapshotMetadata: SnapshotMetadata | None = None
+    evidenceProjection: UnifiedEvidencePersistenceProjection | None = None
 
 
 class AgentArtifactRecord(PersistentSafeModel):
@@ -219,4 +255,5 @@ class ToolAuditRecord(PersistentSafeModel):
     durationMs: Annotated[int, Field(strict=True, ge=0, le=86_400_000)]
     errorCode: RuntimeControlCode | None = None
     snapshotMetadata: SnapshotMetadata | None = None
+    evidenceProjection: UnifiedEvidencePersistenceProjection | None = None
     createdAt: datetime

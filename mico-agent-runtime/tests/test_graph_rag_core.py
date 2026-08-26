@@ -6,7 +6,10 @@ import httpx
 
 from mico_agent_runtime.contracts.evidence import EvidenceQuery
 from mico_agent_runtime.contracts.intent import IntentPlannerContext
+from mico_agent_runtime.contracts.research import ScientificPlannerContext
 from mico_agent_runtime.ports.research_planner import deterministic_intent_route
+from mico_agent_runtime.ports.research_planner import _PlannerResponseRejected
+from mico_agent_runtime.ports.research_planner import _action_fallback_reason
 from mico_agent_runtime.ports.research_planner import HttpResearchPlannerPort
 from mico_agent_runtime.knowledge.local_retriever import (
     LocalKnowledgeIndexConfiguration,
@@ -73,6 +76,151 @@ def test_deepseek_planner_accepts_closed_structured_route() -> None:
     assert result.plan.queryType == "composite"
     assert result.plan.retrievalBranches == ["vector", "graph"]
     assert seen == ["https://api.deepseek.com/chat/completions"]
+
+
+def test_gemini_openai_compatible_planner_uses_chat_completions_endpoint() -> None:
+    seen: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(str(request.url))
+        return httpx.Response(200, json={
+            "choices": [{"message": {"content": json.dumps({
+                "workflow": "knowledge_retrieval",
+                "responseMode": "structured_evidence_review",
+                "safetyProfile": "non_diagnostic",
+                "queryType": "semantic_fact",
+                "routeConfidence": 0.9,
+                "retrievalMode": "vector",
+                "retrievalBranches": ["vector"],
+                "classificationSignals": ["semantic", "model"],
+            })}}],
+        })
+
+    planner = HttpResearchPlannerPort(
+        "https://generativelanguage.googleapis.com/v1beta/openai",
+        "gemini-3.5-flash",
+        "test-token",
+        transport=httpx.MockTransport(handler),
+    )
+    result = planner.route_intent(_context("文献证据检索"))
+
+    assert result.mode == "model"
+    assert result.plan.retrievalBranches == ["vector"]
+    assert seen == [
+        "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+    ]
+
+
+def test_deepseek_route_retries_three_times_with_schema_feedback() -> None:
+    requests: list[dict] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        payload = request.read()
+        body = json.loads(payload)
+        requests.append(body)
+        if len(requests) < 4:
+            content = "not-json"
+        else:
+            content = json.dumps({
+                "workflow": "knowledge_retrieval",
+                "responseMode": "structured_evidence_review",
+                "safetyProfile": "non_diagnostic",
+                "queryType": "semantic_fact",
+                "routeConfidence": 0.8,
+                "retrievalMode": "vector",
+                "retrievalBranches": ["vector"],
+                "classificationSignals": ["semantic", "model"],
+            })
+        return httpx.Response(200, json={"choices": [{"message": {"content": content}}]})
+
+    planner = HttpResearchPlannerPort(
+        "https://api.deepseek.com",
+        "deepseek-v4-flash",
+        "test-token",
+        transport=httpx.MockTransport(handler),
+    )
+    result = planner.route_intent(_context("文献证据检索"))
+
+    assert result.mode == "model"
+    assert len(requests) == 4
+    assert any("Validation feedback:" in message["content"]
+               for message in requests[-1]["messages"])
+
+
+def test_deepseek_scientific_action_retries_three_times_with_schema_feedback() -> None:
+    requests: list[dict] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.read())
+        requests.append(body)
+        if len(requests) < 4:
+            content = "{\"actionName\":\"finish\"}"
+        else:
+            content = json.dumps({
+                "actionId": "action-" + "0" * 32,
+                "actionName": "finish",
+                "rationale": "证据状态已足够，安全结束",
+                "arguments": {
+                    "actionName": "finish",
+                    "reasonCode": "EVIDENCE_SUFFICIENT",
+                },
+            })
+        return httpx.Response(200, json={"choices": [{"message": {"content": content}}]})
+
+    planner = HttpResearchPlannerPort(
+        "https://api.deepseek.com",
+        "deepseek-v4-flash",
+        "test-token",
+        transport=httpx.MockTransport(handler),
+    )
+    result = planner.plan_action(ScientificPlannerContext(
+        questionSummary="当前证据是否足够",
+        intent="data_fact",
+        approvedActions=["finish"],
+        remainingActionBudget=1,
+        observations=[],
+    ))
+
+    assert result.mode == "model"
+    assert result.action.actionName == "finish"
+    assert len(requests) == 4
+    assert any("Validation feedback:" in message["content"]
+               for message in requests[-1]["messages"])
+
+
+def test_scientific_action_fallback_records_redacted_reason_code() -> None:
+    requests: list[dict] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(json.loads(request.read()))
+        return httpx.Response(200, json={
+            "choices": [{"message": {"content": "not-json"}}],
+        })
+
+    planner = HttpResearchPlannerPort(
+        "https://api.deepseek.com",
+        "deepseek-v4-flash",
+        "test-token",
+        transport=httpx.MockTransport(handler),
+    )
+    result = planner.plan_action(ScientificPlannerContext(
+        questionSummary="当前证据是否足够",
+        intent="data_fact",
+        approvedActions=["finish"],
+        remainingActionBudget=1,
+        observations=[],
+    ))
+
+    assert result.mode == "deterministic"
+    assert result.fallbackCode == "SCIENTIFIC_PLANNER_DETERMINISTIC_FALLBACK"
+    assert result.fallbackReasonCode == "SCIENTIFIC_PLANNER_FALLBACK_REASON_INVALID_JSON"
+    assert len(requests) == 4
+
+
+def test_planner_rate_limit_is_classified_without_response_body() -> None:
+    assert _action_fallback_reason(_PlannerResponseRejected(429)) == (
+        "SCIENTIFIC_PLANNER_FALLBACK_REASON_RATE_LIMITED"
+    )
 
 
 def test_local_hybrid_runs_two_branches_and_unifies_source_labels(tmp_path) -> None:

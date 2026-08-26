@@ -14,6 +14,7 @@ from pydantic import ValidationError
 from mico_agent_runtime.contracts.approval import ApprovalDecisionRequest, ApprovalTicketRequest
 from mico_agent_runtime.contracts.evidence import EvidenceTaskRequest
 from mico_agent_runtime.contracts.intent import IntentHttpResponse, IntentTaskRequest
+from mico_agent_runtime.contracts.research import ResearchTask
 from mico_agent_runtime.contracts.review import GraphReviewResumeCommand
 from mico_agent_runtime.contracts.progress import RunProgressRegistry
 from mico_agent_runtime.contracts.control import RunControlResponse
@@ -23,6 +24,7 @@ from mico_agent_runtime.ports.java_agent import (
 )
 from mico_agent_runtime.runtime.evidence_service import EvidenceRuntime
 from mico_agent_runtime.runtime.intent_service import IntentRuntime
+from mico_agent_runtime.runtime.scientific_service import ScientificRuntime
 from mico_agent_runtime.runtime.persistence import (
     RuntimePersistenceConfigurationError,
     RuntimePersistenceCoordinator,
@@ -44,6 +46,7 @@ from mico_agent_runtime.ports.evidence import (
 from mico_agent_runtime.knowledge.local_retriever import LocalKnowledgeSearchPort
 from mico_agent_runtime.knowledge.database_retriever import DatabaseKnowledgeSearchPort
 from mico_agent_runtime.ports.knowledge import KnowledgeSearchPort
+from mico_agent_runtime.ports.schema_catalog import JavaSchemaCatalogPort
 from mico_agent_runtime.knowledge.synthesis import (
     GraphRagSynthesisPort,
     build_graph_rag_synthesis_port,
@@ -78,6 +81,7 @@ def create_app(
     env: Mapping[str, str] | None = None,
     evidence_runtime: EvidenceRuntime | None = None,
     intent_runtime: IntentRuntime | None = None,
+    scientific_runtime: ScientificRuntime | None = None,
     intent_planner: IntentPlannerPort | None = None,
     knowledge_port: KnowledgeSearchPort | None = None,
     synthesis_port: GraphRagSynthesisPort | None = None,
@@ -99,6 +103,7 @@ def create_app(
     ).strip().lower() == "true"
     evidence_runtime_holder: dict[str, EvidenceRuntime | None] = {"runtime": evidence_runtime}
     intent_runtime_holder: dict[str, IntentRuntime | None] = {"runtime": intent_runtime}
+    scientific_runtime_holder: dict[str, ScientificRuntime | None] = {"runtime": scientific_runtime}
     knowledge_port_holder: dict[str, KnowledgeSearchPort | None] = {"port": knowledge_port}
     knowledge_backend = _resolve_knowledge_backend(environment)
     if knowledge_port_holder["port"] is None and (
@@ -230,6 +235,20 @@ def create_app(
             )
         return intent_runtime_holder["runtime"]
 
+    def ensure_scientific_runtime() -> ScientificRuntime:
+        """Build the open-ended research graph only behind the same internal auth."""
+        if scientific_runtime_holder["runtime"] is None:
+            java_port = HttpJavaAgentToolPort.from_environment(env)
+            planner = intent_planner or build_intent_planner(env)
+            scientific_runtime_holder["runtime"] = ScientificRuntime(
+                java_port,
+                planner,
+                knowledge_port=knowledge_port_holder["port"],
+                schema_catalog_port=JavaSchemaCatalogPort(java_port),
+                synthesis_port=synthesis_port or build_graph_rag_synthesis_port(env),
+            )
+        return scientific_runtime_holder["runtime"]
+
     async def resume_intent_internal(run_id: str) -> RunControlResponse:
         coordinator = persistence_holder["runtime"]
         if coordinator is None:
@@ -356,6 +375,58 @@ def create_app(
         if progress is None:
             return _error(404, "RUN_NOT_FOUND", "The requested run was not found")
         return JSONResponse(status_code=200, content=progress.model_dump(mode="json", exclude_none=True))
+
+    @app.post("/internal/runtime/scientific-runs")
+    async def create_scientific_run(
+        request: Request,
+        authorization: str | None = Header(default=None),
+    ) -> JSONResponse:
+        """Execute the generic metadata-first State→Action→Observation graph."""
+        if not auth.enabled:
+            return _error(503, "RUNTIME_DISABLED", "The internal runtime is disabled")
+        if not auth.matches(authorization):
+            return _error(401, "UNAUTHORIZED", "Internal runtime authentication is required")
+        if not request.headers.get("content-type", "").lower().startswith("application/json"):
+            return _error(400, "INVALID_REQUEST", "The request must be JSON")
+        try:
+            payload: Any = await request.json()
+            research_request = ResearchTask.model_validate(payload)
+        except (json.JSONDecodeError, TypeError, ValueError, ValidationError):
+            return _error(400, "INVALID_REQUEST", "The request does not match the closed research contract")
+
+        persistence_error_response = await persistence_begin_or_error(research_request)
+        if persistence_error_response is not None:
+            return persistence_error_response
+        try:
+            runtime_value = ensure_scientific_runtime()
+        except JavaPortConfigurationError:
+            await persistence_fail(research_request, "JAVA_PORT_DISABLED")
+            return _error(503, "JAVA_PORT_DISABLED", "The Java Agent Tool port is not configured")
+        except Exception:
+            await persistence_fail(research_request, "SCIENTIFIC_RUNTIME_INITIALIZATION_FAILED")
+            return _error(500, "SCIENTIFIC_RUNTIME_INITIALIZATION_FAILED", "The scientific runtime could not start")
+        try:
+            result = await asyncio.to_thread(runtime_value.run, research_request)
+        except Exception:
+            await persistence_fail(research_request, "SCIENTIFIC_RUNTIME_EXECUTION_FAILED")
+            return _error(500, "SCIENTIFIC_RUNTIME_EXECUTION_FAILED", "The scientific run failed safely")
+        persistence_error_response = await persistence_finish_or_error(result)
+        if persistence_error_response is not None:
+            return persistence_error_response
+        return JSONResponse(
+            status_code=200,
+            content={
+                "runId": result.runId,
+                "taskId": result.taskId,
+                "traceId": result.traceId,
+                "status": result.status,
+                "errorCode": result.errorCode,
+                "plannerMode": result.plannerMode,
+                "actionCount": result.actionCount,
+                "report": result.report.model_dump(mode="json", exclude_none=True)
+                if result.report is not None else None,
+            },
+        )
 
     @app.post("/internal/runtime/intent-runs/{run_id}/cancel", response_model=None)
     async def cancel_intent_run(
