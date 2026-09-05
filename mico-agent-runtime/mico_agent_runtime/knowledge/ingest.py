@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import hashlib
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
@@ -9,6 +10,7 @@ from typing import Any, Iterable
 from .database_config import KnowledgeStoreConfiguration
 from .database_schema import load_manifest, vector_schema_sql
 from .graph_pipeline import GraphPipelineError, load_graph_manifest
+from .embeddings import GeminiEmbeddingPort
 
 
 _VERSIONED_GRAPH_STATUSES = {"staging", "review_pending", "approved", "published"}
@@ -99,6 +101,11 @@ def ingest_vector_store(configuration: KnowledgeStoreConfiguration) -> dict[str,
     if len(dense) != manifest["paperCount"] or len(chunks) != manifest["chunkCount"]:
         raise ValueError("knowledge corpus does not match manifest")
     initialize_vector_store(configuration, manifest)
+    chunk_embeddings_enabled = os.environ.get(
+        "MICO_KNOWLEDGE_CHUNK_EMBEDDINGS_ENABLED", "false"
+    ).strip().lower() == "true"
+    embedding_port = GeminiEmbeddingPort.from_environment() if chunk_embeddings_enabled else None
+    embedded_chunks = 0
     with psycopg.connect(configuration.vectorDatabaseUrl) as connection:
         register_vector(connection)
         with connection.cursor() as cursor:
@@ -131,24 +138,196 @@ def ingest_vector_store(configuration: KnowledgeStoreConfiguration) -> dict[str,
                 document_id = str(row["pmcid"])
                 ordinal = ordinal_by_document.get(document_id, 0)
                 ordinal_by_document[document_id] = ordinal + 1
+                chunk_embedding = None
+                if embedding_port is not None:
+                    chunk_embedding = HalfVector(
+                        embedding_port.embed_document(row.get("title"), str(row["text"]))
+                    )
+                    embedded_chunks += 1
                 cursor.execute(
                     """
                     INSERT INTO knowledge_chunk
                         (chunk_id, document_id, pmcid, pmid, title, journal, publication_year,
-                         topic, section, doi, source_url, evidence_tier, ordinal, text, metadata)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                         topic, section, doi, source_url, evidence_tier, ordinal, text, metadata, embedding)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT (chunk_id) DO UPDATE SET
                         section = EXCLUDED.section, text = EXCLUDED.text,
-                        ordinal = EXCLUDED.ordinal, metadata = EXCLUDED.metadata
+                        ordinal = EXCLUDED.ordinal, metadata = EXCLUDED.metadata,
+                        embedding = COALESCE(EXCLUDED.embedding, knowledge_chunk.embedding)
                     """,
                     (
                         row["chunkId"], document_id, row["pmcid"], row.get("pmid"), row["title"],
                         row.get("journal"), int(row.get("year") or 2000), row.get("topic"),
                         row.get("section"), row.get("doi"), row["sourceUrl"], "fulltext",
                         ordinal, row["text"], json.dumps({"tokenCount": row.get("tokenCount")}),
+                        chunk_embedding,
                     ),
                 )
-    return {"documents": len(dense), "chunks": len(chunks)}
+    if embedding_port is not None:
+        embedding_port.close()
+    return {"documents": len(dense), "chunks": len(chunks), "chunkEmbeddings": embedded_chunks}
+
+
+def ingest_chunk_variant(
+    configuration: KnowledgeStoreConfiguration,
+    chunks_path: Path,
+    manifest_path: Path,
+    graph_version: str,
+) -> dict[str, Any]:
+    """Add one chunk-v2 variant without replacing the v1 corpus.
+
+    This path intentionally does not call the embedding provider.  It first
+    registers the schema/asset manifest, verifies that all source documents
+    already exist, and then inserts rows tagged with chunk version, variant,
+    embedding version and graph version.  The primary key remains the opaque
+    chunk id, while the version columns make accidental cross-variant reads
+    impossible for configured retrievers.
+    """
+    import psycopg
+
+    if not chunks_path.exists() or not manifest_path.exists():
+        raise FileNotFoundError("KNOWLEDGE_CHUNK_VARIANT_ASSET_MISSING")
+    asset = json.loads(manifest_path.read_text(encoding="utf-8"))
+    chunk_version = str(asset.get("chunkVersion") or "")
+    variant = str(asset.get("variant") or "")
+    summary = asset.get("summary") or {}
+    if chunk_version != "chunk-v2" or variant not in {"small", "medium", "large"}:
+        raise ValueError("KNOWLEDGE_CHUNK_VARIANT_MANIFEST_INVALID")
+    rows = list(_jsonl(chunks_path))
+    expected = int(summary.get("chunkCount") or 0)
+    papers = int(summary.get("paperCount") or 0)
+    if not rows or len(rows) != expected:
+        raise ValueError("KNOWLEDGE_CHUNK_VARIANT_COUNT_MISMATCH")
+    if len({str(row.get("chunkId") or "") for row in rows}) != len(rows):
+        raise ValueError("KNOWLEDGE_CHUNK_VARIANT_DUPLICATE_ID")
+    pmcids = {str(row.get("pmcid") or "") for row in rows}
+    if len(pmcids) != papers or "" in pmcids:
+        raise ValueError("KNOWLEDGE_CHUNK_VARIANT_PAPER_MISMATCH")
+    index_version = f"fulltext-gemini-{chunk_version}-{variant}-v1"
+    db_manifest = {
+        "indexVersion": index_version,
+        "graphVersion": graph_version,
+        "corpusScope": "fulltext_only",
+        "evidenceTier": "fulltext",
+        "paperCount": papers,
+        "chunkCount": len(rows),
+        "chunkVersion": chunk_version,
+        "chunkVariant": variant,
+        "chunkAsset": chunks_path.name,
+        "graphAsset": f"medical_knowledge_graph_{graph_version}.jsonl",
+        "embeddingStatus": "pending",
+        "sourceManifest": manifest_path.name,
+    }
+    initialize_vector_store(configuration, db_manifest)
+    ordinal_by_pmcid: dict[str, int] = {}
+    with psycopg.connect(configuration.vectorDatabaseUrl) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT pmcid FROM knowledge_document WHERE pmcid = ANY(%s)",
+                (list(pmcids),),
+            )
+            existing_pmcids = {str(row[0]) for row in cursor.fetchall()}
+            missing_documents = sorted(pmcids - existing_pmcids)
+            if missing_documents:
+                raise ValueError("KNOWLEDGE_CHUNK_VARIANT_DOCUMENT_MISSING")
+            for row in rows:
+                pmcid = str(row["pmcid"])
+                ordinal = ordinal_by_pmcid.get(pmcid, 0)
+                ordinal_by_pmcid[pmcid] = ordinal + 1
+                metadata = {
+                    "tokenCount": row.get("tokenCount"),
+                    "chunkType": row.get("chunkType"),
+                    "subsection": row.get("subsection"),
+                    "paragraphIndex": row.get("paragraphIndex"),
+                    "paragraphEndIndex": row.get("paragraphEndIndex"),
+                    "sentenceStart": row.get("sentenceStart"),
+                    "sentenceEnd": row.get("sentenceEnd"),
+                    "charStart": row.get("charStart"),
+                    "charEnd": row.get("charEnd"),
+                    "offsetBase": row.get("offsetBase"),
+                    "embeddingText": row.get("embeddingText"),
+                }
+                cursor.execute(
+                    """
+                    INSERT INTO knowledge_chunk
+                        (chunk_id, document_id, pmcid, pmid, title, journal, publication_year,
+                         topic, section, doi, source_url, evidence_tier, ordinal, text, metadata,
+                         embedding, chunk_version, chunk_variant, embedding_model,
+                         embedding_version, graph_version)
+                    SELECT %s, d.document_id, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                           'fulltext', %s, %s, %s, NULL, %s, %s, NULL, NULL, %s
+                    FROM knowledge_document d
+                    WHERE d.pmcid = %s
+                    ON CONFLICT (chunk_id) DO UPDATE SET
+                        document_id = EXCLUDED.document_id, pmcid = EXCLUDED.pmcid,
+                        pmid = EXCLUDED.pmid, title = EXCLUDED.title, journal = EXCLUDED.journal,
+                        publication_year = EXCLUDED.publication_year, topic = EXCLUDED.topic,
+                        section = EXCLUDED.section, doi = EXCLUDED.doi,
+                        source_url = EXCLUDED.source_url, ordinal = EXCLUDED.ordinal,
+                        text = EXCLUDED.text, metadata = EXCLUDED.metadata,
+                        chunk_version = EXCLUDED.chunk_version, chunk_variant = EXCLUDED.chunk_variant,
+                        graph_version = EXCLUDED.graph_version,
+                        embedding = COALESCE(EXCLUDED.embedding, knowledge_chunk.embedding),
+                        embedding_model = COALESCE(EXCLUDED.embedding_model, knowledge_chunk.embedding_model),
+                        embedding_version = COALESCE(EXCLUDED.embedding_version, knowledge_chunk.embedding_version)
+                    """,
+                    (
+                        str(row["chunkId"]), pmcid, row.get("pmid"), row.get("title") or "",
+                        row.get("journal"), int(row.get("year") or 2000), row.get("topic"),
+                        row.get("section"), row.get("doi"), row.get("sourceUrl") or "",
+                        ordinal, row.get("text") or "", json.dumps(metadata, ensure_ascii=False),
+                        chunk_version, variant, graph_version, pmcid,
+                    ),
+                )
+            cursor.execute(
+                """
+                SELECT count(*), count(DISTINCT chunk_id),
+                       count(*) FILTER (WHERE document_id IS NULL),
+                       count(*) FILTER (WHERE pmcid IS NULL OR pmcid = ''),
+                       count(*) FILTER (WHERE text IS NULL OR text = ''),
+                       count(*) FILTER (WHERE section IS NULL OR section = ''),
+                       count(*) FILTER (WHERE embedding IS NOT NULL)
+                FROM knowledge_chunk
+                WHERE chunk_version = %s AND chunk_variant = %s
+                """,
+                (chunk_version, variant),
+            )
+            count_row = cursor.fetchone()
+            cursor.execute(
+                """
+                SELECT section, count(*)
+                FROM knowledge_chunk
+                WHERE chunk_version = %s AND chunk_variant = %s
+                GROUP BY section ORDER BY section
+                """,
+                (chunk_version, variant),
+            )
+            sections = {str(row[0] or "unknown"): int(row[1]) for row in cursor.fetchall()}
+    integrity = {
+        "expectedChunks": len(rows),
+        "databaseChunks": int(count_row[0]),
+        "duplicateChunkId": int(count_row[1] - count_row[0]),
+        "missingDocumentId": int(count_row[2]),
+        "missingPmcid": int(count_row[3]),
+        "missingText": int(count_row[4]),
+        "missingSection": int(count_row[5]),
+        "embeddingNonNull": int(count_row[6]),
+        "sectionCoverage": sections,
+    }
+    integrity["valid"] = (
+        integrity["expectedChunks"] == integrity["databaseChunks"]
+        and integrity["duplicateChunkId"] == 0
+        and integrity["missingDocumentId"] == 0
+        and integrity["missingPmcid"] == 0
+        and integrity["missingText"] == 0
+    )
+    return {
+        "chunkVersion": chunk_version,
+        "chunkVariant": variant,
+        "graphVersion": graph_version,
+        "indexVersion": index_version,
+        "integrity": integrity,
+    }
 
 
 def ingest_graph_store(configuration: KnowledgeStoreConfiguration) -> dict[str, int]:

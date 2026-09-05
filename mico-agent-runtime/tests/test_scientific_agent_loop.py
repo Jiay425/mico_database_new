@@ -753,6 +753,46 @@ def test_initial_inspection_uses_runtime_catalog_query_not_model_sql() -> None:
     assert "SCIENTIFIC_PLANNER_INITIAL_INSPECTION_REPAIRED" in planned["fallbackCodes"]
 
 
+def test_dynamic_materialization_preserves_model_inspection_sql() -> None:
+    class DynamicInspectionPlanner:
+        dynamic_action_materialization = True
+
+        def plan_action(self, _context):
+            return ScientificPlannerResult(
+                action=InspectCohortAction(
+                    actionId="action-" + "2" * 32,
+                    actionName="inspect_cohort",
+                    rationale="Inspect the requested disease distribution before analysis.",
+                    arguments=InspectCohortArguments(
+                        actionName="inspect_cohort",
+                        sql="SELECT disease FROM patients LIMIT 17",
+                        limit=17,
+                    ),
+                ),
+                mode="model",
+            )
+
+    task = _task(max_actions=3).model_copy(update={
+        "allowedActions": ["inspect_cohort", "finish"],
+    })
+    state = {
+        "request": task,
+        "schemaCatalog": _semantic_catalog(),
+        "observations": [],
+        "actionHistory": [],
+        "actionSignatures": [],
+        "fallbackCodes": [],
+        "auditEvents": [],
+    }
+
+    planned = _plan_action(DynamicInspectionPlanner(), state)
+
+    assert planned["currentAction"].actionName == "inspect_cohort"
+    assert planned["currentAction"].arguments.sql == "SELECT disease FROM patients LIMIT 17"
+    assert planned["decisionRecords"][-1].planner_origin == "model"
+    assert "SCIENTIFIC_PLANNER_INITIAL_INSPECTION_REPAIRED" not in planned["fallbackCodes"]
+
+
 def test_focused_comparison_repairs_a_repeated_projection_into_a_finish() -> None:
     class RepeatingFocusedPlanner(FakeScientificPlanner):
         def plan_action(self, context):

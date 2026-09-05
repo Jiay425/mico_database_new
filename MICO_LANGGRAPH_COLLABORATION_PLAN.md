@@ -1,5 +1,9 @@
 # Mico Java × Python LangGraph 协作实施方案
 
+> 当前主链校准：本文保留 Java/Python 信任边界和 P0–P6 历史阶段背景；开放式科研探索的唯一当前设计依据是 `mico-agent-runtime/docs/agent-runtime/p2j-scientific-exploration-agent-plan-v1.md`。本文中早期的固定 T2D/健康对照、固定统计任务和固定首个工作流仅作历史示例，不得作为当前路由、Mapper、SQL 或 Python 脚本实现。
+
+> **2026-08-27 状态校准**：本文保留早期 P0–P6 背景，但当前训练与运行事实以 P2-J4 冻结资产和 Dynamic Materialization 文档为准。Decision SFT Freeze v2（865）与 Qwen3-8B Decision SFT v5 已完成；DPO v4 Controlled Preference Freeze r2（408 pairs）已完成正式训练并保留 adapter，Test70 为 70/70，OOD30 为 29/30，generation smoke 为 10/10。Dynamic Materialization Runtime 是训练后的新运行实验：本地 QueryPlan/AnalysisPlan/Trace 改造已完成，尚未完成真实 DeepSeek Flash + Java/MySQL Dynamic E2E。冻结数据 manifest 中的 `trainingStarted=false` 只表示冻结/参考日志阶段，不代表 DPO 模型未训练。下一步是部署已有 SFT/DPO adapter 做 Dynamic E2E，不得重新训练 DPO。
+
 ## 1. 最终决策
 
 Mico 采用**双服务、单一业务事实源**架构：

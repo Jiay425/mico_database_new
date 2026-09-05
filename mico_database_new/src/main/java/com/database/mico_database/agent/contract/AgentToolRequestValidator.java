@@ -139,6 +139,9 @@ public final class AgentToolRequestValidator {
                         "The catalog declares a bounded integer field"));
             } else if ("recordProfileLocator".equals(type)) {
                 validateRecordProfileLocator(value, name, errors);
+            } else if ("queryPlan".equals(type) && !(value instanceof QueryPlan)) {
+                errors.add(error("INVALID_ARGUMENT_TYPE", "queryPlan must be a typed QueryPlan object",
+                        name, false, "Dynamic scientific reads require a catalog-oriented plan"));
             }
             if (value instanceof String && !(AgentToolName.EXECUTE_READ_QUERY.getWireName().equals(toolName)
                     && "sql".equals(name))) {
@@ -149,7 +152,24 @@ public final class AgentToolRequestValidator {
             }
         }
         if (AgentToolName.EXECUTE_READ_QUERY.getWireName().equals(toolName)) {
+            Object queryPlan = arguments.get("queryPlan");
             Object sql = arguments.get("sql");
+            if (queryPlan != null && sql != null) {
+                errors.add(error("AMBIGUOUS_QUERY_INPUT", "queryPlan and legacy sql cannot be supplied together",
+                        "arguments", false, "A read call must choose one execution representation"));
+            } else if (queryPlan instanceof QueryPlan) {
+                try {
+                    QueryPlan typedPlan = (QueryPlan) queryPlan;
+                    if (arguments.get("limit") instanceof Number
+                            && ((Number) arguments.get("limit")).intValue() != typedPlan.getLimit()) {
+                        throw new IllegalArgumentException("query plan and request limits differ");
+                    }
+                    new QueryPlanCompiler().compile(typedPlan);
+                } catch (IllegalArgumentException exception) {
+                    errors.add(error("QUERY_PLAN_REJECTED", "The catalog query plan was rejected by Java policy",
+                            "queryPlan", false, "Java owns relation, field, aggregation, and limit validation"));
+                }
+            }
             if (sql instanceof String) {
                 DynamicReadQueryPolicy.Validation validation = DynamicReadQueryPolicy.validate((String) sql);
                 if (!validation.isValid()) {

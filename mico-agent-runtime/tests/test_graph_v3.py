@@ -37,6 +37,16 @@ def test_v3_negated_and_causal_relations_are_distinct() -> None:
     assert any(relation.relation_class == "causal" for relation in relations)
 
 
+def test_v3_does_not_pair_full_name_and_acronym_as_self_loop() -> None:
+    relations, rejected = extract_relations(
+        "If TLR4 is exposed to increased lipopolysaccharide (LPS) expression, "
+        "the response may lead to chronic inflammatory liver disease."
+    )
+    assert rejected == 0
+    assert relations
+    assert all(item.source.node_id != item.target.node_id for item in relations)
+
+
 def test_v3_records_are_source_bound_and_versioned() -> None:
     rows = [
         {

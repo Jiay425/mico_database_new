@@ -14,6 +14,10 @@ from mico_agent_runtime.ports.java_agent import JavaPortContractError, JavaPortT
 from mico_agent_runtime.ports.knowledge import KnowledgeSearchPort
 from mico_agent_runtime.ports.schema_catalog import SchemaCatalogPort
 from mico_agent_runtime.ports.scientific_planner import ScientificPlannerPort
+from mico_agent_runtime.ports.task_understanding import (
+    DeterministicTaskUnderstandingPort,
+    TaskUnderstandingPort,
+)
 from mico_agent_runtime.knowledge.synthesis import GraphRagSynthesisPort
 from mico_agent_runtime.contracts.trace_eval import TraceDecision
 
@@ -33,6 +37,9 @@ class ScientificRuntimeResult:
     actionCount: int
     durationMs: int
     decisionRecords: list[TraceDecision] = field(default_factory=list)
+    # Runtime-only objective lifecycle.  It is deliberately separate from
+    # the six-block Decision State and is retained for trace/report sinks.
+    objectiveResolution: dict[str, Any] = field(default_factory=dict)
     stopReasonCode: str | None = None
     fallbackCodes: list[str] = field(default_factory=list)
     safetyViolationCodes: list[str] = field(default_factory=list)
@@ -54,7 +61,9 @@ class ScientificRuntime:
         schema_catalog_port: SchemaCatalogPort | None = None,
         checkpointer: Any | None = None,
         synthesis_port: GraphRagSynthesisPort | None = None,
+        task_understanding_port: TaskUnderstandingPort | None = None,
     ) -> None:
+        self._task_understanding_port = task_understanding_port or DeterministicTaskUnderstandingPort()
         self._graph = build_scientific_graph(
             java_port,
             planner,
@@ -62,6 +71,7 @@ class ScientificRuntime:
             schema_catalog=schema_catalog,
             checkpointer=checkpointer,
             synthesis_port=synthesis_port,
+            task_understanding_port=self._task_understanding_port,
         )
         self._schema_catalog = schema_catalog
         self._schema_catalog_port = schema_catalog_port
@@ -94,6 +104,7 @@ class ScientificRuntime:
             schema_catalog=self._schema_catalog,
             checkpointer=self._checkpointer,
             synthesis_port=self._synthesis_port,
+            task_understanding_port=self._task_understanding_port,
         )
         return None
 
@@ -113,6 +124,7 @@ class ScientificRuntime:
             schema_catalog_port=self._schema_catalog_port,
             checkpointer=self._checkpointer,
             synthesis_port=self._synthesis_port,
+            task_understanding_port=self._task_understanding_port,
         )
 
     def with_knowledge_port(
@@ -129,6 +141,7 @@ class ScientificRuntime:
             schema_catalog_port=self._schema_catalog_port,
             checkpointer=self._checkpointer,
             synthesis_port=self._synthesis_port,
+            task_understanding_port=self._task_understanding_port,
         )
 
     def run(self, request: ResearchTask | dict[str, Any]) -> ScientificRuntimeResult:
@@ -156,6 +169,9 @@ class ScientificRuntime:
             "actionHistory": [],
             "actionSignatures": [],
             "plannerFeedback": [],
+            "dynamicMaterialization": bool(
+                getattr(self._planner, "dynamic_action_materialization", False)
+            ),
             "readReplanCount": 0,
             "fallbackCodes": [],
             "schemaCatalog": self._schema_catalog,
@@ -176,6 +192,7 @@ class ScientificRuntime:
             actionCount=len(state.get("actionHistory", [])),
             durationMs=max(0, int((perf_counter() - started) * 1000)),
             decisionRecords=state.get("decisionRecords", []),
+            objectiveResolution=state.get("objectiveResolution", {}),
             stopReasonCode=state.get("stopReasonCode"),
             fallbackCodes=state.get("fallbackCodes", []),
             safetyViolationCodes=state.get("safetyViolationCodes", []),

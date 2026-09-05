@@ -55,8 +55,41 @@ def vector_schema_sql(dimension: int = 3072) -> tuple[str, ...]:
             evidence_tier TEXT NOT NULL CHECK (evidence_tier = 'fulltext'),
             ordinal INTEGER NOT NULL CHECK (ordinal >= 0),
             text TEXT NOT NULL,
-            metadata JSONB NOT NULL DEFAULT '{}'::jsonb
+            metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+            chunk_version TEXT NOT NULL DEFAULT 'chunk-v1',
+            chunk_variant TEXT NOT NULL DEFAULT 'legacy',
+            embedding_model TEXT,
+            embedding_version TEXT,
+            graph_version TEXT
         )
+        """,
+        # Chunk-level dense retrieval is a separate migration so an existing
+        # document-level store can be upgraded in place.  Ingestion may fill
+        # this column incrementally; retrieval falls back to the document
+        # vector until every chunk has a dense vector.
+        """
+        ALTER TABLE knowledge_chunk
+        ADD COLUMN IF NOT EXISTS embedding HALFVEC(%d)
+        """ % dimension,
+        """
+        ALTER TABLE knowledge_chunk
+        ADD COLUMN IF NOT EXISTS chunk_version TEXT NOT NULL DEFAULT 'chunk-v1'
+        """,
+        """
+        ALTER TABLE knowledge_chunk
+        ADD COLUMN IF NOT EXISTS chunk_variant TEXT NOT NULL DEFAULT 'legacy'
+        """,
+        """
+        ALTER TABLE knowledge_chunk
+        ADD COLUMN IF NOT EXISTS embedding_model TEXT
+        """,
+        """
+        ALTER TABLE knowledge_chunk
+        ADD COLUMN IF NOT EXISTS embedding_version TEXT
+        """,
+        """
+        ALTER TABLE knowledge_chunk
+        ADD COLUMN IF NOT EXISTS graph_version TEXT
         """,
         """
         CREATE INDEX IF NOT EXISTS knowledge_document_embedding_hnsw
@@ -67,10 +100,18 @@ def vector_schema_sql(dimension: int = 3072) -> tuple[str, ...]:
         ON knowledge_chunk (document_id, ordinal)
         """,
         """
+        CREATE INDEX IF NOT EXISTS knowledge_chunk_variant_idx
+        ON knowledge_chunk (chunk_version, chunk_variant, document_id, ordinal)
+        """,
+        """
         CREATE INDEX IF NOT EXISTS knowledge_chunk_fts_idx
         ON knowledge_chunk USING gin (
             to_tsvector('english', coalesce(title, '') || ' ' || coalesce(text, ''))
         )
+        """,
+        """
+        CREATE INDEX IF NOT EXISTS knowledge_chunk_embedding_hnsw
+        ON knowledge_chunk USING hnsw (embedding halfvec_cosine_ops)
         """,
     )
 

@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from .research import Observation
 
 
-UnifiedEvidenceRoute = Literal["vector", "graph", "java"]
+UnifiedEvidenceRoute = Literal["vector", "sparse", "graph", "java"]
 UnifiedEvidenceKind = Literal["literature_chunk", "java_observation"]
 UnifiedEvidenceStatus = Literal["supported", "speculative", "conflicted", "partial", "unsupported"]
 UnifiedEvidenceId = Annotated[str, Field(pattern=r"^evidence-[0-9a-f]{32}$")]
@@ -54,8 +54,8 @@ class UnifiedEvidenceSourceBinding(ClosedModel):
         references = [self.evidenceId is not None, self.observationId is not None]
         if sum(references) != 1:
             raise ValueError("a source binding must reference one evidence or observation")
-        if self.route == "vector" and self.origin != "pgvector":
-            raise ValueError("vector evidence must be bound to pgvector")
+        if self.route in {"vector", "sparse"} and self.origin != "pgvector":
+            raise ValueError("dense or sparse evidence must be bound to pgvector")
         if self.route == "graph" and self.origin != "neo4j":
             raise ValueError("graph evidence must be bound to Neo4j")
         if self.route == "java" and self.origin != "java_controlled_read":
@@ -73,6 +73,7 @@ class UnifiedRerankBreakdown(ClosedModel):
     """Deterministic, inspectable score components for all three routes."""
 
     vectorContribution: float = Field(ge=0.0, le=1.0)
+    sparseContribution: float = Field(default=0.0, ge=0.0, le=1.0)
     graphContribution: float = Field(ge=0.0, le=1.0)
     javaContribution: float = Field(ge=0.0, le=1.0)
     reciprocalRankContribution: float = Field(ge=0.0, le=1.0)
@@ -95,6 +96,7 @@ class UnifiedEvidenceCandidate(ClosedModel):
     sourceBindings: list[UnifiedEvidenceSourceBinding] = Field(min_length=1, max_length=3)
     reasoningPaths: list[ReasoningPath] = Field(default_factory=list, max_length=4)
     vectorScore: float = Field(default=0.0, ge=0.0, le=1.0)
+    sparseScore: float = Field(default=0.0, ge=0.0, le=1.0)
     graphScore: float = Field(default=0.0, ge=0.0, le=1.0)
     javaScore: float = Field(default=0.0, ge=0.0, le=1.0)
     rerankScore: float = Field(default=0.0, ge=0.0, le=1.0)
@@ -144,14 +146,14 @@ def _literature_candidate(item: LiteratureEvidenceItem, route: UnifiedEvidenceRo
     # a hybrid reranker. Those paths are not bound to a graph route until the
     # graph branch is merged; retaining them here violates the unified source
     # contract. The graph branch adds them when it is available.
-    paths = [] if route == "vector" else (
+    paths = [] if route in {"vector", "sparse"} else (
         item.reasoningPaths or [ReasoningPath.from_graph_path(path) for path in item.graphPaths]
     )
     generated = datetime.now(timezone.utc)
     binding = UnifiedEvidenceSourceBinding(
         bindingId=_binding_id(item.evidenceId, route),
         route=route,
-        origin="pgvector" if route == "vector" else "neo4j",
+        origin="pgvector" if route in {"vector", "sparse"} else "neo4j",
         evidenceId=item.evidenceId,
         queryHash=None,
         sourceChunkId=item.sourceChunkId,
@@ -167,9 +169,11 @@ def _literature_candidate(item: LiteratureEvidenceItem, route: UnifiedEvidenceRo
         sourceBindings=[binding],
         reasoningPaths=paths[:4],
         vectorScore=item.vectorScore if route == "vector" else 0.0,
+        sparseScore=item.sparseScore if route == "sparse" else 0.0,
         graphScore=item.graphScore if route == "graph" else 0.0,
         rerankBreakdown=UnifiedRerankBreakdown(
             vectorContribution=item.vectorScore if route == "vector" else 0.0,
+            sparseContribution=item.sparseScore if route == "sparse" else 0.0,
             graphContribution=item.graphScore if route == "graph" else 0.0,
             javaContribution=0.0,
             reciprocalRankContribution=0.0,
@@ -228,17 +232,19 @@ def _java_candidate(observation: Observation) -> UnifiedEvidenceCandidate:
 def merge_unified_evidence(
     *,
     vector_results: list[LiteratureEvidenceItem],
+    sparse_results: list[LiteratureEvidenceItem] | None = None,
     graph_results: list[LiteratureEvidenceItem],
     java_observations: list[Observation],
     plan: RetrievalPlan | None = None,
     limit: int = 20,
 ) -> list[UnifiedEvidenceCandidate]:
     """Fuse three source routes while preserving every source binding and path."""
+    sparse_results = sparse_results or []
     limit = max(1, min(20, limit if plan is None else min(limit, plan.topK)))
     candidates: dict[str, UnifiedEvidenceCandidate] = {}
-    ranks: dict[str, dict[str, int]] = {"vector": {}, "graph": {}, "java": {}}
+    ranks: dict[str, dict[str, int]] = {"vector": {}, "sparse": {}, "graph": {}, "java": {}}
 
-    for route, items in (("vector", vector_results), ("graph", graph_results)):
+    for route, items in (("vector", vector_results), ("sparse", sparse_results), ("graph", graph_results)):
         for rank, item in enumerate(items, start=1):
             key = item.sourceChunkId or item.externalId or item.evidenceId
             ranks[route].setdefault(key, rank)
@@ -258,6 +264,7 @@ def merge_unified_evidence(
                 "reasoningPaths": list(path_map.values())[:4],
                 "supportStatus": _status(list(path_map.values())[:4]),
                 "vectorScore": max(current.vectorScore, candidate.vectorScore),
+                "sparseScore": max(current.sparseScore, candidate.sparseScore),
                 "graphScore": max(current.graphScore, candidate.graphScore),
             })
 
@@ -278,6 +285,7 @@ def merge_unified_evidence(
         raw = (
             0.24 * candidate.vectorScore
             + 0.22 * candidate.graphScore
+            + 0.16 * candidate.sparseScore
             + 0.24 * candidate.javaScore
             + 0.14 * reciprocal
             + 0.10 * path_support
@@ -289,6 +297,7 @@ def merge_unified_evidence(
         breakdown = candidate.rerankBreakdown.model_copy(update={
             "vectorContribution": round(candidate.vectorScore, 8),
             "graphContribution": round(candidate.graphScore, 8),
+            "sparseContribution": round(candidate.sparseScore, 8),
             "javaContribution": round(candidate.javaScore, 8),
             "reciprocalRankContribution": round(reciprocal, 8),
             "pathSupportContribution": round(path_support, 8),
@@ -302,7 +311,7 @@ def merge_unified_evidence(
     final.sort(key=lambda item: (-item.rerankScore, item.candidateId))
     if len(final) > limit and len({route for item in final for route in item.sourceRoutes}) > 1:
         selected = final[:limit]
-        for route in ("vector", "graph", "java"):
+        for route in ("vector", "sparse", "graph", "java"):
             if not any(route in item.sourceRoutes for item in selected):
                 replacement = next((item for item in final if route in item.sourceRoutes), None)
                 if replacement is not None:

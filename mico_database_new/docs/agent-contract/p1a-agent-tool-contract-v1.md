@@ -1,5 +1,12 @@
 # Mico P1-A Agent Tool Contract v1
 
+> **历史契约快照**：本文记录 P1-A/P2-C2 时代的完整固定工具目录与固定
+> `build_cohort` 示例，保留用于兼容测试和演进追溯。当前 active Java Catalog
+> 已收敛为 metadata-only `describe_read_schema` 与数据执行
+> `execute_read_query` 两项；当前状态与取舍见 Runtime 的
+> `p2j4-1-architecture-calibration-v1.md`。本文中的固定疾病/队列工具不得
+> 重新接入当前 Scientific 主链。
+
 ## Scope and authority
 
 P1-A establishes a Java-owned, strongly typed, read-only and auditable contract. Java remains the only business fact source. A future Python + LangGraph Runtime may call only the Java-controlled tool boundary (Java API or MCP adapter); it must not connect to business MySQL. The original typed tools remain fixed. P2 adds a separate `execute_read_query` tool for model-proposed dynamic SQL: the SQL shape is not hard-coded per question, but the untrusted statement is still validated by Java for read-only semantics, catalog boundary, limit and timeout before JDBC execution.

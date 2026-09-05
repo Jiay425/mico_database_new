@@ -16,7 +16,8 @@ import java.util.regex.Pattern;
 public final class DynamicReadQueryPolicy {
 
     public static final int MAX_SQL_LENGTH = 16_000;
-    public static final int MAX_QUERY_LIMIT = 1_000;
+    /** Typed sample-bounded reads may return one row per sample x feature. */
+    public static final int MAX_QUERY_LIMIT = 20_000;
     public static final int MAX_QUERY_OFFSET = 1_000_000;
 
     private static final Pattern LIMIT = Pattern.compile(

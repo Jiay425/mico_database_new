@@ -208,16 +208,22 @@ def _execute_knowledge_workflow(
         if isinstance(route_plan, IntentRoutePlan)
         else "hybrid"
     )
+    # A supplied document boundary is a close-reading request.  Keep Dense as
+    # the default there; Global scope is where Dense/BM25/Graph fusion is
+    # evaluated and used for broad evidence discovery.
+    if request.retrievalScope.scopeType != "global" and retrieval_mode == "hybrid":
+        retrieval_mode = "vector"
     try:
         query = EvidenceQuery(
             topic=request.question,
             direction="context",
             retrievalMode=retrieval_mode,
+            retrievalScope=request.retrievalScope,
             limit=10,
         )
         branches = (
             tuple(route_plan.retrievalBranches)
-            if isinstance(route_plan, IntentRoutePlan) and route_plan.retrievalBranches
+            if retrieval_mode != "vector" and isinstance(route_plan, IntentRoutePlan) and route_plan.retrievalBranches
             else ("vector", "graph") if retrieval_mode == "hybrid" else (retrieval_mode,)
         )
         retrieval_plan = build_retrieval_plan(
@@ -226,6 +232,7 @@ def _execute_knowledge_workflow(
             retrieval_mode=retrieval_mode,
             retrieval_branches=list(branches),
             top_k=10,
+            retrieval_scope=request.retrievalScope,
         )
         parallel_search = getattr(knowledge_port, "search_parallel", None)
         if callable(parallel_search):
@@ -259,6 +266,7 @@ def _execute_knowledge_workflow(
         retrievalScore=item.retrievalScore,
         sourceExcerpt=item.sourceExcerpt,
         vectorScore=item.vectorScore,
+        sparseScore=item.sparseScore,
         graphScore=item.graphScore,
         rerankScore=item.rerankScore,
         rerankBreakdown=item.rerankBreakdown,

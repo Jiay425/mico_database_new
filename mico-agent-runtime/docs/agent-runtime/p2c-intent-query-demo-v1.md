@@ -1,4 +1,10 @@
-# Mico 自然语言动态科研分析主链路
+# Mico 自然语言动态科研分析主链路（当前边界说明）
+
+本文只描述当前动态主链的边界。文中任何历史演示、固定疾病或固定统计实验均不构成可调用工作流；开放式科研问题必须由当前 LangGraph 状态和模型计划动态决定下一步。
+
+校准说明：Java active Catalog 当前包含两个闭合能力：metadata-only
+`describe_read_schema` 与业务数据执行 `execute_read_query`。后者仍是唯一
+业务数据执行边界；任何把 Catalog 写成只注册一个工具的旧句子均按历史快照理解。
 
 ## 目标
 
@@ -45,8 +51,8 @@ sequenceDiagram
 
 模型可以根据自然语言问题提出 SQL，但 SQL 不是事实、不是权限，也不由
 Python 执行。Java 是唯一业务事实源，负责最终验证、只读连接、超时、行数
-上限、禁止写操作/DDL/跨库/文件导出和安全错误映射。Java 只注册
-`execute_read_query`；浏览器不能提交 SQL、表名、scope、数据库地址或 Runtime
+上限、禁止写操作/DDL/跨库/文件导出和安全错误映射。Java 当前注册
+metadata-only 的 `describe_read_schema` 与数据执行的 `execute_read_query`；浏览器不能提交 SQL、表名、scope、数据库地址或 Runtime
 Token。
 
 模型配置只从运行环境读取：

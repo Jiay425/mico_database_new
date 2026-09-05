@@ -10,6 +10,7 @@ from mico_agent_runtime.knowledge.embeddings import (
     EmbeddingRequestError,
     GeminiEmbeddingConfiguration,
     GeminiEmbeddingPort,
+    QueryEmbeddingCache,
     extract_embedding,
     prepare_document,
     prepare_query,
@@ -68,6 +69,66 @@ def test_invalid_provider_response_is_safe() -> None:
     with pytest.raises(EmbeddingRequestError) as error:
         extract_embedding({"embeddings": [{"values": [0.0, 0.0]}]})
     assert str(error.value) == "GEMINI_EMBEDDING_RESPONSE_INVALID"
+
+
+def test_query_embedding_cache_persists_without_storing_query_text(tmp_path) -> None:
+    path = tmp_path / "query-cache.json"
+    calls: list[str] = []
+    cache = QueryEmbeddingCache("gemini-embedding-2", path)
+    first = cache.get_or_compute("private query", lambda: (calls.append("call") or [3.0, 4.0]))
+    second = cache.get_or_compute("private query", lambda: (calls.append("unexpected") or [1.0, 0.0]))
+    assert first == second == [0.6, 0.8]
+    assert calls == ["call"]
+    assert "private query" not in path.read_text(encoding="utf-8")
+    restored = QueryEmbeddingCache("gemini-embedding-2", path)
+    assert restored.get_or_compute("private query", lambda: (calls.append("unexpected") or [1.0, 0.0])) == [0.6, 0.8]
+    assert calls == ["call"]
+
+
+def test_gemini_quota_failure_is_not_retried() -> None:
+    class QuotaModels:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def embed_content(self, *, model, contents):
+            self.calls += 1
+            raise RuntimeError("429 RESOURCE_EXHAUSTED")
+
+    class QuotaClient:
+        def __init__(self) -> None:
+            self.models = QuotaModels()
+
+    client = QuotaClient()
+    port = GeminiEmbeddingPort(
+        GeminiEmbeddingConfiguration(modelName="gemini-embedding-2", apiKey="test-only"),
+        client=client,
+    )
+    with pytest.raises(EmbeddingRequestError, match="GEMINI_EMBEDDING_QUOTA_EXHAUSTED"):
+        port.embed_query("quota test")
+    assert client.models.calls == 1
+
+
+def test_gemini_location_failure_is_not_retried() -> None:
+    class LocationModels:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def embed_content(self, *, model, contents):
+            self.calls += 1
+            raise RuntimeError("400 FAILED_PRECONDITION: User location is not supported for the API use.")
+
+    class LocationClient:
+        def __init__(self) -> None:
+            self.models = LocationModels()
+
+    client = LocationClient()
+    port = GeminiEmbeddingPort(
+        GeminiEmbeddingConfiguration(modelName="gemini-embedding-2", apiKey="test-only"),
+        client=client,
+    )
+    with pytest.raises(EmbeddingRequestError, match="GEMINI_EMBEDDING_LOCATION_UNSUPPORTED"):
+        port.embed_query("location test")
+    assert client.models.calls == 1
 
 
 def test_gemini_backend_uses_dense_index_and_preserves_graph_provenance(tmp_path) -> None:

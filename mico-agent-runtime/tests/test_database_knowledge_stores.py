@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import pytest
 
+from mico_agent_runtime.contracts.evidence import EvidenceQuery
 from mico_agent_runtime.knowledge.database_config import (
     KnowledgeStoreConfiguration,
     KnowledgeStoreConfigurationError,
 )
 from mico_agent_runtime.knowledge.database_schema import vector_schema_sql
 from mico_agent_runtime.transport.app import _resolve_knowledge_backend
+from mico_agent_runtime.knowledge.database_retriever import DatabaseKnowledgeSearchPort
 
 
 def _env() -> dict[str, str]:
@@ -26,6 +28,8 @@ def test_independent_knowledge_store_configuration_is_closed() -> None:
     configuration = KnowledgeStoreConfiguration.from_environment(_env())
     assert configuration.vectorDimension == 3072
     assert configuration.vectorDatabaseUrl.endswith("/mico_knowledge")
+    assert configuration.chunkVersion == "chunk-v1"
+    assert configuration.chunkVariant == "legacy"
 
 
 @pytest.mark.parametrize(
@@ -62,6 +66,22 @@ def test_knowledge_schema_contains_document_chunk_and_manifest_assets() -> None:
     assert "knowledge_document" in sql
     assert "knowledge_chunk" in sql
     assert "on delete cascade" in sql
+    assert "chunk_version" in sql
+    assert "chunk_variant" in sql
+    assert "embedding_version" in sql
+    assert "graph_version" in sql
+
+
+def test_chunk_variant_is_explicitly_configurable() -> None:
+    env = _env()
+    env["MICO_KNOWLEDGE_CHUNK_VERSION"] = "chunk-v2"
+    env["MICO_KNOWLEDGE_CHUNK_VARIANT"] = "medium"
+    configuration = KnowledgeStoreConfiguration.from_environment(env)
+    assert configuration.chunkVersion == "chunk-v2"
+    assert configuration.chunkVariant == "medium"
+    env["MICO_KNOWLEDGE_CHUNK_VARIANT"] = "../legacy"
+    with pytest.raises(ValueError, match="KNOWLEDGE_CHUNK_VARIANT_INVALID"):
+        KnowledgeStoreConfiguration.from_environment(env)
 
 
 def test_configured_database_stores_are_not_silently_bypassed_by_local_default() -> None:
@@ -70,3 +90,22 @@ def test_configured_database_stores_are_not_silently_bypassed_by_local_default()
     env.pop("MICO_KNOWLEDGE_VECTOR_ENABLED")
     env.pop("MICO_KNOWLEDGE_GRAPH_ENABLED")
     assert _resolve_knowledge_backend(env) == "local"
+
+
+def test_database_search_honors_requested_retrieval_mode() -> None:
+    class SpyPort(DatabaseKnowledgeSearchPort):
+        def __init__(self) -> None:
+            self.seen: list[tuple[str, ...]] = []
+
+        def search_parallel(self, query, branches, plan=None):  # type: ignore[no-untyped-def]
+            self.seen.append(branches)
+            return []
+
+    port = SpyPort()
+    for mode, expected in [
+        ("vector", ("vector",)),
+        ("graph", ("graph",)),
+        ("hybrid", ("vector", "graph")),
+    ]:
+        port.search(EvidenceQuery(topic="microbiome", direction="context", retrievalMode=mode, limit=1))
+        assert port.seen[-1] == expected

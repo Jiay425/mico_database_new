@@ -6,6 +6,7 @@ import com.database.mico_database.agent.contract.AgentToolCatalog;
 import com.database.mico_database.agent.contract.AgentToolDefinition;
 import com.database.mico_database.agent.contract.AgentToolRequest;
 import com.database.mico_database.agent.contract.RecordProfileLocator;
+import com.database.mico_database.agent.contract.QueryPlan;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -112,8 +113,18 @@ public final class AgentInternalToolRequestAdapter {
         if ("integer".equals(declaredType)) {
             return requiredInteger(value);
         }
+        if ("boolean".equals(declaredType)) {
+            return requiredBoolean(value);
+        }
         if ("recordProfileLocator".equals(declaredType)) {
             return convertLocator(value);
+        }
+        if ("queryPlan".equals(declaredType)) {
+            try {
+                return objectMapper.treeToValue(value, QueryPlan.class);
+            } catch (IOException exception) {
+                throw new AgentInternalToolFormatException("queryPlan is invalid");
+            }
         }
         // Unknown names remain in the contract request; the validator rejects them.
         return convertUntyped(value);
@@ -161,6 +172,13 @@ public final class AgentInternalToolRequestAdapter {
             throw new AgentInternalToolFormatException("limit must be a JSON integer");
         }
         return value.intValue();
+    }
+
+    private Boolean requiredBoolean(JsonNode value) {
+        if (value == null || !value.isBoolean()) {
+            throw new AgentInternalToolFormatException("boolean argument must be a JSON boolean");
+        }
+        return value.booleanValue();
     }
 
     private Object convertUntyped(JsonNode value) {

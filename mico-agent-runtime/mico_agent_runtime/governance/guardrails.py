@@ -67,8 +67,27 @@ def _is_negated_boundary(question: str, match_start: int) -> bool:
     rejected by the normal deny rules.
     """
 
-    prefix = question[max(0, match_start - 24):match_start]
-    if re.search(r"(?:non[-\s]?|without\s+)$", prefix, re.IGNORECASE):
+    # Keep enough local context for natural English boundaries such as
+    # "do not turn an observational result into a causal claim" while still
+    # avoiding a whole-question negation that could mask a later positive ask.
+    prefix = question[max(0, match_start - 96):match_start]
+    if re.search(
+        r"(?:non[-\s]?|without(?:\s+[a-z]+){0,4}\s+)$",
+        prefix,
+        re.IGNORECASE,
+    ):
+        return True
+    if re.search(
+        r"(?:do\s+not|don't|avoid|without)(?:\s+[a-z]+){0,4}\s+$",
+        prefix,
+        re.IGNORECASE,
+    ):
+        return True
+    if re.search(
+        r"(?:do\s+not|don't)\s+turn(?:\s+[a-z]+){1,12}\s+$",
+        prefix,
+        re.IGNORECASE,
+    ):
         return True
     return bool(re.search(
         r"(?:不|不要|不能|勿|避免|禁止|不得|仅|只).{0,16}"

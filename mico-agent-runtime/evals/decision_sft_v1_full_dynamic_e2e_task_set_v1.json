@@ -1,0 +1,171 @@
+{
+  "schema_version": "decision-sft-v1-full-dynamic-e2e-task-set-v1",
+  "status": "PREPARED_NOT_RUN",
+  "purpose": "Decision SFT v1 policy replacement canary over real observations and an explicit finish boundary",
+  "training_eligible": false,
+  "policy_input_version": "scientific-decision-state-v1",
+  "scientific_actions": [
+    "inspect_cohort",
+    "execute_read_query",
+    "compare_groups",
+    "analyze_projection",
+    "stratified_analysis",
+    "adjust_confounders",
+    "cross_project_validate",
+    "cross_disease_validate",
+    "retrieve_evidence",
+    "finish"
+  ],
+  "provider_roles": {
+    "task_understanding": "gemini_model",
+    "scientific_policy": "qwen_sft_model",
+    "materializer": "gemini_canary_model",
+    "java_query": "real_java_tool",
+    "python_analysis": "real_typed_runtime",
+    "retrieval": "real_if_available"
+  },
+  "execution_policy": {
+    "max_actions_per_task": 6,
+    "open_trajectory": true,
+    "fixed_action_sequence": false,
+    "runtime_may_skip_unavailable_task": true,
+    "deterministic_scientific_action_fallback": false,
+    "deterministic_materializer_fallback": false
+  },
+  "tasks": [
+    {
+      "task_id": "decision-sft-v1-e2e-a-t2d-age",
+      "label": "T2D versus Healthy with age assessment",
+      "question": "比较 T2D 和 Healthy 的菌群差异，判断这种差异是否受年龄影响、在不同项目里是否稳定，并结合文献解释。",
+      "scenario": "real_dynamic",
+      "requested_scopes": [
+        "mico:query:read",
+        "mico:research:read",
+        "mico:evidence:read"
+      ],
+      "expected_objectives": [
+        "group_comparison",
+        "confounder_assessment",
+        "cross_project_validation",
+        "evidence_support"
+      ],
+      "obligations": [
+        "task_understanding",
+        "real_query",
+        "real_analysis",
+        "real_observation",
+        "state_update",
+        "next_policy_decision",
+        "real_retrieval_optional"
+      ],
+      "max_actions": 6,
+      "real_data_required": true,
+      "skip_if_unavailable": true,
+      "training_eligible": false
+    },
+    {
+      "task_id": "decision-sft-v1-e2e-b-stratified",
+      "label": "Group comparison with an approved stratum",
+      "question": "比较 T2D 和 Healthy 的菌群差异，并检查这种差异在已有的年龄或性别分层中是否保持一致。",
+      "scenario": "real_dynamic",
+      "requested_scopes": [
+        "mico:query:read",
+        "mico:research:read"
+      ],
+      "expected_objectives": [
+        "group_comparison",
+        "stratified_analysis"
+      ],
+      "obligations": [
+        "task_understanding",
+        "real_query",
+        "real_analysis",
+        "real_observation",
+        "state_update",
+        "next_policy_decision"
+      ],
+      "max_actions": 6,
+      "real_data_required": true,
+      "skip_if_unavailable": true,
+      "training_eligible": false
+    },
+    {
+      "task_id": "decision-sft-v1-e2e-c-evidence",
+      "label": "Observation-grounded literature evidence",
+      "question": "在完成可验证的 T2D 与 Healthy 菌群观察后，检索关于年龄、菌群差异和项目间稳定性的文献证据，并保留证据局限。",
+      "scenario": "real_evidence_optional",
+      "requested_scopes": [
+        "mico:query:read",
+        "mico:evidence:read",
+        "mico:research:read"
+      ],
+      "expected_objectives": [
+        "group_comparison",
+        "evidence_support"
+      ],
+      "obligations": [
+        "task_understanding",
+        "real_query",
+        "real_analysis",
+        "real_observation",
+        "real_retrieval_optional",
+        "state_update",
+        "next_policy_decision"
+      ],
+      "max_actions": 6,
+      "real_data_required": true,
+      "skip_if_unavailable": true,
+      "training_eligible": false
+    },
+    {
+      "task_id": "decision-sft-v1-e2e-d-availability-boundary",
+      "label": "Cross-project objective with unavailable project dimension",
+      "question": "判断已经观察到的 T2D 与 Healthy 差异在不同项目中是否稳定；如果当前队列没有足够的项目维度，请明确报告数据不足并继续可执行的步骤。",
+      "scenario": "real_availability_boundary",
+      "requested_scopes": [
+        "mico:query:read",
+        "mico:research:read"
+      ],
+      "expected_objectives": [
+        "group_comparison",
+        "cross_project_validation"
+      ],
+      "obligations": [
+        "task_understanding",
+        "real_query",
+        "real_observation",
+        "availability_boundary",
+        "insufficient_data_observation",
+        "state_update",
+        "next_policy_decision"
+      ],
+      "max_actions": 6,
+      "real_data_required": true,
+      "skip_if_unavailable": true,
+      "training_eligible": false
+    },
+    {
+      "task_id": "decision-sft-v1-e2e-e-finish-boundary",
+      "label": "Completed-obligation finish boundary",
+      "question": "对已经完成组间比较、混杂评估和证据汇总的观察结果给出最终的有界总结；只有用户目标都已完成时才结束。",
+      "scenario": "controlled_finish_boundary",
+      "requested_scopes": [
+        "mico:research:read",
+        "mico:evidence:read"
+      ],
+      "expected_objectives": [
+        "group_comparison",
+        "confounder_assessment",
+        "evidence_support"
+      ],
+      "obligations": [
+        "finish_boundary",
+        "next_policy_decision"
+      ],
+      "max_actions": 6,
+      "real_data_required": false,
+      "skip_if_unavailable": true,
+      "training_eligible": false
+    }
+  ]
+}

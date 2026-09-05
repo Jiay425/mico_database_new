@@ -7,6 +7,7 @@ import shutil
 import ssl
 import subprocess
 import tempfile
+import threading
 import time
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
@@ -19,6 +20,90 @@ class EmbeddingConfigurationError(ValueError):
 
 class EmbeddingRequestError(RuntimeError):
     """A provider call failed without exposing provider details."""
+
+
+class QueryEmbeddingCache:
+    """Process/file backed cache for query vectors.
+
+    Document vectors cannot be used as query vectors, but the same query is
+    often evaluated repeatedly (especially during qrels tuning).  Persist only
+    a model-scoped hash and the normalized vector so the cache never stores
+    the raw query text.  A provider call is made only on a cache miss.
+    """
+
+    def __init__(
+        self,
+        model_name: str,
+        path: str | os.PathLike[str] | None = None,
+        dimension: int | None = None,
+    ) -> None:
+        self.model_name = model_name
+        self.path = os.fspath(path) if path else None
+        self.dimension = dimension
+        self._values: dict[str, list[float]] = {}
+        self._lock = threading.RLock()
+        self.hits = 0
+        self.misses = 0
+        if self.path:
+            self._load()
+
+    def _key(self, query: str) -> str:
+        import hashlib
+
+        return hashlib.sha256((self.model_name + "\x00" + query).encode("utf-8")).hexdigest()
+
+    def _load(self) -> None:
+        try:
+            with open(self.path, "r", encoding="utf-8") as handle:
+                payload = json.load(handle)
+        except (OSError, ValueError, TypeError):
+            return
+        if not isinstance(payload, Mapping) or payload.get("model") != self.model_name:
+            return
+        values = payload.get("vectors")
+        if not isinstance(values, Mapping):
+            return
+        for key, vector in values.items():
+            normalized = _as_values(vector)
+            if normalized is not None and (self.dimension is None or len(normalized) == self.dimension):
+                self._values[str(key)] = normalized
+
+    def _persist(self) -> None:
+        if not self.path:
+            return
+        target = os.path.abspath(self.path)
+        parent = os.path.dirname(target)
+        os.makedirs(parent, exist_ok=True)
+        fd, temporary = tempfile.mkstemp(prefix=".query-embedding-", suffix=".tmp", dir=parent)
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                json.dump(
+                    {"version": 1, "model": self.model_name, "vectors": self._values},
+                    handle,
+                    ensure_ascii=False,
+                    separators=(",", ":"),
+                )
+            os.replace(temporary, target)
+        finally:
+            try:
+                os.unlink(temporary)
+            except OSError:
+                pass
+
+    def get_or_compute(self, query: str, compute: Any) -> list[float]:
+        key = self._key(query)
+        with self._lock:
+            cached = self._values.get(key)
+            if cached is not None:
+                self.hits += 1
+                return list(cached)
+            self.misses += 1
+            vector = _as_values(compute())
+            if vector is None or (self.dimension is not None and len(vector) != self.dimension):
+                raise EmbeddingRequestError("GEMINI_EMBEDDING_RESPONSE_INVALID")
+            self._values[key] = vector
+            self._persist()
+            return list(vector)
 
 
 def _windows_system_ssl_context() -> ssl.SSLContext | None:
@@ -90,7 +175,10 @@ def prepare_document(title: str | None, text: str) -> str:
 
 
 def _as_values(value: Any) -> list[float] | None:
-    if isinstance(value, Mapping):
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
+        # Cache entries and test doubles may already be raw numeric vectors.
+        pass
+    elif isinstance(value, Mapping):
         value = value.get("values") or value.get("embedding")
     else:
         value = getattr(value, "values", None) or getattr(value, "embedding", None)
@@ -192,6 +280,18 @@ class GeminiEmbeddingPort:
                 return extract_embedding(response)
             except Exception as exc:
                 last_error = exc
+                # Retrying a provider quota response only burns time and can
+                # extend an outage.  Surface a stable internal code so the
+                # hybrid retriever can keep sparse/graph evidence alive.
+                marker = str(exc).upper()
+                if any(token in marker for token in ("429", "RESOURCE_EXHAUSTED", "QUOTA")):
+                    raise EmbeddingRequestError("GEMINI_EMBEDDING_QUOTA_EXHAUSTED") from exc
+                # Gemini returns FAILED_PRECONDITION when the API key's
+                # effective location is unsupported.  This is not a malformed
+                # embedding response and retrying it only consumes time (and
+                # can obscure the actionable deployment requirement).
+                if "LOCATION IS NOT SUPPORTED" in marker or "FAILED_PRECONDITION" in marker:
+                    raise EmbeddingRequestError("GEMINI_EMBEDDING_LOCATION_UNSUPPORTED") from exc
                 if attempt < 3:
                     time.sleep(0.5 * (attempt + 1))
         if isinstance(last_error, EmbeddingRequestError):

@@ -49,6 +49,7 @@ def _catalog() -> SchemaSemanticCatalog:
                         semanticStatus="verified",
                         aggregatable=True,
                         displayable=True,
+                        scientificCapabilities=["outcome"],
                         description="Stored abundance value",
                     )
                 ],
@@ -87,6 +88,40 @@ def test_schema_catalog_rejects_unknown_join_entity() -> None:
     catalog["joins"][0]["rightEntity"] = "unknown_entity"
     with pytest.raises(ValidationError):
         SchemaSemanticCatalog.model_validate(catalog)
+
+
+def test_schema_field_scientific_capabilities_are_serialized() -> None:
+    catalog = _catalog()
+    field = catalog.entities[1].fields[0]
+    assert field.scientificCapabilities == ["outcome"]
+    payload = catalog.model_dump(mode="json")
+    assert payload["entities"][1]["fields"][0]["scientificCapabilities"] == ["outcome"]
+    restored = SchemaSemanticCatalog.model_validate(payload)
+    assert restored == catalog
+
+
+def test_schema_field_rejects_non_numeric_outcome_capability() -> None:
+    with pytest.raises(ValidationError):
+        SchemaFieldSemantics(
+            name="gender",
+            dataType="string",
+            nullable=True,
+            semanticStatus="verified",
+            scientificCapabilities=["outcome"],
+            description="Categorical field",
+        )
+
+
+def test_schema_field_rejects_duplicate_scientific_capabilities() -> None:
+    with pytest.raises(ValidationError):
+        SchemaFieldSemantics(
+            name="age",
+            dataType="integer",
+            nullable=True,
+            semanticStatus="verified",
+            scientificCapabilities=["covariate", "covariate"],
+            description="Age covariate",
+        )
 
 
 def test_java_schema_catalog_port_accepts_metadata_without_snapshot() -> None:

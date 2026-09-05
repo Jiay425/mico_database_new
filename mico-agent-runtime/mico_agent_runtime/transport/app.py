@@ -47,6 +47,10 @@ from mico_agent_runtime.knowledge.local_retriever import LocalKnowledgeSearchPor
 from mico_agent_runtime.knowledge.database_retriever import DatabaseKnowledgeSearchPort
 from mico_agent_runtime.ports.knowledge import KnowledgeSearchPort
 from mico_agent_runtime.ports.schema_catalog import JavaSchemaCatalogPort
+from mico_agent_runtime.ports.task_understanding import (
+    TaskUnderstandingPort,
+    build_task_understanding_port,
+)
 from mico_agent_runtime.knowledge.synthesis import (
     GraphRagSynthesisPort,
     build_graph_rag_synthesis_port,
@@ -89,6 +93,7 @@ def create_app(
     runtime_persistence: RuntimePersistenceCoordinator | None = None,
     approval_coordinator: ApprovalCoordinator | None = None,
     run_control_coordinator: RunControlCoordinator | None = None,
+    task_understanding_port: TaskUnderstandingPort | None = None,
 ) -> FastAPI:
     """Create the app without opening a socket or constructing a Java client."""
 
@@ -104,6 +109,9 @@ def create_app(
     evidence_runtime_holder: dict[str, EvidenceRuntime | None] = {"runtime": evidence_runtime}
     intent_runtime_holder: dict[str, IntentRuntime | None] = {"runtime": intent_runtime}
     scientific_runtime_holder: dict[str, ScientificRuntime | None] = {"runtime": scientific_runtime}
+    task_understanding_port_holder: dict[str, TaskUnderstandingPort | None] = {
+        "port": task_understanding_port,
+    }
     knowledge_port_holder: dict[str, KnowledgeSearchPort | None] = {"port": knowledge_port}
     knowledge_backend = _resolve_knowledge_backend(environment)
     if knowledge_port_holder["port"] is None and (
@@ -173,6 +181,9 @@ def create_app(
         close_knowledge = getattr(knowledge_port_holder["port"], "close", None)
         if callable(close_knowledge):
             close_knowledge()
+        close_task_understanding = getattr(task_understanding_port_holder["port"], "close", None)
+        if callable(close_task_understanding):
+            close_task_understanding()
     app.add_event_handler("shutdown", close_runtime_persistence)
 
     async def persistence_begin_or_error(value: Any) -> JSONResponse | None:
@@ -240,12 +251,15 @@ def create_app(
         if scientific_runtime_holder["runtime"] is None:
             java_port = HttpJavaAgentToolPort.from_environment(env)
             planner = intent_planner or build_intent_planner(env)
+            if task_understanding_port_holder["port"] is None:
+                task_understanding_port_holder["port"] = build_task_understanding_port(env)
             scientific_runtime_holder["runtime"] = ScientificRuntime(
                 java_port,
                 planner,
                 knowledge_port=knowledge_port_holder["port"],
                 schema_catalog_port=JavaSchemaCatalogPort(java_port),
                 synthesis_port=synthesis_port or build_graph_rag_synthesis_port(env),
+                task_understanding_port=task_understanding_port_holder["port"],
             )
         return scientific_runtime_holder["runtime"]
 
@@ -423,6 +437,25 @@ def create_app(
                 "errorCode": result.errorCode,
                 "plannerMode": result.plannerMode,
                 "actionCount": result.actionCount,
+                # These are metadata-only provenance projections.  They carry
+                # no question text, SQL, Python, preview rows, filter values,
+                # credentials, or database details, and are required to
+                # distinguish policy, repair, materialization, and execution
+                # failures in Dynamic E2E reports.
+                "auditEvents": [
+                    item.model_dump(mode="json", exclude_none=True)
+                    for item in result.auditEvents
+                ],
+                "decisionRecords": [
+                    item.model_dump(mode="json", exclude_none=True)
+                    for item in result.decisionRecords
+                ],
+                # Runtime-only objective lifecycle; it is intentionally not
+                # part of any ScientificPolicyInput state snapshot.
+                "objectiveResolution": result.objectiveResolution,
+                "fallbackCodes": list(result.fallbackCodes),
+                "stopReasonCode": result.stopReasonCode,
+                "safetyViolationCodes": list(result.safetyViolationCodes),
                 "report": result.report.model_dump(mode="json", exclude_none=True)
                 if result.report is not None else None,
             },

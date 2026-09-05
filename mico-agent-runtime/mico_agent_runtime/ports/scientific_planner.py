@@ -38,6 +38,26 @@ class ScientificPlannerResult:
     # A redacted reason for the final model-contract failure. This is never
     # the provider response, prompt, question, token, or SQL.
     fallbackReasonCode: str | None = None
+    # When a dynamic Harness guard changes only the high-level action, retain
+    # the original policy choice for audit.  These fields never carry SQL,
+    # Python, data values, or identifiers.
+    rawAction: str | None = None
+    repairCodes: tuple[str, ...] = ()
+    # ``inspect_cohort`` is a Runtime-owned metadata-first action in the
+    # Dynamic Scientific path.  It carries no model-generated query plan.
+    runtimeOwned: bool = False
+    # Decision-Policy provenance.  These fields are populated only when the
+    # Qwen policy selected the high-level action; legacy planners keep the
+    # defaults for compatibility.
+    decisionReason: str | None = None
+    alternativeActions: tuple[str, ...] = ()
+    stopReason: str | None = None
+    # The two provenance values are intentionally separate.  ``mode`` tells
+    # callers how the high-level Action was produced; these fields let Trace
+    # distinguish a Qwen policy decision from a materializer fallback without
+    # inferring either one from a generic ``plannerModelUsed`` flag.
+    policyOrigin: str = "unknown"
+    materializerOrigin: str = "unknown"
 
 
 class ScientificPlannerPort(Protocol):

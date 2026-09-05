@@ -11,45 +11,73 @@ research values.
 from __future__ import annotations
 
 import json
+import math
 import re
+import time
 from collections.abc import Mapping
 from dataclasses import dataclass
-from hashlib import sha256
-from typing import Any, Protocol
+from typing import Any, Callable
 from urllib.parse import urlsplit
 
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from mico_agent_runtime.contracts.scientific_policy import (
+    ScientificPolicyInput,
+    build_scientific_policy_input,
+)
+from mico_agent_runtime.contracts.decision_state import ScientificDecisionState
 from mico_agent_runtime.contracts.research import (
-    AdjustConfoundersAction,
-    AnalyzeProjectionAction,
-    AnalyzeProjectionArguments,
-    FinishAction,
-    FinishArguments,
-    ProjectionAnalysisArguments,
     ResearchIntent,
-    RetrieveEvidenceAction,
-    RetrieveEvidenceArguments,
-    ScientificAction,
     ScientificActionName,
     ScientificPlannerContext,
     StopReasonCode,
 )
-from mico_agent_runtime.ports.scientific_planner import (
-    ScientificPlannerPort,
-    ScientificPlannerResult,
-    _deterministic_action,
-    _evidence_action,
-    _finish_action,
-    _final_projection_action,
-    _projection_action,
+from mico_agent_runtime.ports.gemini_resilience import (
+    GeminiRequestBudget,
+    GeminiRequestBudgetExceeded,
+    GeminiResponseCache,
+    parse_retry_delay_seconds,
+    sleep_before_retry,
 )
 
 
-SFT_POLICY_FALLBACK_CODE = "SFT_POLICY_SAFE_FALLBACK"
-SFT_POLICY_DISABLED_CODE = "SFT_POLICY_DISABLED"
 SFT_POLICY_MAX_RETRIES = 3
+
+# Kept as a named contract so offline Decision-SFT preparation can import the
+# exact system message used by the serving adapter.  The value is intentionally
+# unchanged from the previously inline scientific-policy prompt.
+SCIENTIFIC_POLICY_PROMPT_VERSION = "generic_contract_hardened"
+SCIENTIFIC_POLICY_SYSTEM_PROMPT = (
+    "Return exactly one JSON object with keys selected_action, decision_reason, "
+    "alternative_actions, stop_reason. The values in state.task.objectives describe "
+    "user goals; objective names are not Scientific Action names and must never be used "
+    "as selected_action. Choose exactly one Scientific Action. selected_action MUST be "
+    "copied exactly, character-for-character, from state.action_space.available_actions; "
+    "do not choose an unavailable action even when its related objective remains incomplete. "
+    "stop_reason is required only for finish and must otherwise be null. "
+    "Use only the six-block scientific decision state; do not invent SQL, IDs, sample values, "
+    "URLs, permissions, disease facts, or evidence. If the state contains a validated Java "
+    "read with row_count=0 or fewer than two observed groups, and execute_read_query is "
+    "available, prefer a new execute_read_query so the materializer can request a different "
+    "catalog-bounded projection; do not repeat inspect_cohort solely to spend a turn. If a "
+    "validated inspect_cohort observation is already present, repeat it only when the state "
+    "shows a genuinely new technical inspection is possible. These are policy guidelines; "
+    "if a completed execute_read_query is present but group_comparison is still not_started, "
+    "and the current group_count is below two, choose execute_read_query over inspect_cohort "
+    "when it is available so the materializer can request a materially different projection. "
+    "The currently registered group-analysis operators require exactly two observed groups. "
+    "If group_count is not exactly two and execute_read_query is available, choose a fresh "
+    "execute_read_query instead of an analysis action that the hard capability boundary has "
+    "not made executable; do not treat an arbitrary multi-group discovery result as a two-group "
+    "comparison. "
+    "When group_count is exactly two, a numeric outcome is available, and compare_groups is "
+    "available while group_comparison is not completed, prefer compare_groups before issuing "
+    "another read solely to discover optional project or feature dimensions; the Runtime will "
+    "keep those as separate facts for later actions. "
+    "Runtime still validates availability and never substitutes an action. Return JSON only, "
+    "no Markdown."
+)
 
 
 class DecisionPolicyOutput(BaseModel):
@@ -75,9 +103,11 @@ class DecisionPolicyOutput(BaseModel):
         return self
 
 
-class DecisionPolicyFallback(Protocol):
-    def plan_action(self, context: ScientificPlannerContext) -> ScientificPlannerResult:
-        ...
+class _DecisionResponseRejected(ValueError):
+    def __init__(self, response: httpx.Response) -> None:
+        super().__init__("SFT policy response rejected")
+        self.response = response
+        self.retry_delay_seconds = parse_retry_delay_seconds(response)
 
 
 def _parse_json(content: object) -> object:
@@ -101,6 +131,22 @@ def _parse_json(content: object) -> object:
         if text[start + end:].strip():
             raise ValueError("trailing non-json decision policy content")
         return parsed
+
+
+def _canonicalize_policy_payload(value: object) -> object:
+    """Apply one narrow provider typo repair before the closed contract.
+
+    Gemini occasionally emits a null ``decision_res`` bookkeeping key along
+    with the four documented policy fields.  It carries no decision data and
+    is not admitted into ``DecisionPolicyOutput``; dropping only this exact
+    null alias keeps the wire contract closed while allowing a harmless
+    provider formatting variation to be retried without changing policy
+    semantics.
+    """
+
+    if isinstance(value, Mapping) and value.get("decision_res") is None:
+        return {key: item for key, item in value.items() if key != "decision_res"}
+    return value
 
 
 def _feedback(error: Exception) -> str:
@@ -172,7 +218,11 @@ def _observation_flags(context: ScientificPlannerContext, goal_code: str) -> lis
             flags.extend(("JAVA_OBSERVED", "ANALYSIS_AVAILABLE"))
         if any(item.source == "knowledge_hybrid" for item in observations):
             flags.append("EVIDENCE_RETRIEVED")
-        if any(item.qualityCodes for item in observations):
+        if any(
+            code != "numeric_outcome_available"
+            for item in observations
+            for code in item.qualityCodes
+        ):
             flags.append("EVIDENCE_INCOMPLETE")
     if goal_code == "evidence_conflict_resolution":
         flags.append("EVIDENCE_CONFLICT")
@@ -257,111 +307,30 @@ def build_decision_policy_state(context: ScientificPlannerContext) -> dict[str, 
     }
 
 
-def _verified_groupable_fields(context: ScientificPlannerContext) -> list[str]:
-    if context.schemaCatalog is None:
-        return []
-    fields = [
-        field.name
-        for entity in context.schemaCatalog.entities
-        for field in entity.fields
-        if field.groupable and not field.sensitive and field.semanticStatus == "verified"
-    ]
-    return list(dict.fromkeys(fields))[:4]
-
-
-def _reify_action(context: ScientificPlannerContext, decision: DecisionPolicyOutput) -> ScientificAction:
-    """Turn a closed capability choice into a Runtime-owned action object."""
-
-    if decision.selected_action not in context.approvedActions:
-        raise ValueError("decision action is not approved")
-
-    if decision.selected_action == "finish":
-        base = _finish_action(context)
-        return base.model_copy(update={
-            "arguments": FinishArguments(
-                actionName="finish",
-                reasonCode=decision.stop_reason,
-            )
-        })
-    if decision.selected_action == "retrieve_evidence":
-        return _evidence_action(context)
-    if decision.selected_action == "analyze_projection":
-        ids = [
-            item.observationId
-            for item in context.observations
-            if item.source in {"java_controlled_read", "python_bounded_analysis"}
-        ]
-        if not ids:
-            raise ValueError("analyze_projection requires a tabular observation")
-        return _final_projection_action(context, ids[-1])
-    if decision.selected_action in {
-        "compare_groups",
-        "stratified_analysis",
-        "adjust_confounders",
-        "cross_project_validate",
-        "cross_disease_validate",
-    }:
-        ids = [
-            item.observationId
-            for item in context.observations
-            if item.source in {"java_controlled_read", "python_bounded_analysis"}
-        ]
-        minimum = 2 if decision.selected_action in {
-            "cross_project_validate", "cross_disease_validate"
-        } else 1
-        if len(ids) < minimum:
-            raise ValueError("selected analysis action lacks approved observations")
-        fields = _verified_groupable_fields(context)
-        if decision.selected_action == "stratified_analysis" and not fields:
-            raise ValueError("stratified_analysis lacks verified dimensions")
-        if decision.selected_action == "adjust_confounders" and not fields:
-            raise ValueError("adjust_confounders lacks verified confounders")
-        if decision.selected_action == "adjust_confounders":
-            action_id = "action-" + sha256(
-                (context.questionSummary + "|adjust_confounders|" + "|".join(ids[-1:])).encode("utf-8")
-            ).hexdigest()[:32]
-            return AdjustConfoundersAction(
-                actionId=action_id,
-                actionName="adjust_confounders",
-                rationale="Control verified confounder dimensions before treating the observation as stable",
-                arguments=ProjectionAnalysisArguments(
-                    actionName="adjust_confounders",
-                    observationIds=ids[-1:],
-                    analysisGoal=context.questionSummary,
-                    confounders=fields,
-                ),
-            )
-        action = _projection_action(
-            context,
-            action_name=decision.selected_action,
-            observation_ids=ids[-minimum:] if minimum == 2 else ids[-1:],
-            dimensions=fields if decision.selected_action == "stratified_analysis" else None,
-        )
-        if action is not None:
-            if decision.selected_action == "stratified_analysis":
-                return action.model_copy(update={
-                    "arguments": action.arguments.model_copy(update={"dimensions": fields})
-                })
-            return action
-        raise ValueError("selected analysis action could not be reified")
-
-    # Read actions remain entirely deterministic and catalog-owned.  This is
-    # also the final safeguard against an SFT model injecting SQL.
-    deterministic = _deterministic_action(context)
-    if deterministic.actionName != decision.selected_action:
-        raise ValueError("selected read action could not be safely reified")
-    return deterministic
-
-
 @dataclass
 class HttpDecisionSftPlannerPort:
-    """Call an OpenAI-compatible SFT policy endpoint with safe fallback."""
+    """Call the SFT/DPO endpoint for a closed next-action choice only.
+
+    A separate research planner must materialize the selected action into
+    question-specific SQL or a bounded analysis plan.  This policy endpoint
+    is intentionally never allowed to fall back to catalog-templated reads.
+    """
 
     base_url: str
     model: str
     token: str = ""
-    fallback: DecisionPolicyFallback | None = None
     transport: httpx.BaseTransport | None = None
+    # Explicit provenance keeps local HTTP canaries distinct from remote Qwen.
+    policy_origin: str = "qwen_model"
+    request_budget: GeminiRequestBudget | None = None
+    response_cache: GeminiResponseCache | None = None
+    sleep_fn: Callable[[float], None] = time.sleep
+    max_retry_delay_seconds: float | None = None
+    # Remote A100 inference can legitimately take longer than the old fixed
+    # 30-second workstation timeout (especially on the first request after
+    # adapter load).  Keep this explicit and configurable instead of turning
+    # a slow but healthy policy response into a false contract failure.
+    timeout_seconds: float = 120.0
 
     def __post_init__(self) -> None:
         parsed = urlsplit(self.base_url)
@@ -369,6 +338,8 @@ class HttpDecisionSftPlannerPort:
             raise ValueError("SFT policy URL is invalid")
         if parsed.query or parsed.fragment or not self.model.strip():
             raise ValueError("SFT policy configuration is invalid")
+        if not math.isfinite(self.timeout_seconds) or self.timeout_seconds <= 0:
+            raise ValueError("SFT policy timeout must be a positive finite number")
         base = self.base_url.rstrip("/")
         path = parsed.path.rstrip("/")
         if path.endswith("/v1") or path.endswith("/openai"):
@@ -380,24 +351,35 @@ class HttpDecisionSftPlannerPort:
         # tunnel response into a local 502).
         self._client = httpx.Client(
             transport=self.transport,
-            timeout=30.0,
+            timeout=self.timeout_seconds,
             trust_env=False,
+            limits=httpx.Limits(max_keepalive_connections=0, max_connections=10),
         )
+        self.request_count = 0
+        self.cache_hit_count = 0
 
-    def _fallback(self, context: ScientificPlannerContext) -> ScientificPlannerResult:
-        if self.fallback is None:
-            raise RuntimeError("SFT policy has no safe fallback planner")
-        result = self.fallback.plan_action(context)
-        codes = [result.fallbackCode] if result.fallbackCode else []
-        codes.append(SFT_POLICY_FALLBACK_CODE)
-        return ScientificPlannerResult(
-            action=result.action,
-            mode=result.mode,
-            fallbackCode="+".join(codes),
-            fallbackReasonCode=result.fallbackReasonCode,
-        )
+    def _post_json(self, body: dict[str, Any]) -> httpx.Response:
+        """POST one policy request with optional Gemini run controls."""
 
-    def plan_action(self, context: ScientificPlannerContext) -> ScientificPlannerResult:
+        headers = {"Content-Type": "application/json"}
+        if self.token.strip():
+            headers["Authorization"] = f"Bearer {self.token}"
+        key = self.response_cache.key(self._endpoint, body) if self.response_cache else None
+        request = self._client.build_request("POST", self._endpoint, headers=headers, json=body)
+        if key is not None:
+            cached = self.response_cache.get(key, request)
+            if cached is not None:
+                self.cache_hit_count += 1
+                return cached
+        if self.request_budget is not None:
+            self.request_budget.reserve("policy")
+        self.request_count += 1
+        response = self._client.send(request)
+        if key is not None and response.status_code == 200:
+            self.response_cache.put(key, response)
+        return response
+
+    def _select_legacy_action(self, context: ScientificPlannerContext) -> DecisionPolicyOutput:
         policy_state = build_decision_policy_state(context)
         system = (
             "Return exactly one JSON object with keys selected_action, decision_reason, "
@@ -424,20 +406,32 @@ class HttpDecisionSftPlannerPort:
 
         for attempt in range(SFT_POLICY_MAX_RETRIES + 1):
             try:
-                response = self._client.post(self._endpoint, headers=headers, json=body)
+                response = self._post_json(body)
                 if response.status_code != 200:
-                    raise ValueError("SFT policy response rejected")
+                    raise _DecisionResponseRejected(response)
                 payload = response.json()
                 content: object
                 if isinstance(payload, dict) and "choices" in payload:
                     content = payload["choices"][0]["message"]["content"]
                 else:
                     content = payload
-                decision = DecisionPolicyOutput.model_validate(_parse_json(content))
-                action = _reify_action(context, decision)
-                return ScientificPlannerResult(action=action, mode="sft_policy")
+                decision = DecisionPolicyOutput.model_validate(
+                    _canonicalize_policy_payload(_parse_json(content))
+                )
+                if decision.selected_action not in context.approvedActions:
+                    raise ValueError("decision action is not approved")
+                if not set(decision.alternative_actions).issubset(set(context.approvedActions)):
+                    raise ValueError("decision alternatives are not approved")
+                return decision
             except Exception as error:
+                if isinstance(error, GeminiRequestBudgetExceeded):
+                    raise
                 if attempt < SFT_POLICY_MAX_RETRIES:
+                    sleep_before_retry(
+                        error,
+                        sleep=self.sleep_fn,
+                        max_delay_seconds=self.max_retry_delay_seconds,
+                    )
                     body["messages"].append({
                         "role": "user",
                         "content": (
@@ -446,7 +440,108 @@ class HttpDecisionSftPlannerPort:
                             "do not add keys or invent values."
                         ),
                     })
-        return self._fallback(context)
+        raise RuntimeError("DYNAMIC_ACTION_SELECTION_FAILED")
+
+    def _select_scientific_action(
+        self,
+        policy_input: ScientificPolicyInput,
+    ) -> DecisionPolicyOutput:
+        """Select from the hard-available actions using only Decision State."""
+
+        system = SCIENTIFIC_POLICY_SYSTEM_PROMPT
+        state_payload = {
+            "decision_type": "scientific_action",
+            "state": policy_input.model_dump(mode="json"),
+        }
+        body: dict[str, Any] = {
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": json.dumps(
+                    state_payload, ensure_ascii=False, separators=(",", ":")
+                )},
+            ],
+            "response_format": {"type": "json_object"},
+            "max_tokens": 256,
+            "temperature": 0,
+        }
+        headers = {"Content-Type": "application/json"}
+        if self.token.strip():
+            headers["Authorization"] = f"Bearer {self.token}"
+
+        available = set(policy_input.action_space.available_actions)
+        last_error: Exception | None = None
+        unavailable = False
+        # A new-state policy gets one structured repair opportunity.  The
+        # repair describes only technical illegality and never ranks actions.
+        for attempt in range(2):
+            try:
+                response = self._post_json(body)
+                if response.status_code != 200:
+                    raise _DecisionResponseRejected(response)
+                payload = response.json()
+                content: object
+                if isinstance(payload, dict) and "choices" in payload:
+                    content = payload["choices"][0]["message"]["content"]
+                else:
+                    content = payload
+                decision = DecisionPolicyOutput.model_validate(
+                    _canonicalize_policy_payload(_parse_json(content))
+                )
+                if decision.selected_action not in available:
+                    unavailable = True
+                    raise ValueError("POLICY_ACTION_NOT_AVAILABLE")
+                if not set(decision.alternative_actions).issubset(available):
+                    unavailable = True
+                    raise ValueError("POLICY_ACTION_NOT_AVAILABLE")
+                return decision
+            except Exception as error:
+                if isinstance(error, GeminiRequestBudgetExceeded):
+                    raise
+                last_error = error
+                if attempt == 0:
+                    sleep_before_retry(
+                        error,
+                        sleep=self.sleep_fn,
+                        max_delay_seconds=self.max_retry_delay_seconds,
+                    )
+                    feedback = _feedback(error)
+                    body["messages"] = [
+                        *body["messages"][:2],
+                        {
+                            "role": "user",
+                            "content": (
+                                "The selected action is not currently executable or the output "
+                                "failed the closed contract. Objective names are not action names. "
+                                "Choose exactly one action copied character-for-character from "
+                                f"the current available_actions list {sorted(available)!r}; do not "
+                                "choose an unavailable action. Return the same JSON keys. Technical "
+                                f"validation feedback only: {feedback}"
+                            ),
+                        },
+                    ]
+        if unavailable:
+            raise RuntimeError("POLICY_ACTION_NOT_AVAILABLE") from last_error
+        # The new Decision-State policy is not allowed to choose a scientific
+        # fallback when the provider/contract fails.  Returning a deterministic
+        # action here would silently transfer policy ownership back to Runtime.
+        raise RuntimeError("POLICY_DECISION_FAILED") from last_error
+
+    def select_action(
+        self,
+        context: ScientificPlannerContext | ScientificDecisionState | ScientificPolicyInput,
+    ) -> DecisionPolicyOutput:
+        """Select using new Decision State; retain legacy calls temporarily."""
+
+        if isinstance(context, (ScientificDecisionState, ScientificPolicyInput)):
+            return self._select_scientific_action(build_scientific_policy_input(context))
+        return self._select_legacy_action(context)
+
+    def plan_action(self, context: ScientificPlannerContext):
+        """Reject direct use: HybridIntentPlannerPort owns materialization."""
+
+        del context
+        raise RuntimeError("DYNAMIC_ACTION_MATERIALIZATION_REQUIRED")
 
     def close(self) -> None:
         self._client.close()

@@ -10,6 +10,7 @@ import com.database.mico_database.agent.contract.AgentToolValidationResult;
 import com.database.mico_database.agent.contract.DataSnapshot;
 import com.database.mico_database.agent.contract.DynamicReadQueryPolicy;
 import com.database.mico_database.agent.contract.QualitySummary;
+import com.database.mico_database.agent.contract.QueryPlan;
 import com.database.mico_database.agent.readmodel.DynamicQueryReadModel;
 import com.database.mico_database.agent.readmodel.ReadModelResult;
 import com.database.mico_database.agent.readmodel.ReadReceipt;
@@ -23,7 +24,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Java executable boundary: model-proposed read SQL is still validated and
+ * Java executable boundary: model-proposed typed read plans are compiled and
  * executed by Java. Schema description is metadata-only; no fixed cohort or
  * differential workflow is dispatched here.
  */
@@ -61,12 +62,21 @@ public final class AgentReadOnlyToolExecutor implements AgentToolExecutorPort {
             return AgentToolResponse.notImplemented(request.getToolCallId(), request.getRunId());
         }
         try {
+            QueryPlan queryPlan = (QueryPlan) request.getArguments().get("queryPlan");
             String sql = (String) request.getArguments().get("sql");
+            boolean includeOpaqueSampleKey = Boolean.TRUE.equals(
+                    request.getArguments().get("includeAnalysisSampleKey"));
+            if (includeOpaqueSampleKey && queryPlan == null) {
+                throw new IllegalArgumentException("opaque sample key requires a typed QueryPlan");
+            }
             Object rawLimit = request.getArguments().get("limit");
             int limit = rawLimit == null
-                    ? DynamicReadQueryPolicy.MAX_QUERY_LIMIT
+                    ? queryPlan == null ? DynamicReadQueryPolicy.MAX_QUERY_LIMIT : queryPlan.getLimit()
                     : ((Number) rawLimit).intValue();
-            ReadModelResult<DynamicQueryReadModel> result = dynamicReadQueryService.execute(sql, limit);
+            ReadModelResult<DynamicQueryReadModel> result = queryPlan == null
+                    ? dynamicReadQueryService.execute(sql, limit)
+                    : dynamicReadQueryService.execute(queryPlan, limit, request.getRunId(),
+                            includeOpaqueSampleKey);
             return completed(request, result);
         } catch (IllegalArgumentException exception) {
             return AgentToolResponse.rejected(request.getToolCallId(), request.getRunId(),
@@ -129,7 +139,7 @@ public final class AgentReadOnlyToolExecutor implements AgentToolExecutorPort {
         quality.setSubjectLinkStatus(AgentContractConstants.SUBJECT_LINK_STATUS_UNVERIFIED);
         quality.setMissingCounts(missing);
         List<String> warnings = new ArrayList<>();
-        warnings.add("SQL was proposed by the model but executed only after Java read-only policy validation");
+        warnings.add("A typed QueryPlan was proposed by the model; Java compiled and executed the SQL");
         warnings.add("dynamic query output is bounded and transient; it is not a replayable snapshot");
         warnings.add("row counts do not establish independent Subject or patient counts");
         warnings.add("Python-generated analysis is bounded by the Runtime sandbox");

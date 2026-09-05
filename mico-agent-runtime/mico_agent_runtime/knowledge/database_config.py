@@ -12,6 +12,7 @@ class KnowledgeStoreConfigurationError(ValueError):
 
 
 _GRAPH_VERSION_RE = re.compile(r"^[a-z0-9][a-z0-9-]{1,79}$")
+_ASSET_VERSION_RE = re.compile(r"^[a-z0-9][a-z0-9-]{1,79}$")
 
 
 def _required(source: Mapping[str, str], name: str) -> str:
@@ -43,9 +44,15 @@ class KnowledgeStoreConfiguration:
     neo4jPassword: str
     indexDirectory: Path
     vectorDimension: int = 3072
-    vectorTopK: int = 20
-    graphTopK: int = 20
+    # Internal candidate pools.  The public evidence response remains bounded
+    # by EvidenceQuery.limit (currently Top-10); fusion/reranking needs a much
+    # wider pool to measure and improve Recall@50.
+    vectorTopK: int = 50
+    graphTopK: int = 50
+    sparseTopK: int = 50
     graphVersion: str = "fulltext-provenance-graphrag-v3"
+    chunkVersion: str = "chunk-v1"
+    chunkVariant: str = "legacy"
 
     @classmethod
     def from_environment(
@@ -68,13 +75,14 @@ class KnowledgeStoreConfiguration:
         index_directory = Path(_required(source, "MICO_LOCAL_KNOWLEDGE_INDEX_DIR")).expanduser()
         try:
             dimension = int(source.get("MICO_KNOWLEDGE_VECTOR_DIMENSION", "3072"))
-            vector_top_k = int(source.get("MICO_KNOWLEDGE_VECTOR_TOP_K", "20"))
-            graph_top_k = int(source.get("MICO_KNOWLEDGE_GRAPH_TOP_K", "20"))
+            vector_top_k = int(source.get("MICO_KNOWLEDGE_VECTOR_TOP_K", "50"))
+            sparse_top_k = int(source.get("MICO_KNOWLEDGE_SPARSE_TOP_K", "50"))
+            graph_top_k = int(source.get("MICO_KNOWLEDGE_GRAPH_TOP_K", "50"))
         except ValueError as exc:
             raise KnowledgeStoreConfigurationError("KNOWLEDGE_LIMIT_INVALID") from exc
         if dimension <= 0 or dimension > 16000:
             raise KnowledgeStoreConfigurationError("KNOWLEDGE_VECTOR_DIMENSION_INVALID")
-        if not 1 <= vector_top_k <= 100 or not 1 <= graph_top_k <= 100:
+        if not 1 <= vector_top_k <= 100 or not 1 <= sparse_top_k <= 100 or not 1 <= graph_top_k <= 100:
             raise KnowledgeStoreConfigurationError("KNOWLEDGE_LIMIT_INVALID")
         graph_version = source.get(
             "MICO_KNOWLEDGE_GRAPH_VERSION",
@@ -82,6 +90,12 @@ class KnowledgeStoreConfiguration:
         ).strip()
         if not _GRAPH_VERSION_RE.fullmatch(graph_version):
             raise KnowledgeStoreConfigurationError("KNOWLEDGE_GRAPH_VERSION_INVALID")
+        chunk_version = source.get("MICO_KNOWLEDGE_CHUNK_VERSION", "chunk-v1").strip()
+        chunk_variant = source.get("MICO_KNOWLEDGE_CHUNK_VARIANT", "legacy").strip()
+        if not _ASSET_VERSION_RE.fullmatch(chunk_version):
+            raise KnowledgeStoreConfigurationError("KNOWLEDGE_CHUNK_VERSION_INVALID")
+        if not _ASSET_VERSION_RE.fullmatch(chunk_variant):
+            raise KnowledgeStoreConfigurationError("KNOWLEDGE_CHUNK_VARIANT_INVALID")
         return cls(
             vectorDatabaseUrl=vector_url,
             neo4jUri=neo4j_uri,
@@ -90,6 +104,9 @@ class KnowledgeStoreConfiguration:
             indexDirectory=index_directory,
             vectorDimension=dimension,
             vectorTopK=vector_top_k,
+            sparseTopK=sparse_top_k,
             graphTopK=graph_top_k,
             graphVersion=graph_version,
+            chunkVersion=chunk_version,
+            chunkVariant=chunk_variant,
         )

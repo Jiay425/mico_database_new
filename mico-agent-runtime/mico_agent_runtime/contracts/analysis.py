@@ -31,7 +31,10 @@ AnalysisEvidenceId = Annotated[str, StringConstraints(pattern=r"^evidence-[0-9a-
 AnalysisHash = Annotated[str, StringConstraints(pattern=r"^sha256:[0-9a-f]{64}$")]
 AnalysisFieldName = Annotated[
     str,
-    StringConstraints(pattern=r"^[A-Za-z][A-Za-z0-9_]{0,63}$", max_length=64),
+    StringConstraints(
+        pattern=r"^[A-Za-z][A-Za-z0-9_]{0,63}(?:\.[a-z][a-z0-9_]{1,63})?$",
+        max_length=128,
+    ),
 ]
 AnalysisCode = Annotated[
     str,
@@ -46,6 +49,7 @@ AnalysisVersion = Annotated[
         pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
     ),
 ]
+AnalysisResultText = Annotated[str, StringConstraints(min_length=1, max_length=512)]
 
 
 def _utc(value: datetime) -> datetime:
@@ -107,9 +111,10 @@ class AnalysisPlan(ClosedModel):
     def require_sources_for_projection(self) -> "AnalysisPlan":
         if self.actionName != "inspect_cohort" and not self.sourceObservationIds:
             raise ValueError("analysis action requires a source observation")
-        if self.actionName in {"cross_project_validate", "cross_disease_validate"} \
-                and len(self.sourceObservationIds) < 2:
-            raise ValueError("cross validation requires at least two source observations")
+        # Cross validation may operate on one grouped tabular observation;
+        # the typed operator compares the project/disease groups in its rows.
+        # Multiple source observations are still accepted when the caller has
+        # separate bounded reads to combine.
         if self.actionName == "stratified_analysis" and not self.dimensions:
             raise ValueError("stratified analysis requires at least one dimension")
         if self.actionName == "adjust_confounders" and not self.confounders:
@@ -140,6 +145,7 @@ class AnalysisEvidence(ClosedModel):
 
 class AnalysisFeatureResult(ClosedModel):
     featureName: Annotated[str, StringConstraints(min_length=1, max_length=256)]
+    status: Literal["supported", "insufficient_data", "failed"] = "supported"
     metrics: dict[AnalysisCode, float] = Field(default_factory=dict, max_length=16)
     supportStatus: AnalysisSupportStatus = "supported"
 
@@ -152,21 +158,71 @@ class AnalysisFeatureResult(ClosedModel):
         return checked
 
 
+class AnalysisGroupResult(ClosedModel):
+    """One group summary from a typed two-group comparison."""
+
+    group: AnalysisResultText
+    n: int = Field(strict=True, ge=0, le=1000000)
+    mean: float
+
+
+class AnalysisStratumResult(ClosedModel):
+    """One within-stratum two-group comparison."""
+
+    stratum: AnalysisResultText
+    feature_name: AnalysisResultText | None = None
+    group_a_n: int = Field(strict=True, ge=0, le=1000000)
+    group_b_n: int = Field(strict=True, ge=0, le=1000000)
+    mean_difference: float
+    p_value: float = Field(ge=0.0, le=1.0)
+    # ``p_value`` remains the raw per-stratum value for backwards
+    # compatibility.  Numeric stratification additionally records the
+    # multiple-testing corrected value explicitly; categorical legacy
+    # results leave these optional aliases unset.
+    raw_p_value: float | None = Field(default=None, ge=0.0, le=1.0)
+    adjusted_p_value: float | None = Field(default=None, ge=0.0, le=1.0)
+    q_value: float | None = Field(default=None, ge=0.0, le=1.0)
+    direction: Literal["positive", "negative", "neutral"]
+
+
+class AnalysisValidationResult(ClosedModel):
+    """One repeated validation-dimension comparison."""
+
+    validation_value: AnalysisResultText
+    group_a_n: int = Field(strict=True, ge=0, le=1000000)
+    group_b_n: int = Field(strict=True, ge=0, le=1000000)
+    mean_difference: float
+    p_value: float = Field(ge=0.0, le=1.0)
+    direction: Literal["positive", "negative", "neutral"]
+
+
 class AnalysisResult(ClosedModel):
     """Safe, bounded output of one dynamic analysis operation."""
 
     analysisId: AnalysisId
     actionName: AnalysisActionName
+    analysis_type: str | None = None
+    execution_mode: Literal["typed", "generated"] = "generated"
+    method_used: AnalysisResultText | None = None
     status: AnalysisStatus
     plannerMode: Literal["model", "deterministic"]
-    codeVersion: Literal["sandbox-python-v1"]
+    codeVersion: Literal["sandbox-python-v1", "typed-analysis-operator-v1"]
     sourceObservationIds: list[AnalysisObservationId] = Field(min_length=1, max_length=8)
     rowsAnalyzed: int = Field(strict=True, ge=0, le=1000000)
     metrics: dict[AnalysisCode, float] = Field(default_factory=dict, max_length=32)
+    group_results: list[AnalysisGroupResult] = Field(default_factory=list, max_length=64)
+    stratum_results: list[AnalysisStratumResult] = Field(default_factory=list, max_length=64)
+    validation_results: list[AnalysisValidationResult] = Field(default_factory=list, max_length=64)
+    feature_results: list[AnalysisFeatureResult] = Field(default_factory=list, max_length=64)
+    ranking_method: Annotated[str, StringConstraints(min_length=1, max_length=256)] | None = None
+    adjusted_covariates: list[AnalysisFieldName] = Field(default_factory=list, max_length=16)
+    used_row_count: int = Field(strict=True, ge=0, le=1000000, default=0)
+    dropped_row_count: int = Field(strict=True, ge=0, le=1000000, default=0)
     topFeatures: list[AnalysisFeatureResult] = Field(default_factory=list, max_length=20)
     evidence: list[AnalysisEvidence] = Field(min_length=1, max_length=8)
     limitations: list[Literal[
         "generated_code_was_sandbox_validated",
+        "typed_plan_executed_by_approved_operator",
         "input_projection_was_bounded",
         "snapshot_is_transient_and_not_replayable",
         "analysis_is_not_a_clinical_conclusion",
@@ -214,7 +270,11 @@ __all__ = [
     "AnalysisActionName",
     "AnalysisEvidence",
     "AnalysisFeatureResult",
+    "AnalysisGroupResult",
     "AnalysisPlan",
     "AnalysisResult",
+    "AnalysisResultText",
     "AnalysisSourceMetadata",
+    "AnalysisStratumResult",
+    "AnalysisValidationResult",
 ]

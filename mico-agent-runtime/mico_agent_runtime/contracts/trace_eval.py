@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
 from pydantic import Field, StringConstraints, field_validator, model_validator
 
@@ -12,10 +12,19 @@ from .tools import ToolCallIdentifier, TransientPersistence
 
 TraceContractVersion = Literal["p2j4-trace-eval-v1", "p2j4-trace-eval-v2"]
 PlannerOrigin = Literal["model", "semantic_guard", "deterministic_fallback", "unknown"]
+PolicyOrigin = Literal[
+    "qwen_model",
+    "gemini_canary_model",
+    "local_http_stub",
+    "legacy_model",
+    "deterministic_fallback",
+    "unknown",
+]
 TraceStatus = Literal["COMPLETED", "FAILED", "REJECTED"]
 TraceEventStatus = Literal["COMPLETED", "REJECTED", "FAILED"]
 TraceNode = Literal[
     "validate_research_task",
+    "understand_task",
     "policy_gate",
     "plan_action",
     "authorize_action",
@@ -189,12 +198,41 @@ class TraceDecision(ClosedModel):
     repair_codes: list[str] = Field(default_factory=list, max_length=16)
     # Exact redacted policy state used for this decision.  These fields are
     # optional only for backwards-compatible reads of historical traces;
-    # newly emitted runtime traces populate them from build_decision_policy_state.
+    # newly emitted legacy traces populate them from the legacy policy state;
+    # Decision-State traces leave them empty and use ``state_snapshot``.
     task_kind: str | None = Field(default=None, max_length=64)
     goal_code: str | None = Field(default=None, max_length=96)
     observation_flags: list[str] = Field(default_factory=list, max_length=16)
     history_actions: list[ScientificActionName] = Field(default_factory=list, max_length=8)
     candidate_actions: list[ScientificActionName] = Field(default_factory=list, max_length=10)
+    # Dynamic materialization provenance.  Hashes identify a plan/catalog
+    # without persisting SQL, Python, filter values, or preview rows.
+    materializer_origin: Literal[
+        "model",
+        "gemini_canary_model",
+        "deepseek_model",
+        "deterministic",
+        "deterministic_fallback",
+        "runtime_owned",
+        "unknown",
+    ] = "unknown"
+    policy_origin: PolicyOrigin = "unknown"
+    query_plan_hash: Annotated[str, StringConstraints(pattern=r"^sha256:[0-9a-f]{64}$")] | None = None
+    query_plan_validation_status: Literal["passed", "failed", "legacy", "not_applicable"] | None = None
+    analysis_plan_hash: Annotated[str, StringConstraints(pattern=r"^sha256:[0-9a-f]{64}$")] | None = None
+    analysis_execution_status: Literal["passed", "failed", "legacy", "not_applicable"] | None = None
+    catalog_hash: Annotated[str, StringConstraints(pattern=r"^sha256:[0-9a-f]{64}$")] | None = None
+    # New Decision State policy provenance.  The legacy fields above remain
+    # readable for historical traces, but new-state decisions populate these
+    # fields and do not copy legacy flags into the policy snapshot.
+    policy_input_version: Literal["scientific-decision-state-v1"] | None = None
+    state_snapshot: dict[str, Any] | None = None
+    available_actions: list[ScientificActionName] = Field(default_factory=list, max_length=10)
+    # Runtime-only objective lifecycle captured alongside (never inside) the
+    # six-block policy state.  This keeps blocked/completed obligations
+    # auditable across a terminal finish turn without leaking strategy hints
+    # into model input.
+    objective_resolution: dict[str, Any] | None = None
 
     @model_validator(mode="after")
     def complete_decision_trace_fields(self) -> "TraceDecision":

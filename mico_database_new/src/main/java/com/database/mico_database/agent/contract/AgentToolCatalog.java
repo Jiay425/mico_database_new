@@ -39,17 +39,21 @@ public final class AgentToolCatalog {
         scopes.add(AgentScope.QUERY_READ.getWireName());
         Map<String, String> properties = new LinkedHashMap<>();
         properties.put("sql", "string");
+        properties.put("queryPlan", "queryPlan");
         properties.put("limit", "integer");
+        // Runtime-only technical projection.  It asks Java to return an
+        // opaque run-scoped sample key; it is not a model-selected field.
+        properties.put("includeAnalysisSampleKey", "boolean");
         definitions.put("execute_read_query", new AgentToolDefinition(
                 AgentToolName.EXECUTE_READ_QUERY,
-                "Execute one model-proposed read query after Java policy validation.",
+                "Execute one catalog-compiled read plan after Java policy validation.",
                 scopes,
                 AgentRiskLevel.HIGH,
                 true,
                 true,
-                1000,
+                20_000,
                 new AgentArgumentSchema(properties,
-                        Collections.singleton("sql"), false)));
+                        Collections.emptySet(), false)));
         definitions.put("describe_read_schema", new AgentToolDefinition(
                 AgentToolName.DESCRIBE_READ_SCHEMA,
                 "Return versioned, metadata-only semantics for the approved read surface.",

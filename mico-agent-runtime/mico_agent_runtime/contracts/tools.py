@@ -3,9 +3,10 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Annotated, Any, Literal
 
-from pydantic import Field, StringConstraints, TypeAdapter
+from pydantic import Field, StringConstraints, TypeAdapter, model_validator
 
 from .base import ClosedModel, Identifier, NonEmptyText
+from .materialization import QueryPlan
 
 
 # Java tool calls are intentionally reduced to the one dynamic read tool. The
@@ -26,7 +27,11 @@ JavaTransientSnapshotId = Annotated[
 TransientSnapshotId = JavaTransientSnapshotId
 ToolCallIdentifier = Annotated[str, StringConstraints(pattern=r"^call-[0-9a-f]{32}$")]
 DynamicSqlText = Annotated[str, Field(min_length=1, max_length=16000)]
+# Legacy SQL remains bounded by Java's legacy 1,000-row policy.  Typed
+# QueryPlans can use the wider finite cap required by sample-bounded
+# abundance reads (the Java compiler applies the same bound).
 Limit1000 = Annotated[int, Field(strict=True, ge=1, le=1000)]
+Limit20000 = Annotated[int, Field(strict=True, ge=1, le=20_000)]
 SourceSampleText = Annotated[str, Field(min_length=1, max_length=4096)]
 StrictPositiveInt = Annotated[int, Field(strict=True, gt=0)]
 
@@ -39,10 +44,29 @@ class RecordProfileLocator(ClosedModel):
 
 
 class ExecuteReadQueryArguments(ClosedModel):
-    """Untrusted SQL proposal; Java is the final policy and execution boundary."""
+    """Java read call; typed QueryPlan is the new path, SQL is legacy only.
 
-    sql: DynamicSqlText
-    limit: Limit1000 | None = None
+    ``includeAnalysisSampleKey`` is a Runtime-owned technical projection.  It
+    never comes from the model's QueryPlan and asks Java to append an opaque,
+    run-scoped sample identity for sample-level analysis.  Raw sample/patient
+    identifiers remain outside the response contract.
+    """
+
+    queryPlan: QueryPlan | None = None
+    sql: DynamicSqlText | None = None
+    limit: Limit20000 | None = None
+    includeAnalysisSampleKey: bool = False
+
+    @model_validator(mode="after")
+    def require_one_representation(self) -> "ExecuteReadQueryArguments":
+        if (self.queryPlan is None) == (self.sql is None):
+            raise ValueError("Java read call requires exactly one queryPlan or legacy sql")
+        if self.includeAnalysisSampleKey and self.queryPlan is None:
+            raise ValueError("analysis sample key requires a typed QueryPlan")
+        if self.queryPlan is not None and self.limit is not None \
+                and self.limit != self.queryPlan.limit:
+            raise ValueError("query plan limit and read limit must match")
+        return self
 
 
 class ExecuteReadQueryInput(ClosedModel):

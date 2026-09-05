@@ -5,25 +5,92 @@ from .analysis import (
     AnalysisActionName,
     AnalysisEvidence,
     AnalysisFeatureResult,
+    AnalysisGroupResult,
     AnalysisPlan,
     AnalysisResult,
+    AnalysisResultText,
     AnalysisSourceMetadata,
+    AnalysisStratumResult,
+    AnalysisValidationResult,
 )
 from .audit import AuditEvent, EvidenceSummary, RuntimeRunResult
 from .control import RunControlResponse
+from .decision_state import (
+    AnalysisStatus,
+    ConfounderAdjustmentState,
+    CovariateDataState,
+    CrossDiseaseValidationState,
+    CrossProjectValidationState,
+    DataQualityState,
+    EvidenceConsistency,
+    EvidenceStatus,
+    GroupComparisonState,
+    GroupDataState,
+    HeterogeneityLevel,
+    ImbalanceLevel,
+    MissingnessLevel,
+    ProjectDataState,
+    ProjectionAnalysisState,
+    SampleSizeLevel,
+    ScientificActionSpaceState,
+    ScientificAnalysisState,
+    ScientificDataState,
+    ScientificDecisionState,
+    ScientificEvidenceState,
+    ScientificObjective,
+    ScientificProgressState,
+    ScientificTaskConstraints,
+    ScientificTaskState,
+    StratifiedAnalysisState,
+)
 from .evidence import EvidenceReviewReport, EvidenceRunResult, EvidenceTaskRequest
 from .graph_rag import (
     EvidenceSynthesisContext, EvidenceSynthesisResult, GraphEvidencePath, GroundedClaim,
     ModelReasoningStep, ReasoningStep,
 )
-from .generated_analysis import AnalysisPlannerContext, GeneratedAnalysisPlan, GeneratedAnalysisResult
+from .generated_analysis import (
+    AnalysisPlannerContext,
+    GeneratedAnalysisPlan,
+    GeneratedAnalysisResult,
+    TypedAnalysisPlannerResult,
+)
 from .intent import IntentHttpResponse, IntentQueryReport, IntentRunResult, IntentTaskRequest
+from .task_understanding import TaskUnderstandingOutput
+from .scientific_policy import (
+    ScientificPolicyInput,
+    build_policy_input,
+    build_scientific_policy_input,
+)
 from .metrics import RuntimeMetrics
+from .materialization import (
+    AnalysisMethod,
+    AnalysisMethodFamily,
+    AnalysisMetric,
+    NumericCutPoint,
+    NumericMultipleTesting,
+    NumericMissingValuePolicy,
+    NumericStratificationSpec,
+    NumericStratificationStrategy,
+)
+from .materializer_contract import (
+    MATERIALIZER_CONTRACTS,
+    MATERIALIZER_CONTRACT_BY_ACTION,
+    MaterializerContract,
+    MaterializerContractKind,
+    MaterializerProducer,
+    materializer_contract_for_action,
+)
 from .review import (
     EvidencePathView, GraphPublicationApproval, GraphReviewDecision,
     GraphReviewQueue, GraphReviewResumeCommand, GraphReviewTicket,
 )
-from .schema_catalog import SchemaEntitySemantics, SchemaFieldSemantics, SchemaJoinSemantics, SchemaSemanticCatalog
+from .schema_catalog import (
+    SchemaEntitySemantics,
+    SchemaFieldSemantics,
+    SchemaJoinSemantics,
+    SchemaSemanticCatalog,
+    ScientificCapability,
+)
 from .unified_evidence import (
     UnifiedEvidenceCandidate,
     UnifiedEvidenceSourceBinding,
@@ -79,21 +146,39 @@ from .trace_eval import (
 
 __all__ = [
     "AllowedScope", "AllowedToolName", "ApprovalDecisionRequest", "ApprovalOperation",
-    "AnalysisActionName", "AnalysisEvidence", "AnalysisFeatureResult", "AnalysisPlan",
-    "AnalysisResult", "AnalysisSourceMetadata",
+    "AnalysisActionName", "AnalysisEvidence", "AnalysisFeatureResult", "AnalysisGroupResult",
+    "AnalysisPlan", "AnalysisResult", "AnalysisResultText", "AnalysisSourceMetadata",
+    "AnalysisStratumResult", "AnalysisValidationResult",
+    "AnalysisMethod", "AnalysisMethodFamily", "AnalysisMetric",
+    "NumericCutPoint", "NumericMultipleTesting", "NumericMissingValuePolicy",
+    "NumericStratificationSpec", "NumericStratificationStrategy",
+    "MaterializerContract", "MaterializerContractKind", "MaterializerProducer",
+    "MATERIALIZER_CONTRACTS", "MATERIALIZER_CONTRACT_BY_ACTION",
+    "materializer_contract_for_action",
     "ApprovalTicketRequest", "ApprovalTicketResponse", "AuditEvent", "EvidenceSummary",
     "RuntimeRunResult", "RunControlResponse", "EvidenceReviewReport", "EvidenceRunResult",
+    "AnalysisStatus", "ConfounderAdjustmentState", "CovariateDataState",
+    "CrossDiseaseValidationState", "CrossProjectValidationState", "DataQualityState",
+    "EvidenceConsistency", "EvidenceStatus", "GroupComparisonState", "GroupDataState",
+    "HeterogeneityLevel", "ImbalanceLevel", "MissingnessLevel", "ProjectDataState",
+    "ProjectionAnalysisState", "SampleSizeLevel", "ScientificActionSpaceState",
+    "ScientificAnalysisState", "ScientificDataState", "ScientificDecisionState",
+    "ScientificEvidenceState", "ScientificObjective", "ScientificProgressState",
+    "ScientificTaskConstraints", "ScientificTaskState", "StratifiedAnalysisState",
     "EvidenceTaskRequest", "AnalysisPlannerContext", "GeneratedAnalysisPlan",
     "EvidenceSynthesisContext", "EvidenceSynthesisResult", "GraphEvidencePath", "GroundedClaim",
     "ModelReasoningStep", "ReasoningStep",
-    "GeneratedAnalysisResult", "IntentHttpResponse", "IntentQueryReport", "IntentRunResult",
+    "GeneratedAnalysisResult", "TypedAnalysisPlannerResult", "IntentHttpResponse", "IntentQueryReport", "IntentRunResult",
     "IntentTaskRequest", "RuntimeMetrics", "ExecuteReadQueryArguments",
+    "TaskUnderstandingOutput", "ScientificPolicyInput", "build_policy_input",
+    "build_scientific_policy_input",
     "ExecuteReadQueryJavaToolCall", "DescribeReadSchemaArguments", "DescribeReadSchemaJavaToolCall",
     "ExecuteReadQueryInput", "JavaToolCall", "JavaToolResponse",
     "RecordProfileLocator", "validate_java_tool_call",
     "EvidencePathView", "GraphPublicationApproval", "GraphReviewDecision",
     "GraphReviewQueue", "GraphReviewResumeCommand", "GraphReviewTicket",
     "SchemaEntitySemantics", "SchemaFieldSemantics", "SchemaJoinSemantics", "SchemaSemanticCatalog",
+    "ScientificCapability",
     "UnifiedEvidenceCandidate", "UnifiedEvidenceSourceBinding", "UnifiedRerankBreakdown",
     "merge_unified_evidence",
     "AdjustConfoundersAction", "AnalyzeProjectionAction", "CompareGroupsAction",

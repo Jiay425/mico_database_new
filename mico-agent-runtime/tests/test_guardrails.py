@@ -8,6 +8,15 @@ def test_explicit_research_boundaries_do_not_trigger_a_false_rejection() -> None
     assert evaluate_input(
         "比较两个研究组的差异，只输出相关性和局限性，不输出因果或诊断结论。"
     ).verdict == "ALLOW"
+    assert evaluate_input(
+        "Retrieve bounded supporting evidence without making causal claims."
+    ).verdict == "ALLOW"
+    assert evaluate_input(
+        "Compare the observed groups; do not make causal or clinical claims."
+    ).verdict == "ALLOW"
+    assert evaluate_input(
+        "Stop only after the evidence obligation is satisfied; do not turn an observational result into a causal claim."
+    ).verdict == "ALLOW"
 
 
 def test_positive_clinical_or_causal_requests_remain_rejected() -> None:

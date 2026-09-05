@@ -1,5 +1,9 @@
 # P2-I 知识库首次导入报告
 
+这是独立知识库部署时点的历史验证报告：它证明过受控的 pgvector/Neo4j
+存储导入和集成测试，不证明 P2-J4.1 的 50 条真实 Trace 已运行。当前
+评测/Trace 状态以 `p2j4-1-architecture-calibration-v1.md` 为准。
+
 ## 结论
 
 独立的 pgvector 和 Neo4j 知识库已完成首次真实导入和只读混合检索验证。两个容器
@@ -32,8 +36,10 @@ PostgreSQL 的当前索引清单同时保留历史导入版本记录；当前运
 - 全量 Python 测试：`161 passed, 2 skipped`；
 - `compileall`：通过。
 
-混合检索测试使用数据库中已经存在的 Gemini embedding 向量作为测试查询向量，未调用
-外部 Gemini API。没有自动批准 v4，也没有执行发布切换。
+历史混合检索测试为了验证数据库连通性，向测试 double 注入了数据库中已有的向量，
+因此未调用外部 Gemini API；这不等同于线上文本查询不需要 query embedding。线上
+pgvector 仍必须把每个新查询编码成同维向量，现已增加跨进程 query-vector 缓存，避免
+评测重跑重复消耗配额。没有自动批准 v4，也没有执行发布切换。
 
 ## 发布边界
 

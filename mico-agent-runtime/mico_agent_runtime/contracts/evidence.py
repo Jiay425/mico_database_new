@@ -8,7 +8,7 @@ from pydantic import Field, StringConstraints, field_validator
 from .base import ClosedModel, Identifier, NonEmptyText
 from .evidence_report import EvidenceId, EvidenceReference, EvidenceReviewReport, EvidenceSource
 from .graph_rag import GraphEvidencePath, ReasoningPath
-from .retrieval import RerankBreakdown
+from .retrieval import RerankBreakdown, RetrievalScope
 
 
 EvidenceDirection = Literal["supporting", "contrary", "context"]
@@ -29,6 +29,9 @@ class EvidenceTaskRequest(ClosedModel):
     )
     requestedDirections: list[EvidenceDirection] = Field(min_length=1, max_length=3)
     retrievalMode: KnowledgeRetrievalMode = "hybrid"
+    # Optional request/UI-supplied document boundary.  The default remains a
+    # deliberately explicit global search for ordinary corpus questions.
+    retrievalScope: RetrievalScope = Field(default_factory=RetrievalScope)
     limit: int = Field(default=10, strict=True, ge=1, le=10)
     createdAt: datetime
 
@@ -52,6 +55,7 @@ class EvidenceQuery(ClosedModel):
     taxonName: Annotated[str, StringConstraints(min_length=1, max_length=512)] | None = None
     direction: EvidenceDirection
     retrievalMode: KnowledgeRetrievalMode = "hybrid"
+    retrievalScope: RetrievalScope = Field(default_factory=RetrievalScope)
     limit: int = Field(strict=True, ge=1, le=10)
 
 
@@ -66,18 +70,19 @@ class LiteratureEvidenceItem(ClosedModel):
     direction: EvidenceDirection
     summary: Annotated[str, StringConstraints(min_length=1, max_length=2000)]
     evidenceTier: Literal["fulltext", "abstract", "metadata"] = "metadata"
-    retrievalRoute: Literal["vector", "graph", "hybrid"] | None = None
-    retrievalModel: Literal["gemini-embedding-2", "fulltext-tfidf-cosine-v1"] | None = None
+    retrievalRoute: Literal["vector", "sparse", "graph", "hybrid"] | None = None
+    retrievalModel: Literal["gemini-embedding-2", "fulltext-tfidf-cosine-v1", "postgres-fulltext-bm25-v1"] | None = None
     sourceChunkId: Annotated[str, StringConstraints(min_length=1, max_length=128)] | None = None
     retrievalScore: float = Field(default=0.0, ge=0.0)
     sourceExcerpt: Annotated[str, StringConstraints(min_length=1, max_length=1200)] | None = None
     vectorScore: float = Field(default=0.0, ge=0.0)
+    sparseScore: float = Field(default=0.0, ge=0.0)
     graphScore: float = Field(default=0.0, ge=0.0)
     rerankScore: float = Field(default=0.0, ge=0.0)
     rerankBreakdown: RerankBreakdown | None = None
     graphPaths: list[GraphEvidencePath] = Field(default_factory=list, max_length=4)
     reasoningPaths: list[ReasoningPath] = Field(default_factory=list, max_length=4)
-    retrievalSources: list[Literal["vector", "graph"]] = Field(default_factory=list, max_length=2)
+    retrievalSources: list[Literal["vector", "sparse", "graph"]] = Field(default_factory=list, max_length=3)
 
 
 class EvidenceRunResult(ClosedModel):

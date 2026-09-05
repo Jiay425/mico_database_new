@@ -1,5 +1,10 @@
 # Mico P1-B2 Java Read-Only Tool Executor v1
 
+> **历史执行器快照**：本文的固定五工具/固定疾病与 cohort 说明保留作旧
+> contract 测试和审计依据，不代表当前 active Catalog。当前 Java Catalog
+> 只有 `describe_read_schema` 与 `execute_read_query`；Python 不得依据本页
+> 恢复固定业务分支。
+
 ## 1. Boundary and scope
 
 `AgentReadOnlyToolExecutor` is an internal Java boundary. It receives the existing P1-A typed `AgentToolRequest`, validates it with `AgentToolRequestValidator`, and dispatches only the five fixed read-only operations already supplied by `AgentReadModelService`. Java remains the only business fact source.

@@ -1,10 +1,66 @@
 # Mico Agent Runtime
 
 This directory contains the independent Python + LangGraph runtime. The
-current checked-in workflows are deterministic by default and do not connect
-to the business MySQL database or read Java configuration files. An
-OpenAI-compatible planner is optional and fail-closes to deterministic mode;
-no token is stored in the repository.
+Scientific Dynamic Runtime uses a policy model for high-level Action choice
+and a configured materializer for typed QueryPlan/AnalysisPlan parameters;
+Java remains the business-data read boundary. The legacy Intent compatibility
+workflow is retained separately for historical fixtures and is not the
+Scientific Dynamic main path. No token is stored in the repository.
+
+**Current calibration (2026-08-27):** Decision SFT v5 and DPO v4 Controlled
+r2 are already trained assets. The current implementation work is the new
+Dynamic Materialization E2E, not another DPO training run. Local QueryPlan,
+AnalysisPlan, provenance and guardrail tests pass; real Qwen service,
+DeepSeek Flash materialization, Java/MySQL E2E and the Dynamic canaries remain
+to be executed.
+
+## Decision-State-native SFT v1 (offline only)
+
+The first Decision Policy dataset is built by
+`python scripts/build_decision_sft_v1.py`. It freezes the same six-block
+`ScientificDecisionState` used at serving time and never starts an LLM,
+training job, or A100. The contract has three non-negotiable rules:
+
+1. **Objective is not Action.** An objective such as
+   `cross_project_validation` is not the Action `cross_project_validate`.
+2. **The selected action must be executable in the current state.** Every
+   label must be in the availability list recomputed from the semantic Catalog;
+   alternatives obey the same rule.
+3. **Training state must match serving state.** Provenance metadata is kept
+   offline and is never sent to the model; legacy flags, raw rows, plans and
+   identities are forbidden.
+
+The builder writes its candidate pool, contract-approved records, disjoint
+train/validation/frozen-test JSONL, and audit report under
+`artifacts/decision_sft_v1/`. Those 480 records are only the pre-review
+candidate set. Run the repository-agent review as a separate offline gate:
+
+```text
+python scripts/review_decision_sft_v1.py
+```
+
+Review order is fixed: (1) deterministic contract validation, (2) repository-
+agent full semantic review of every candidate, (3) high-risk second-pass
+adjudication, and (4) deterministic post-review validation. The review keeps
+the original candidates in `candidate_v1.jsonl`, adds controlled boundary
+coverage, re-deduplicates and re-splits by trajectory/pair, and writes final
+artifacts under `artifacts/decision_sft_v1_reviewed/`. It calls no external
+model, starts no service, and never launches training. Only a successful final
+review sets `DECISION_SFT_V1_DATA_READY=true` and `training_eligible=true`.
+
+Once the reviewed set is frozen, prepare (still offline) with:
+
+```text
+python scripts/prepare_decision_sft_v1_training.py
+```
+
+This writes the dataset fingerprint, old-SFT configuration audit, measured
+Qwen token lengths, BF16/LoRA training configuration, CPU assistant-only
+masking dry run, frozen-test evaluator contract, and external-canary reuse
+check under `artifacts/decision_sft_v1_reviewed/training_prep/`. It makes no
+model/API call and does not read the frozen test split from the trainer. The
+future GPU entry point is `sft/p2j4_train_decision_sft_v1.py`; it accepts only
+train and validation JSONL after this gate.
 
 ## Boundary
 
@@ -93,6 +149,12 @@ silently fall back to JSONL. For Gemini dense retrieval, additionally set
 `MICO_GEMINI_EMBEDDING_ENABLED=true`, `MICO_GEMINI_EMBEDDING_MODEL=gemini-embedding-2`,
 and `MICO_GEMINI_API_KEY` through the deployment environment. The key is never
 stored in the repository or emitted in logs.
+Each new text query still needs one query vector for pgvector; document vectors
+already stored in the database cannot be substituted for it. Set
+`MICO_KNOWLEDGE_QUERY_EMBED_CACHE_PATH` to a protected writable JSON path to
+reuse query vectors across process restarts. The cache stores only a
+model-scoped hash and normalized vector, never raw query text. Sparse FTS and
+Neo4j Graph branches do not consume Gemini quota.
 The local port uses either the full-text TF-IDF baseline or the explicit
 Gemini paper-level index (`fulltext-gemini-paper-embedding-v1`) plus
 provenance-graph matching. Database mode performs the equivalent retrieval in
@@ -123,9 +185,11 @@ explicit `deterministic_grounded` path; it never treats a fixed fallback as
   model planning. Model claims must reference returned evidence and graph path
   IDs or they are rejected and downgraded.
   For DeepSeek-compatible deployments, use `https://api.deepseek.com` as the
-  base URL; the Runtime uses `/chat/completions` there. Other OpenAI-compatible
-  base URLs use `/v1/chat/completions`. Optional provider JSON/thinking hints may
-  be removed on a 400/422 response, but evidence/path validation remains mandatory.
+  base URL. For Gemini's OpenAI-compatible API, use
+  `https://generativelanguage.googleapis.com/v1beta/openai`; the Runtime maps
+  both forms to `/chat/completions`. Other OpenAI-compatible base URLs use
+  `/v1/chat/completions`. Optional provider JSON/thinking hints may be removed
+  on a 400/422 response, but evidence/path validation remains mandatory.
 
 ## Development
 

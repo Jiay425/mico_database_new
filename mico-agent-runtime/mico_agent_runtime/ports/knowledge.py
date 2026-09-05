@@ -23,7 +23,7 @@ class PlannedKnowledgeSearchPort(KnowledgeSearchPort, Protocol):
     def search_parallel(
         self,
         query: EvidenceQuery,
-        branches: tuple[Literal["vector", "graph"], ...],
+        branches: tuple[Literal["vector", "sparse", "graph"], ...],
         plan: RetrievalPlan | None = None,
     ) -> list[LiteratureEvidenceItem]:
         ...

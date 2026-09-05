@@ -65,6 +65,7 @@ def build_evidence_graph(search_port: EvidenceSearchPort):
                 taxonName=taxon,
                 direction=direction,
                 retrievalMode=request.retrievalMode,
+                retrievalScope=request.retrievalScope,
                 limit=request.limit,
             )
             for taxon in taxons
@@ -112,6 +113,7 @@ def build_evidence_graph(search_port: EvidenceSearchPort):
             retrievalScore=item.retrievalScore,
             sourceExcerpt=item.sourceExcerpt,
             vectorScore=item.vectorScore,
+            sparseScore=item.sparseScore,
             graphScore=item.graphScore,
             rerankScore=item.rerankScore,
             rerankBreakdown=item.rerankBreakdown,
@@ -150,6 +152,7 @@ def build_evidence_graph(search_port: EvidenceSearchPort):
                     else [request.retrievalMode]
                 ),
                 top_k=request.limit,
+                retrieval_scope=request.retrievalScope,
             ),
             limitations=limitations,
             nonDiagnostic="not_clinical_diagnostic_or_treatment_advice",

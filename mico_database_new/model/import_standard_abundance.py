@@ -48,7 +48,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--password",
-        default=os.environ.get("MYSQL_PASSWORD", "ljy123"),
+        default=os.environ.get("MYSQL_PASSWORD"),
+        required="MYSQL_PASSWORD" not in os.environ,
         help="MySQL password.",
     )
     parser.add_argument(

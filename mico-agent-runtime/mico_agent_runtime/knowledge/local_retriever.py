@@ -13,7 +13,7 @@ from typing import Literal, Mapping
 from mico_agent_runtime.contracts.evidence import EvidenceQuery, LiteratureEvidenceItem
 from mico_agent_runtime.contracts.graph_rag import GraphEvidencePath, GraphPathStep, ReasoningPath
 from mico_agent_runtime.contracts.retrieval import RetrievalPlan, build_retrieval_plan
-from mico_agent_runtime.knowledge.embeddings import EmbeddingPort, GeminiEmbeddingPort
+from mico_agent_runtime.knowledge.embeddings import EmbeddingPort, GeminiEmbeddingPort, QueryEmbeddingCache
 from mico_agent_runtime.knowledge.reranking import merge_and_rerank
 
 
@@ -83,6 +83,17 @@ QUERY_TERM_ALIASES: dict[str, tuple[str, ...]] = {
     "对照": ("control", "healthy"),
 }
 
+SEMANTIC_RELATION_CLASSES = {"association", "causal", "directional"}
+GRAPH_ENTITY_TYPES = {
+    "concept",
+    "disease",
+    "hostprocess",
+    "metabolite",
+    "pathway",
+    "taxon",
+    "topic",
+}
+
 
 def _tokens(value: str) -> list[str]:
     result: list[str] = []
@@ -103,8 +114,41 @@ def _query_terms(value: str) -> list[str]:
     return terms
 
 
+def _query_type(topic: str) -> Literal["semantic_fact", "relation", "multi_hop", "composite"]:
+    value = topic.lower()
+    if any(marker in value for marker in (
+        "across studies", "across the supplied studies", "agree or differ",
+        "consistent, and where", "conflicting findings", "null, negative",
+    )):
+        return "composite"
+    if (
+        "multi-hop" in value or "multi hop" in value or "mechanism linking" in value
+        or ("fit together" in value and "evidence" in value)
+    ):
+        return "multi_hop"
+    if "relationship" in value or "relation" in value or "between" in value:
+        return "relation"
+    if "synthesize" in value or "across studies" in value:
+        return "composite"
+    return "semantic_fact"
+
+
 def _opaque_id(value: str) -> str:
     return "evidence-" + hashlib.sha256(value.encode("utf-8")).hexdigest()[:32]
+
+
+def _norm(value: str) -> str:
+    return re.sub(r"\s+", " ", value.strip().lower())
+
+
+def _unversioned_node_id(value: str) -> str:
+    """Return the stable node namespace used by path-shape checks.
+
+    Versioned graph exports use IDs such as ``v3:chunk:<id>`` while the
+    original local graph used ``chunk:<id>``.  Retrieval must accept both
+    forms without changing the exposed evidence chunk identifier.
+    """
+    return re.sub(r"^v[0-9]+:", "", value)
 
 
 class LocalKnowledgeSearchPort:
@@ -120,10 +164,15 @@ class LocalKnowledgeSearchPort:
         self,
         configuration: LocalKnowledgeIndexConfiguration,
         embedding_port: EmbeddingPort | None = None,
+        query_embedding_cache_path: str | Path | None = None,
     ) -> None:
         self._directory = configuration.indexDirectory
         self._backend = configuration.retrievalBackend
         self._embedding_port = embedding_port
+        self._query_embedding_cache = QueryEmbeddingCache(
+            getattr(embedding_port, "modelName", "unknown"),
+            query_embedding_cache_path,
+        )
         self._dense_vectors: dict[str, list[float]] = {}
         self._dense_dimension: int | None = None
         self._retrieval_model = "fulltext-tfidf-cosine-v1"
@@ -138,13 +187,21 @@ class LocalKnowledgeSearchPort:
 
     @classmethod
     def from_environment(cls, env: Mapping[str, str] | None = None) -> "LocalKnowledgeSearchPort":
+        import os
+
         configuration = LocalKnowledgeIndexConfiguration.from_environment(env)
+        source = os.environ if env is None else env
+        cache_path = source.get("MICO_KNOWLEDGE_QUERY_EMBED_CACHE_PATH", "").strip()
         embedding_port = (
             GeminiEmbeddingPort.from_environment(env)
             if configuration.retrievalBackend == "gemini"
             else None
         )
-        return cls(configuration, embedding_port=embedding_port)
+        return cls(
+            configuration,
+            embedding_port=embedding_port,
+            query_embedding_cache_path=cache_path or None,
+        )
 
     def _load(self) -> None:
         manifest_path = self._directory / "medical_knowledge_manifest.json"
@@ -218,6 +275,7 @@ class LocalKnowledgeSearchPort:
                 self._dense_dimension = int(dense_meta.get("dimension"))
                 if self._dense_dimension <= 0:
                     raise ValueError("invalid dimension")
+                self._query_embedding_cache.dimension = self._dense_dimension
                 with dense_path.open("r", encoding="utf-8") as handle:
                     for line in handle:
                         if not line.strip():
@@ -254,7 +312,7 @@ class LocalKnowledgeSearchPort:
     def search_parallel(
         self,
         query: EvidenceQuery,
-        branches: tuple[Literal["vector", "graph"], ...] = ("vector", "graph"),
+        branches: tuple[Literal["vector", "sparse", "graph"], ...] = ("vector", "sparse", "graph"),
         plan: RetrievalPlan | None = None,
     ) -> list[LiteratureEvidenceItem]:
         """Run vector and graph retrieval independently, then unify their results.
@@ -268,35 +326,42 @@ class LocalKnowledgeSearchPort:
             return []
         query_text = f"{query.topic} {query.taxonName or ''}".strip()
         requested = tuple(dict.fromkeys(branches))
-        if not requested or any(branch not in {"vector", "graph"} for branch in requested):
+        if not requested or any(branch not in {"vector", "sparse", "graph"} for branch in requested):
             raise ValueError("unsupported retrieval branch")
+        if set(requested) == {"vector", "graph"}:
+            requested = ("vector", "sparse", "graph")
         if plan is None:
-            mode = "hybrid" if len(requested) == 2 else requested[0]
+            mode = "hybrid" if len(requested) > 1 or requested[0] == "sparse" else requested[0]
             plan = build_retrieval_plan(
                 query_summary=query.topic,
-                query_type="multi_hop" if "graph" in requested else "semantic_fact",
+                query_type=_query_type(query.topic) if "graph" in requested else "semantic_fact",
                 retrieval_mode=mode,
                 retrieval_branches=list(requested),
                 top_k=query.limit,
             )
-        if len(requested) == 2:
-            with ThreadPoolExecutor(max_workers=2, thread_name_prefix="mico-rag") as pool:
+        if len(requested) >= 2:
+            with ThreadPoolExecutor(max_workers=3, thread_name_prefix="mico-rag") as pool:
                 vector_future = pool.submit(
                     self._dense_scores if self._backend == "gemini" else self._vector_scores,
                     query_text if self._backend == "gemini" else terms,
                 )
                 graph_future = pool.submit(
-                    self._graph_scores, terms, plan.maxHops or 3, plan.minConfidence
+                    self._graph_scores, terms, plan.maxHops or 3, plan.minConfidence, query_text
                 )
+                sparse_future = pool.submit(self._sparse_scores, terms)
                 vector_scores = vector_future.result()
+                sparse_scores = sparse_future.result()
                 graph_scores, graph_paths = graph_future.result()
             vector_results = self._build_branch_results(
-                query, vector_scores, {}, {}, "vector", max_items=query.limit
+                query, vector_scores, {}, {}, "vector", max_items=50
+            )
+            sparse_results = self._build_branch_results(
+                query, {}, {}, {}, "sparse", max_items=50, sparse_scores=sparse_scores
             )
             graph_results = self._build_branch_results(
-                query, {}, graph_scores, graph_paths, "graph", max_items=query.limit
+                query, {}, graph_scores, graph_paths, "graph", max_items=50
             )
-            return merge_and_rerank(query, vector_results, graph_results, plan)
+            return merge_and_rerank(query, vector_results, graph_results, plan, sparse_results=sparse_results)
 
         if requested[0] == "vector":
             vector_scores = (
@@ -307,7 +372,14 @@ class LocalKnowledgeSearchPort:
             return merge_and_rerank(query, self._build_branch_results(
                 query, vector_scores, {}, {}, "vector", max_items=query.limit
             ), [], plan)
-        graph_scores, graph_paths = self._graph_scores(terms, plan.maxHops or 3, plan.minConfidence)
+        if requested[0] == "sparse":
+            return merge_and_rerank(query, [], [], plan, sparse_results=self._build_branch_results(
+                query, {}, {}, {}, "sparse", max_items=query.limit,
+                sparse_scores=self._sparse_scores(terms),
+            ))
+        graph_scores, graph_paths = self._graph_scores(
+            terms, plan.maxHops or 3, plan.minConfidence, query_text
+        )
         return merge_and_rerank(query, [], self._build_branch_results(
             query, {}, graph_scores, graph_paths, "graph", max_items=query.limit
         ), plan)
@@ -318,19 +390,24 @@ class LocalKnowledgeSearchPort:
         vector_scores: dict[str, float],
         graph_scores: dict[str, float],
         graph_paths: dict[str, list[GraphEvidencePath]],
-        route: Literal["vector", "graph", "hybrid"],
+        route: Literal["vector", "sparse", "graph", "hybrid"],
         *,
         max_items: int,
+        sparse_scores: dict[str, float] | None = None,
     ) -> list[LiteratureEvidenceItem]:
         scores: dict[str, float] = {}
-        for chunk_id in set(vector_scores) | set(graph_scores):
+        chunk_ids = set(vector_scores) | set(graph_scores) | set(sparse_scores or {})
+        for chunk_id in chunk_ids:
             vector_score = vector_scores.get(chunk_id, 0.0)
             graph_score = graph_scores.get(chunk_id, 0.0)
+            sparse_score = (sparse_scores or {}).get(chunk_id, 0.0)
             path_support = min(1.0, len(graph_paths.get(chunk_id, [])) / 2.0)
             if route == "vector":
                 score = vector_score
             elif route == "graph":
                 score = graph_score
+            elif route == "sparse":
+                score = sparse_score
             else:
                 score = 0.55 * vector_score + 0.35 * graph_score + 0.10 * path_support
             if score > 0:
@@ -341,7 +418,7 @@ class LocalKnowledgeSearchPort:
         seen_papers: set[str] = set()
         for chunk_id, score in sorted(scores.items(), key=lambda item: (-item[1], item[0])):
             row = by_chunk.get(chunk_id)
-            if row is None or str(row.get("pmcid")) in seen_papers:
+            if row is None or (route != "sparse" and str(row.get("pmcid")) in seen_papers):
                 continue
             seen_papers.add(str(row.get("pmcid")))
             year = int(row.get("year") or 2000)
@@ -366,6 +443,7 @@ class LocalKnowledgeSearchPort:
                 retrievalScore=round(score, 8),
                 sourceExcerpt=excerpt,
                 vectorScore=round(vector_scores.get(chunk_id, 0.0), 8),
+                sparseScore=round((sparse_scores or {}).get(chunk_id, 0.0), 8),
                 graphScore=round(graph_scores.get(chunk_id, 0.0), 8),
                 rerankScore=round(score, 8),
                 graphPaths=graph_paths.get(chunk_id, [])[:4],
@@ -378,6 +456,21 @@ class LocalKnowledgeSearchPort:
             if len(results) >= max_items:
                 break
         return results
+
+    def _sparse_scores(self, terms: list[str]) -> dict[str, float]:
+        """Chunk-level lexical/BM25-like score for the local backend."""
+        query_terms = set(term for term in terms if len(term) > 1)
+        if not query_terms:
+            return {}
+        scores: dict[str, float] = {}
+        for row in self._vectors:
+            text = " ".join((str(row.get("title") or ""), str(row.get("text") or ""))).lower()
+            tokens = set(_tokens(text))
+            matched = [term for term in query_terms if term in tokens]
+            if matched:
+                score = sum(self._idf.get(term, 1.0) for term in matched) / max(1.0, len(query_terms))
+                scores[str(row["chunkId"])] = min(1.0, score)
+        return scores
 
     @staticmethod
     def _merge_branch_results(
@@ -449,7 +542,10 @@ class LocalKnowledgeSearchPort:
     def _dense_scores(self, query_text: str) -> dict[str, float]:
         if self._embedding_port is None:
             raise LocalKnowledgeIndexConfigurationError("LOCAL_KNOWLEDGE_EMBEDDING_NOT_CONFIGURED")
-        query_vector = self._embedding_port.embed_query(query_text)
+        query_vector = self._query_embedding_cache.get_or_compute(
+            query_text,
+            lambda: self._embedding_port.embed_query(query_text),
+        )
         if self._dense_dimension is None or len(query_vector) != self._dense_dimension:
             raise LocalKnowledgeIndexConfigurationError("LOCAL_KNOWLEDGE_EMBEDDING_DIMENSION_MISMATCH")
         scores: dict[str, float] = {}
@@ -491,6 +587,7 @@ class LocalKnowledgeSearchPort:
     def _reverse_relation(relation: str) -> str:
         return {
             "MENTIONS": "MENTIONED_BY",
+            "MENTIONS_ENTITY": "MENTIONED_BY_ENTITY",
             "MENTIONS_CANDIDATE": "CANDIDATE_MENTIONED_BY",
             "PART_OF": "HAS_CHUNK",
             "IN_SECTION": "HAS_CHUNK",
@@ -506,7 +603,7 @@ class LocalKnowledgeSearchPort:
             return "conflicted"
         if any(marker in relation for marker in ("CONFLICT", "CONTRADICT", "NEGAT")):
             return "conflicted"
-        if target.startswith("candidate_taxon:") or "CANDIDATE" in relation:
+        if _unversioned_node_id(target).startswith("candidate_taxon:") or "CANDIDATE" in relation:
             return "speculative"
         return "supported"
 
@@ -521,15 +618,27 @@ class LocalKnowledgeSearchPort:
         return "partial"
 
     def _graph_scores(
-        self, terms: list[str], max_hops: int = 3, min_confidence: float = 0.65
+        self,
+        terms: list[str],
+        max_hops: int = 3,
+        min_confidence: float = 0.65,
+        query_text: str = "",
     ) -> tuple[dict[str, float], dict[str, list[GraphEvidencePath]]]:
         max_seed_nodes = 16
         max_expansions = 4000
         max_neighbors_per_node = 80
         allowed_relations = {
             "MENTIONS",
+            "MENTIONS_ENTITY",
             "MENTIONS_CANDIDATE",
             "ASSOCIATED_WITH_CANDIDATE",
+            "ASSOCIATED_WITH",
+            "CAUSES",
+            "MEDIATES",
+            "PROMOTES",
+            "INHIBITS",
+            "INCREASED_IN",
+            "DECREASED_IN",
             "HAS_TOPIC",
             "PART_OF",
             "IN_SECTION",
@@ -541,6 +650,24 @@ class LocalKnowledgeSearchPort:
         seed_nodes = {
             node_id for node_id, labels in self._graph_labels.items()
             if labels & query_terms
+        }
+        # Prefer paths that connect the explicit entities in the question.
+        # Without this focus set, a high-degree concept such as "inflammation"
+        # can dominate a relation query even when another path contains both
+        # requested entities.  The focus is only a ranking signal; it does not
+        # create a relationship or alter the evidence contract.
+        normalized_query = _norm(query_text)
+        focus_nodes = {
+            node_id for node_id, node in self._graph_nodes.items()
+            if node.get("nodeType") in GRAPH_ENTITY_TYPES
+            and (
+                _norm(str(node.get("label") or "")) in normalized_query
+                or any(
+                    _norm(str(alias)) in normalized_query
+                    for alias in (node.get("aliases") or [])
+                    if isinstance(alias, str)
+                )
+            )
         }
         scores: defaultdict[str, float] = defaultdict(float)
         paths_by_chunk: defaultdict[str, list[GraphEvidencePath]] = defaultdict(list)
@@ -562,7 +689,7 @@ class LocalKnowledgeSearchPort:
                 neighbors = sorted(
                     self._graph_adjacency.get(node_id, []),
                     key=lambda item: (
-                        0 if str(item[1].get("relation")) in {"MENTIONS", "MENTIONS_CANDIDATE"} else 1,
+                        0 if str(item[1].get("relation")) in {"MENTIONS", "MENTIONS_ENTITY", "MENTIONS_CANDIDATE"} else 1,
                         str(item[0]),
                     ),
                 )
@@ -584,8 +711,9 @@ class LocalKnowledgeSearchPort:
                         continue
                     next_path = edge_path + [(neighbor, edge, reversed_edge)]
                     next_visited = visited | {neighbor}
-                    if neighbor.startswith("chunk:"):
-                        chunk_id = neighbor[6:]
+                    unversioned_neighbor = _unversioned_node_id(neighbor)
+                    if unversioned_neighbor.startswith("chunk:"):
+                        chunk_id = unversioned_neighbor[6:]
                         steps: list[GraphPathStep] = []
                         for index, (target, hop, reverse) in enumerate(next_path):
                             source = seed if index == 0 else next_path[index - 1][0]
@@ -629,7 +757,19 @@ class LocalKnowledgeSearchPort:
                         )
                         if signature not in signatures and len(paths_by_chunk[chunk_id]) < 4:
                             paths_by_chunk[chunk_id].append(path)
-                        scores[chunk_id] += 1.0 / len(steps)
+                        path_node_ids = [seed] + [target for target, _, _ in next_path]
+                        focus_hit_count = len(set(path_node_ids) & focus_nodes)
+                        connects_focus_entities = any(
+                            str(hop.get("relationClass") or "") in SEMANTIC_RELATION_CLASSES
+                            and {str(hop.get("source")), str(hop.get("target"))}.issubset(focus_nodes)
+                            for _, hop, _ in next_path
+                        )
+                        focus_multiplier = 1.0
+                        if focus_hit_count >= 2:
+                            focus_multiplier += 0.75
+                        if connects_focus_entities:
+                            focus_multiplier += 1.25
+                        scores[chunk_id] += (1.0 / len(steps)) * focus_multiplier
                     queue.append((neighbor, next_path, next_visited))
         if not scores:
             return {}, {}

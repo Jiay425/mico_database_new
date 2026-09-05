@@ -39,12 +39,13 @@ $env:MICO_KNOWLEDGE_GRAPH_ENABLED = "true"
 $env:MICO_KNOWLEDGE_GRAPH_VERSION = "fulltext-provenance-graphrag-v3"
 $env:MICO_LOG_LEVEL = "WARNING"
 $env:PYTHONPATH = $runtimeRoot
-# This is a policy-only paired experiment.  Keep planner fallback and final
-# GraphRAG synthesis deterministic, so a paid downstream model cannot become
-# a hidden second experimental variable (or an avoidable per-case cost).
-$env:MICO_RESEARCH_PLANNER_BASE_URL = ""
-$env:MICO_RESEARCH_PLANNER_MODEL = ""
-$env:MICO_RESEARCH_PLANNER_TOKEN = ""
+# Qwen chooses the next high-level Action.  The configured Research Planner
+# must then materialize that exact action into question-specific SQL or a
+# bounded analysis plan.  Do not clear these values and silently replace
+# model-generated queries with catalog templates.
+if (-not $env:MICO_RESEARCH_PLANNER_BASE_URL -or -not $env:MICO_RESEARCH_PLANNER_MODEL -or -not $env:MICO_RESEARCH_PLANNER_TOKEN) {
+    throw "DYNAMIC_RESEARCH_PLANNER_CONFIG_REQUIRED"
+}
 $env:MICO_GRAPH_RAG_GENERATOR_BASE_URL = ""
 $env:MICO_GRAPH_RAG_GENERATOR_MODEL = ""
 $env:MICO_GRAPH_RAG_GENERATOR_TOKEN = ""

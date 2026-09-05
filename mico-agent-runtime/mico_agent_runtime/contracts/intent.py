@@ -9,6 +9,7 @@ from .audit import AuditEvent
 from .generated_analysis import GeneratedAnalysisResult
 from .metrics import RuntimeMetrics
 from .base import ClosedModel, Identifier
+from .retrieval import RetrievalScope
 from .tools import AllowedScope, ToolStatus
 
 
@@ -33,6 +34,9 @@ class IntentTaskRequest(ClosedModel):
     taskId: Identifier
     requesterId: Identifier
     requestedScopes: list[AllowedScope] = Field(min_length=1, max_length=8)
+    # UI/runtime supplied literature boundary.  It is kept separate from the
+    # Java data-tool scopes above because it governs PGVector/Neo4j evidence.
+    retrievalScope: RetrievalScope = Field(default_factory=RetrievalScope)
     question: IntentQuestion
     allowedWorkflows: list[ApprovedWorkflow] = Field(min_length=1, max_length=2)
     createdAt: datetime

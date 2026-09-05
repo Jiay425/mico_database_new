@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from datetime import datetime, timezone
-from typing import Annotated, Literal, TypeAlias
+from typing import Annotated, Any, Literal, TypeAlias
 
 from pydantic import Field, StringConstraints, TypeAdapter, field_validator, model_validator
 
@@ -17,8 +17,9 @@ from .analysis import (
 from .base import ClosedModel, Identifier
 from .graph_rag import GroundedClaim, ReasoningStep
 from .schema_catalog import SchemaSemanticCatalog
+from .materialization import QueryPlan, RelationId, SemanticFieldId
 from .unified_evidence import UnifiedEvidenceCandidate
-from .tools import DynamicSqlText, JavaTransientSnapshotId, Limit1000
+from .tools import DynamicSqlText, JavaTransientSnapshotId, Limit20000
 
 
 ResearchContractVersion = Literal["v1"]
@@ -74,6 +75,8 @@ ResearchLimitationCode = Literal[
     "unmapped_or_ambiguous_labels_are_not_resolved",
     "dynamic_query_is_java_validated_and_bounded",
     "generated_analysis_is_bounded_and_sandboxed",
+    "objective_unavailable_due_to_data",
+    "objective_unavailable_due_to_environment",
 ]
 
 
@@ -202,6 +205,10 @@ class ScientificObservationSummary(ClosedModel):
     rowCount: int = Field(strict=True, ge=0, le=1000000)
     qualityCodes: list[MetricCode] = Field(default_factory=list, max_length=32)
     versionCodes: list[VersionToken] = Field(default_factory=list, max_length=8)
+    # Safe semantic shape of a Dynamic QueryPlan. Physical tables, SQL,
+    # filters and returned values never cross the planner boundary.
+    queryPlanFields: list[SemanticFieldId] = Field(default_factory=list, max_length=16)
+    queryPlanRelationPath: list[RelationId] = Field(default_factory=list, max_length=2)
 
 
 class ScientificPlannerContext(ClosedModel):
@@ -215,7 +222,25 @@ class ScientificPlannerContext(ClosedModel):
     # Opaque, allow-listed Runtime feedback for a bounded re-plan.  This is
     # deliberately a code rather than Java error text, SQL, or any data value.
     executionFeedback: list[PlannerFeedbackCode] = Field(default_factory=list, max_length=3)
+    # Closed semantic requirements derived from the requested action and the
+    # current Java catalog.  These are hints/constraints for the Dynamic
+    # Materializer, never physical columns or data values.  They let a
+    # cross-validation read request the actual grouping dimension and numeric
+    # outcome instead of accepting an unrelated numeric field such as age.
+    requiredSemanticFields: list[SemanticFieldId] = Field(default_factory=list, max_length=8)
+    requiredGroupField: SemanticFieldId | None = None
+    # Runtime-only capability facts used to prevent a materializer from
+    # reintroducing a field already proven to have zero cohort coverage.
+    # This is not part of ScientificPolicyInput/Decision State.
+    unavailableSemanticFields: list[SemanticFieldId] = Field(default_factory=list, max_length=8)
     schemaCatalog: SchemaSemanticCatalog | None = None
+    # The Dynamic Scientific materializer may receive the policy-facing
+    # six-block state as a read-only view.  It is deliberately a plain JSON
+    # payload here to avoid a contracts import cycle (decision_state imports
+    # ScientificActionName from this module); the graph creates it only from
+    # a validated ScientificDecisionState.  Raw rows, SQL and physical catalog
+    # identifiers never belong in this field.
+    decisionState: dict[str, Any] | None = None
 
     @field_validator("questionSummary")
     @classmethod
@@ -224,14 +249,26 @@ class ScientificPlannerContext(ClosedModel):
 
 
 class ExecuteReadQueryArguments(ClosedModel):
-    """Model SQL proposal; Java remains the final policy/execution boundary."""
+    """Read arguments with a typed-plan path and legacy SQL compatibility.
+
+    New Dynamic Runtime materialization must populate ``queryPlan``.  ``sql``
+    remains optional only so historical tool fixtures and the non-scientific
+    compatibility boundary can be read without rewriting old assets.
+    """
 
     actionName: Literal["execute_read_query"] = "execute_read_query"
-    sql: DynamicSqlText
-    limit: Limit1000 | None = None
+    queryPlan: QueryPlan | None = None
+    sql: DynamicSqlText | None = None
+    limit: Limit20000 | None = None
 
     @model_validator(mode="after")
     def require_read_shape(self) -> "ExecuteReadQueryArguments":
+        if (self.queryPlan is None) == (self.sql is None):
+            raise ValueError("read arguments require exactly one queryPlan or legacy sql")
+        if self.queryPlan is not None:
+            if self.limit is not None and self.limit != self.queryPlan.limit:
+                raise ValueError("query plan limit and read limit must match")
+            return self
         normalized = self.sql.lstrip().lower()
         if not normalized.startswith(("select", "with")):
             raise ValueError("only a SELECT or WITH draft may be proposed")
@@ -243,14 +280,21 @@ class ExecuteReadQueryArguments(ClosedModel):
 
 
 class InspectCohortArguments(ClosedModel):
-    """Metadata-first dynamic read; Java validates the SQL before execution."""
+    """Metadata-first read with typed-plan and legacy SQL compatibility."""
 
     actionName: Literal["inspect_cohort"] = "inspect_cohort"
-    sql: DynamicSqlText
-    limit: Limit1000 | None = None
+    queryPlan: QueryPlan | None = None
+    sql: DynamicSqlText | None = None
+    limit: Limit20000 | None = None
 
     @model_validator(mode="after")
     def require_read_shape(self) -> "InspectCohortArguments":
+        if (self.queryPlan is None) == (self.sql is None):
+            raise ValueError("read arguments require exactly one queryPlan or legacy sql")
+        if self.queryPlan is not None:
+            if self.limit is not None and self.limit != self.queryPlan.limit:
+                raise ValueError("query plan limit and read limit must match")
+            return self
         normalized = self.sql.lstrip().lower()
         if not normalized.startswith(("select", "with")):
             raise ValueError("only a SELECT or WITH draft may be proposed")
@@ -274,10 +318,22 @@ class ProjectionAnalysisArguments(ClosedModel):
     observationIds: list[ObservationId] = Field(min_length=1, max_length=8)
     analysisGoal: Annotated[str, StringConstraints(min_length=1, max_length=512)]
     dimensions: list[
-        Annotated[str, StringConstraints(pattern=r"^[A-Za-z][A-Za-z0-9_]{0,63}$", max_length=64)]
+        Annotated[
+            str,
+            StringConstraints(
+                pattern=r"^[A-Za-z][A-Za-z0-9_]{0,63}(?:\.[a-z][a-z0-9_]{1,63})?$",
+                max_length=128,
+            ),
+        ]
     ] = Field(default_factory=list, max_length=8)
     confounders: list[
-        Annotated[str, StringConstraints(pattern=r"^[A-Za-z][A-Za-z0-9_]{0,63}$", max_length=64)]
+        Annotated[
+            str,
+            StringConstraints(
+                pattern=r"^[A-Za-z][A-Za-z0-9_]{0,63}(?:\.[a-z][a-z0-9_]{1,63})?$",
+                max_length=128,
+            ),
+        ]
     ] = Field(default_factory=list, max_length=8)
 
     @field_validator("analysisGoal")
@@ -298,9 +354,11 @@ class ProjectionAnalysisArguments(ClosedModel):
             raise ValueError("adjust_confounders requires confounder fields")
         if self.actionName == "stratified_analysis" and not self.dimensions:
             raise ValueError("stratified_analysis requires dimensions")
-        if self.actionName in {"cross_project_validate", "cross_disease_validate"} \
-                and len(self.observationIds) < 2:
-            raise ValueError("cross validation requires at least two observations")
+        # A single Java observation is sufficient when it contains the
+        # requested group field and numeric outcome: the bounded operator
+        # compares the groups present in that observation.  Multiple source
+        # observations remain valid for callers that intentionally combine
+        # independent bounded reads.
         return self
 
 
@@ -447,6 +505,10 @@ class Observation(ClosedModel):
     sampleKeyCount: int | None = Field(default=None, strict=True, ge=0, le=1000000)
     missingnessSummary: list[ObservationMetric] = Field(default_factory=list, max_length=64)
     exclusionSummary: list[ObservationMetric] = Field(default_factory=list, max_length=64)
+    # Retain only the semantic read shape so a later Dynamic Materializer can
+    # avoid proposing the same bounded projection for a fresh observation.
+    queryPlanFields: list[SemanticFieldId] = Field(default_factory=list, max_length=16)
+    queryPlanRelationPath: list[RelationId] = Field(default_factory=list, max_length=2)
 
     @field_validator("generatedAt")
     @classmethod

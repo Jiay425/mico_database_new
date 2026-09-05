@@ -14,6 +14,14 @@ from .research_planner import (
     IntentPlannerPort,
     build_intent_planner,
 )
+from .task_understanding import (
+    DeterministicTaskUnderstandingPort,
+    HttpTaskUnderstandingPort,
+    TaskUnderstandingError,
+    TaskUnderstandingPort,
+    TaskUnderstandingResult,
+    build_task_understanding_port,
+)
 from .evidence import (
     EvidenceSearchConfiguration,
     EvidenceSearchConfigurationError,
@@ -48,6 +56,12 @@ __all__ = [
     "HttpResearchPlannerPort",
     "IntentPlannerPort",
     "build_intent_planner",
+    "DeterministicTaskUnderstandingPort",
+    "HttpTaskUnderstandingPort",
+    "TaskUnderstandingError",
+    "TaskUnderstandingPort",
+    "TaskUnderstandingResult",
+    "build_task_understanding_port",
     "EvidenceSearchError",
     "EvidenceSearchPort",
     "UnconfiguredEvidenceSearchPort",

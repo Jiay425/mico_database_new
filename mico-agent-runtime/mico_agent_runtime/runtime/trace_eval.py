@@ -19,6 +19,7 @@ from mico_agent_runtime.contracts.trace_eval import (
 
 _VALID_NODES = {
     "validate_research_task",
+    "understand_task",
     "policy_gate",
     "plan_action",
     "authorize_action",

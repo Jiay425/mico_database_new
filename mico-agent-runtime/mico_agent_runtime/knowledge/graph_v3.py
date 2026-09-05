@@ -69,6 +69,10 @@ ENTITY_ALIASES: dict[str, tuple[str, str, tuple[str, ...]]] = {
     "lipopolysaccharide": ("Metabolite", "lipopolysaccharide", ("lipopolysaccharide", "lps")),
     "butyrate": ("Metabolite", "butyrate", ("butyrate",)),
     "serotonin": ("Metabolite", "serotonin", ("serotonin",)),
+    # High-frequency biomedical target that otherwise leaves a repeated
+    # acronym/full-name pair (e.g. ``TLR4 ... lipopolysaccharide (LPS)``)
+    # looking like a self-loop during nearest-mention pairing.
+    "toll_like_receptor_4": ("Protein", "toll-like receptor 4", ("tlr4", "toll-like receptor 4", "toll like receptor 4")),
     "gut_brain_axis": ("Pathway", "gut-brain axis", ("gut-brain axis", "microbiota-gut-brain axis")),
     "gut_liver_brain_axis": ("Pathway", "gut-liver-brain axis", ("gut-liver-brain axis",)),
     "bile_acid_metabolism": ("Pathway", "bile acid metabolism", ("bile acid metabolism",)),
@@ -204,6 +208,29 @@ def extract_relations(text: str) -> tuple[list[RelationCandidate], int]:
             continue
         offset = sentence_match.start()
         mentions = extract_mentions(sentence)
+        # Keep one representative for aliases that are adjacent/overlapping
+        # (``lipopolysaccharide (LPS)``).  Retain repeated mentions that are
+        # genuinely separated, since they can participate in distinct
+        # relations later in the sentence.
+        compact_mentions: list[EntityMention] = []
+        for mention in mentions:
+            duplicate_index = next(
+                (
+                    index
+                    for index, existing in enumerate(compact_mentions)
+                    if existing.node_id == mention.node_id
+                    and mention.start <= existing.end + 3
+                    and existing.start <= mention.end + 3
+                ),
+                None,
+            )
+            if duplicate_index is None:
+                compact_mentions.append(mention)
+            else:
+                existing = compact_mentions[duplicate_index]
+                if len(mention.surface) > len(existing.surface):
+                    compact_mentions[duplicate_index] = mention
+        mentions = compact_mentions
         if len(mentions) < 2:
             continue
         relation_match: tuple[str, str, re.Match[str]] | None = None
@@ -218,9 +245,23 @@ def extract_relations(text: str) -> tuple[list[RelationCandidate], int]:
         before = [item for item in mentions if item.end <= marker.start()]
         after = [item for item in mentions if item.start >= marker.end()]
         if before and after:
-            pairs = [(before[-1], after[0])]
+            # Prefer the nearest pair, but never emit a semantic self-loop.
+            # If the nearest mentions are aliases of the same node, walk out
+            # to the next closest distinct pair in deterministic order.
+            pairs = []
+            for source in reversed(before):
+                for target in after:
+                    if source.node_id != target.node_id:
+                        pairs = [(source, target)]
+                        break
+                if pairs:
+                    break
         else:
-            pairs = [(mentions[index], mentions[index + 1]) for index in range(min(len(mentions) - 1, 4))]
+            pairs = [
+                (mentions[index], mentions[index + 1])
+                for index in range(min(len(mentions) - 1, 4))
+                if mentions[index].node_id != mentions[index + 1].node_id
+            ]
         for source, target in pairs:
             confidence = 0.86
             if source.normalization_status == "candidate_taxon" or target.normalization_status == "candidate_taxon":

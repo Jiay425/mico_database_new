@@ -58,7 +58,7 @@ class GraphQualityIssue(ClosedModel):
     issueCode: Literal[
         "ENTITY_UNMAPPED", "ENTITY_AMBIGUOUS", "MISSING_EVIDENCE",
         "LOW_CONFIDENCE", "UNSUPPORTED_RELATION", "INVALID_ASSERTION",
-        "MISSING_ENDPOINT", "CONFLICT_REQUIRES_REVIEW",
+        "MISSING_ENDPOINT", "SELF_LOOP_RELATION", "CONFLICT_REQUIRES_REVIEW",
     ]
     recordType: Literal["node", "edge"]
     recordId: str = Field(min_length=1, max_length=192)
@@ -115,6 +115,11 @@ class GraphBuildResult(ClosedModel):
     records: list[dict[str, Any]] = Field(min_length=1)
     manifest: GraphBuildManifest
     issues: list[GraphQualityIssue] = Field(default_factory=list, max_length=10000)
+    # Keep rejected source records in a sidecar-ready collection.  The main
+    # graph asset must remain clean (rejected records are never emitted into
+    # ``records``), but dropping them entirely made false-negative auditing
+    # impossible.  This field is intentionally not used by publication gates.
+    rejectedRecords: list[dict[str, Any]] = Field(default_factory=list, max_length=10000)
 
 
 class GraphPipelineError(ValueError):
@@ -234,6 +239,14 @@ def validate_graph_record(record: Mapping[str, Any], node_ids: set[str]) -> list
         issues.append(_record_issue(record, "MISSING_ENDPOINT", "error"))
     elif str(record["source"]) not in node_ids or str(record["target"]) not in node_ids:
         issues.append(_record_issue(record, "MISSING_ENDPOINT", "error"))
+    elif (
+        record.get("relationClass") != "structural"
+        and str(record["source"]) == str(record["target"])
+    ):
+        # A semantic assertion must link two distinct entities.  Self-loops
+        # are extraction artefacts (for example ``butyrate -> butyrate``),
+        # not evidence a retriever should surface or a reviewer must assess.
+        issues.append(_record_issue(record, "SELF_LOOP_RELATION", "error"))
     relation = str(record.get("relation") or "")
     if relation not in _ALLOWED_RELATIONS:
         issues.append(_record_issue(record, "UNSUPPORTED_RELATION", "error"))
@@ -270,6 +283,7 @@ def _mark_conflicts(records: list[dict[str, Any]]) -> None:
 def build_versioned_graph(
     rows: Iterable[Mapping[str, Any]],
     graph_version: str = GRAPH_PIPELINE_VERSION,
+    input_asset: str = "medical_chunks.jsonl",
 ) -> GraphBuildResult:
     if not GRAPH_VERSION_RE.fullmatch(graph_version):
         raise GraphPipelineError("GRAPH_VERSION_INVALID")
@@ -331,6 +345,7 @@ def build_versioned_graph(
     node_ids = {str(record["nodeId"]) for record in records if record.get("recordType") == "node"}
     issues: list[GraphQualityIssue] = []
     accepted: list[dict[str, Any]] = []
+    rejected_records: list[dict[str, Any]] = []
     rejected_ids: set[str] = set()
     for record in records:
         record_issues = validate_graph_record(record, node_ids)
@@ -338,6 +353,8 @@ def build_versioned_graph(
         errors = [issue for issue in record_issues if issue.severity == "error"]
         if errors:
             record["qualityStatus"] = "rejected"
+            record["rejectionIssueCodes"] = sorted({issue.issueCode for issue in errors})
+            rejected_records.append(record)
             rejected_ids.add(str(record.get("nodeId") or record.get("edgeId")))
             continue
         if record.get("recordType") == "edge" and record.get("qualityStatus") != "review_required":
@@ -365,7 +382,7 @@ def build_versioned_graph(
         graphVersion=graph_version,
         buildRunId=build_run_id,
         createdAt=datetime.now(timezone.utc).isoformat(),
-        inputAsset="medical_chunks.jsonl",
+        inputAsset=input_asset,
         inputFingerprint=_input_fingerprint(materialized),
         paperCount=base_counts.get("papers", 0),
         chunkCount=base_counts.get("chunks", 0),
@@ -382,7 +399,12 @@ def build_versioned_graph(
         qualityIssueCounts=dict(sorted(issue_counts.items())),
         status="review_pending" if review_count else "staging",
     )
-    return GraphBuildResult(records=final_records, manifest=manifest, issues=issues)
+    return GraphBuildResult(
+        records=final_records,
+        manifest=manifest,
+        issues=issues,
+        rejectedRecords=rejected_records,
+    )
 
 
 def load_graph_manifest(path: Path) -> GraphBuildManifest:
@@ -481,3 +503,10 @@ def save_graph_build(result: GraphBuildResult, output_path: Path, manifest_path:
         encoding="utf-8",
     )
     manifest_path.write_text(result.manifest.model_dump_json(indent=2), encoding="utf-8")
+    # Rejected records are deliberately kept out of the published/staging
+    # graph JSONL, but persist a deterministic sidecar for quality audits.
+    rejected_path = output_path.with_name(output_path.stem + "_rejected.jsonl")
+    rejected_path.write_text(
+        "".join(json.dumps(record, ensure_ascii=False) + "\n" for record in result.rejectedRecords),
+        encoding="utf-8",
+    )

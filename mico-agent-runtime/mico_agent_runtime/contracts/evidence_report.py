@@ -23,18 +23,19 @@ class EvidenceReference(ClosedModel):
     direction: Literal["supporting", "contrary", "context"]
     summary: Annotated[str, StringConstraints(min_length=1, max_length=2000)]
     evidenceTier: Literal["fulltext", "abstract", "metadata"] = "metadata"
-    retrievalRoute: Literal["vector", "graph", "hybrid"] | None = None
-    retrievalModel: Literal["gemini-embedding-2", "fulltext-tfidf-cosine-v1"] | None = None
+    retrievalRoute: Literal["vector", "sparse", "graph", "hybrid"] | None = None
+    retrievalModel: Literal["gemini-embedding-2", "fulltext-tfidf-cosine-v1", "postgres-fulltext-bm25-v1"] | None = None
     sourceChunkId: Annotated[str, StringConstraints(min_length=1, max_length=128)] | None = None
     retrievalScore: float = Field(default=0.0, ge=0.0)
     sourceExcerpt: Annotated[str, StringConstraints(min_length=1, max_length=1200)] | None = None
     vectorScore: float = Field(default=0.0, ge=0.0)
+    sparseScore: float = Field(default=0.0, ge=0.0)
     graphScore: float = Field(default=0.0, ge=0.0)
     rerankScore: float = Field(default=0.0, ge=0.0)
     rerankBreakdown: RerankBreakdown | None = None
     graphPaths: list[GraphEvidencePath] = Field(default_factory=list, max_length=4)
     reasoningPaths: list[ReasoningPath] = Field(default_factory=list, max_length=4)
-    retrievalSources: list[Literal["vector", "graph"]] = Field(default_factory=list, max_length=2)
+    retrievalSources: list[Literal["vector", "sparse", "graph"]] = Field(default_factory=list, max_length=3)
 
 
 class EvidenceReviewReport(ClosedModel):
@@ -44,7 +45,7 @@ class EvidenceReviewReport(ClosedModel):
     topic: Annotated[str, StringConstraints(min_length=1, max_length=1024)]
     queryType: Literal["semantic_fact", "relation", "multi_hop", "composite"] = "semantic_fact"
     routeConfidence: float = Field(default=0.0, ge=0.0, le=1.0)
-    retrievalBranches: list[Literal["vector", "graph"]] = Field(default_factory=list, max_length=2)
+    retrievalBranches: list[Literal["vector", "sparse", "graph"]] = Field(default_factory=list, max_length=3)
     retrievalPlan: RetrievalPlan | None = None
     queriesExecuted: int = Field(strict=True, ge=0, le=64)
     references: list[EvidenceReference] = Field(max_length=50)

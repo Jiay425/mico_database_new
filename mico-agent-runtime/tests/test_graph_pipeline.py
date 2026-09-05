@@ -120,6 +120,26 @@ def test_quality_gate_rejects_missing_evidence_and_endpoint() -> None:
     assert all(issue.severity == "error" for issue in issues)
 
 
+def test_quality_gate_rejects_semantic_self_loop() -> None:
+    issues = validate_graph_record(
+        {
+            "recordType": "edge",
+            "edgeId": "edge-loop",
+            "source": "entity-1",
+            "target": "entity-1",
+            "relation": "ASSOCIATED_WITH",
+            "relationClass": "association",
+            "assertionStatus": "asserted",
+            "confidence": 0.9,
+            "evidenceChunkId": "PMC1-A001",
+            "evidenceText": "Source-bound assertion.",
+        },
+        {"entity-1"},
+    )
+    assert {issue.issueCode for issue in issues} == {"SELF_LOOP_RELATION"}
+    assert issues[0].severity == "error"
+
+
 def test_publish_requires_clean_build_and_writes_explicit_registry(tmp_path: Path) -> None:
     result = build_versioned_graph(_rows())
     manifest_path = tmp_path / "manifest.json"

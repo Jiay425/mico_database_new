@@ -1,5 +1,11 @@
 # P2 Controlled Dynamic Read Query Contract v1
 
+> **历史 P2 动态查询契约快照**：本文仍准确描述动态 SQL 的 Java 最终校验、
+> Python 不直连业务 MySQL 和安全边界，但其“Catalog 只有
+> `execute_read_query`”及旧固定工具并存的表述是阶段性快照。当前 active
+> Catalog 还提供 metadata-only `describe_read_schema`；当前综合状态见
+> `mico-agent-runtime/docs/agent-runtime/p2j4-1-architecture-calibration-v1.md`。
+
 ## Purpose
 
 LangGraph is the orchestration layer. A configured model may recognize the

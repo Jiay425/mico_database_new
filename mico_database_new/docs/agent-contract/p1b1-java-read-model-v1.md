@@ -1,5 +1,9 @@
 # P1-B1 Java Read Model v1
 
+> **历史只读 Read Model 快照**：本文描述 P1-B1 的五个固定方法和早期
+> P2-C2 扩展；它们不是当前 active Agent Tool Catalog 的可调用清单。当前
+> Catalog 与 Scientific 主链边界见 `p2j4-1-architecture-calibration-v1.md`。
+
 ## 1. Scope and authority
 
 P1-B1 adds a Java-side, typed, read-only adapter for the five facts required by the next Agent Runtime stage. Java remains the only business fact source. The adapter is an internal Java service/Mapper boundary; it does not add an HTTP, MCP, FastAPI, Python, or LangGraph interface.

@@ -3,8 +3,13 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.p2g-query-embedding-cache*.json
+evals/.p2g-query-embedding-cache*.json
 .venv/
 venv/
 build/
 dist/
 *.egg-info/
+/artifacts/local_canary/
+/artifacts/gemini_dynamic_canary/
+/artifacts/data_semantics_probe/

@@ -11,6 +11,44 @@ mico_database_new/model/merged_abundance.csv
 /mico-agent-runtime/evals/**/*.json
 /mico-agent-runtime/evals/**/*.jsonl
 /mico-agent-runtime/evals/**/*.log
+!/mico-agent-runtime/evals/decision_sft_v1_full_dynamic_e2e_task_set_v1.json
 /mico-agent-runtime/docs/p2j4-*.md
 /mico-agent-runtime/logs/
 /mico-agent-runtime/data/
+/mico-agent-runtime/artifacts/
+/mico-agent-runtime/tmp-runtime-smoke/
+
+# Runtime output may contain request metadata, database queries, or local
+# infrastructure details. Keep it local even when a filename is not *.log.
+/logs/
+/mico_database_new/logs/
+/mico_database_new/model/*.log
+/mico_database_new/model/**/*.log
+/mico_database_new/*.log
+/data/
+/meta2db_final_validation.txt
+
+# Generated import summaries and knowledge-index/cache artifacts are local
+# operational records, not source assets.
+/mico_database_new/model/meta2db_*.summary.json
+/mico_database_new/model/meta2db_*.validation.json
+/mico_database_new/model/meta2db_species/*_summary.json
+/mico_database_new/references/knowledge/medical/rag/*.jsonl
+/mico_database_new/references/knowledge/medical/rag/*manifest*.json
+/mico_database_new/references/knowledge/medical/rag/*review_queue*.json
+/mico_database_new/references/knowledge/medical/rag/*embedding*_meta.json
+/mico_database_new/references/knowledge/medical/rag/.p2g-query-embedding-cache*.json
+
+# Local import payloads, container images, and generated interpreter/runtime files.
+/mico_database_new/model/meta2db_genus_relative_abundance.csv
+/mico_database_new/model/meta2db_genus_relative_abundance.csv.tmp
+/mico_database_new/model/meta2db_species/*.csv
+/mico_database_new/model/mysql_8_0_image.tar
+/redis/
+/tools/PAssist_Std.exe
+**/__pycache__/
+*.py[cod]
+
+# Build products are reproducible and may embed runtime configuration.
+**/target/
+*.class

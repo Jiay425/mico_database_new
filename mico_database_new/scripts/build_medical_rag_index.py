@@ -32,6 +32,21 @@ SKIP_SECTION_KEYWORDS = {
     "supporting information",
 }
 
+# Boilerplate sections are retained in the raw paper archive but should not
+# become primary retrieval evidence in chunk-v2.  This list is v2-only so the
+# historical chunk-v1 hash remains reproducible.
+V2_SKIP_SECTION_KEYWORDS = SKIP_SECTION_KEYWORDS | {
+    "funding",
+    "conflicts of interest",
+    "competing interests",
+    "author contributions",
+    "data availability",
+    "ethics statement",
+    "ethical approval",
+    "informed consent",
+    "publisher's note",
+}
+
 TOKEN_RE = re.compile(r"[A-Za-z][A-Za-z0-9_-]+|[\u4e00-\u9fff]{1,}")
 
 
@@ -48,6 +63,45 @@ class Chunk:
     section: str
     source_url: str
     text: str
+
+
+@dataclass(frozen=True)
+class ChunkV2:
+    """A structure-aware retrieval chunk.
+
+    Offsets are relative to the normalized subsection text recorded in the
+    same build.  They are intentionally not presented as offsets into the
+    original PDF/XML because normalization and markdown parsing can change
+    byte positions.
+    """
+
+    chunk_id: str
+    pmcid: str
+    pmid: str
+    topic: str
+    title: str
+    year: str
+    journal: str
+    doi: str
+    section: str
+    subsection: str
+    source_url: str
+    text: str
+    chunk_type: str
+    paragraph_index: int
+    paragraph_end_index: int
+    sentence_start: int
+    sentence_end: int
+    char_start: int
+    char_end: int
+    offset_base: str
+
+
+V2_VARIANTS = {
+    "small": {"targetTokens": 256, "minTokens": 100, "maxTokens": 340},
+    "medium": {"targetTokens": 512, "minTokens": 150, "maxTokens": 650},
+    "large": {"targetTokens": 768, "minTokens": 220, "maxTokens": 960},
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -70,6 +124,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-chars", type=int, default=1800, help="Max chars per chunk")
     parser.add_argument("--overlap", type=int, default=250, help="Overlap chars between chunks")
     parser.add_argument("--min-chars", type=int, default=240, help="Minimum chars per chunk")
+    parser.add_argument(
+        "--version", choices=("v1", "v2"), default="v1",
+        help="v1 preserves the original character splitter; v2 writes separate versioned assets",
+    )
+    parser.add_argument(
+        "--variant", choices=tuple(V2_VARIANTS), default="medium",
+        help="chunk-v2 target variant (small/medium/large)",
+    )
+    parser.add_argument(
+        "--all-v2-variants", action="store_true",
+        help="when --version v2, write all small/medium/large variants",
+    )
     return parser.parse_args()
 
 
@@ -125,6 +191,12 @@ def parse_markdown_metadata(md_text: str) -> Tuple[str, Dict[str, str], str, str
     if abstract_start > 0:
         end = fulltext_start - 1 if fulltext_start > 0 else len(lines)
         abstract_text = normalize_text("\n".join(lines[abstract_start:end]))
+        # A subset of imported XML records redundantly starts the body with
+        # ``Abstract`` (sometimes glued to the first word as ``AbstractThe``).
+        # The markdown heading already carries that structure, so remove only
+        # this leading marker and never alter an occurrence inside the prose.
+        abstract_text = re.sub(r"^abstract(?=[A-Z])", "", abstract_text, flags=re.I)
+        abstract_text = re.sub(r"^abstract\s+", "", abstract_text, flags=re.I)
 
     fulltext_text = normalize_text("\n".join(lines[fulltext_start:])) if fulltext_start > 0 else ""
     return title, metadata, abstract_text, fulltext_text
@@ -194,6 +266,325 @@ def split_section_to_chunks(sec_text: str, max_chars: int, overlap: int, min_cha
         start = max(0, end - overlap)
 
     return chunks
+
+
+def _v2_token_count(text: str) -> int:
+    """Count retrieval tokens without dropping stopwords used for sizing."""
+    return len(TOKEN_RE.findall(text.lower()))
+
+
+def split_into_structured_blocks(fulltext_text: str) -> List[Tuple[str, str, str]]:
+    """Split normalized full text into (section, subsection, text) blocks.
+
+    ``###`` is treated as a section and ``####`` as a subsection.  A
+    subsection is never merged with the next subsection; this keeps the
+    retrieval unit from silently crossing a scientific heading boundary.
+    """
+    if not fulltext_text:
+        return []
+    blocks: List[Tuple[str, str, str]] = []
+    section = "正文"
+    subsection = ""
+    lines: List[str] = []
+
+    def flush() -> None:
+        nonlocal lines
+        text = normalize_text("\n".join(lines))
+        if text:
+            blocks.append((section, subsection, text))
+        lines = []
+
+    for line in fulltext_text.splitlines():
+        # Check the deeper heading first because #### also starts with ###.
+        if line.startswith("#### "):
+            flush()
+            subsection = line[5:].strip() or ""
+        elif line.startswith("### "):
+            flush()
+            section = line[4:].strip() or "正文"
+            subsection = ""
+        else:
+            lines.append(line)
+    flush()
+
+    cleaned: List[Tuple[str, str, str]] = []
+    for sec, sub, text in blocks:
+        heading = f"{sec} {sub}".lower()
+        if any(keyword in heading for keyword in V2_SKIP_SECTION_KEYWORDS):
+            continue
+        cleaned.append((sec, sub, text))
+    return cleaned
+
+
+def _paragraph_units(text: str) -> List[dict[str, object]]:
+    """Return paragraph text and normalized-subsection character offsets."""
+    units: List[dict[str, object]] = []
+    sentence_index = 0
+    pattern = re.compile(r"(?s)(.+?)(?:\n\s*\n+|\Z)")
+    for paragraph_index, match in enumerate(pattern.finditer(text)):
+        raw = match.group(1)
+        paragraph = raw.strip()
+        if not paragraph:
+            continue
+        leading = len(raw) - len(raw.lstrip())
+        start = match.start(1) + leading
+        end = start + len(paragraph)
+        sentence_spans = [
+            sentence_match
+            for sentence_match in re.finditer(r"[^.!?。！？\n]+(?:[.!?。！？]|$)", paragraph)
+            if sentence_match.group(0).strip()
+        ]
+        count = max(1, len(sentence_spans))
+        units.append({
+            "text": paragraph,
+            "start": start,
+            "end": end,
+            "paragraphIndex": paragraph_index,
+            "sentenceStart": sentence_index,
+            "sentenceEnd": sentence_index + count,
+            "sentenceSpans": sentence_spans,
+            "chunkType": classify_chunk_type(paragraph),
+        })
+        sentence_index += count
+    return units
+
+
+def classify_chunk_type(text: str) -> str:
+    """Keep captions/tables as independent retrieval records when detectable."""
+    stripped = text.strip()
+    lowered = stripped.lower()
+    if re.match(r"^(?:figure|fig\.?|图)\s*\d+", lowered):
+        return "figure_caption"
+    if re.match(r"^table\s*\d+", lowered) or ("\n|" in stripped and stripped.startswith("|")):
+        return "table"
+    return "paragraph"
+
+
+def _sentence_windows(
+    unit: dict[str, object],
+    target_tokens: int,
+    min_tokens: int,
+    max_tokens: int,
+) -> List[dict[str, object]]:
+    """Split one oversized paragraph by sentence, overlapping one sentence."""
+    paragraph = str(unit["text"])
+    spans = list(unit["sentenceSpans"])
+    if not spans:
+        spans = [re.match(r"(?s).+", paragraph)]  # type: ignore[list-item]
+    sentences = [span.group(0).strip() for span in spans if span and span.group(0).strip()]
+    if not sentences:
+        return []
+    output: List[dict[str, object]] = []
+    index = 0
+    while index < len(sentences):
+        end = index
+        count = 0
+        while end < len(sentences):
+            next_count = count + _v2_token_count(sentences[end])
+            if end > index and next_count > max_tokens:
+                break
+            count = next_count
+            end += 1
+            if count >= target_tokens and end < len(sentences):
+                lookahead = count + _v2_token_count(sentences[end])
+                if lookahead > max_tokens:
+                    break
+        if end == index:
+            # An individual sentence can exceed maxTokens.  Make a bounded
+            # hard window only for this pathological case.
+            words = paragraph.split()
+            word_start = 0
+            while word_start < len(words):
+                word_end = min(len(words), word_start + max_tokens)
+                piece = " ".join(words[word_start:word_end])
+                while word_end > word_start + 1 and _v2_token_count(piece) > max_tokens:
+                    word_end -= 1
+                    piece = " ".join(words[word_start:word_end])
+                output.append({
+                    "text": piece,
+                    "paragraphIndex": int(unit["paragraphIndex"]),
+                    "sentenceStart": int(unit["sentenceStart"]),
+                    "sentenceEnd": int(unit["sentenceStart"]) + 1,
+                    "charStart": int(unit["start"]),
+                    "charEnd": int(unit["end"]),
+                    "chunkType": str(unit["chunkType"]),
+                })
+                if word_end >= len(words):
+                    break
+                word_start = max(word_start + 1, word_end - max_tokens // 10)
+            break
+        selected = sentences[index:end]
+        first_span = spans[index]
+        last_span = spans[end - 1]
+        output.append({
+            "text": " ".join(selected),
+            "paragraphIndex": int(unit["paragraphIndex"]),
+            "sentenceStart": int(unit["sentenceStart"]) + index,
+            "sentenceEnd": int(unit["sentenceStart"]) + end,
+            # Sentence-window offsets point to the selected evidence rather
+            # than the complete oversized paragraph.  This makes downstream
+            # graph/source highlighting auditable after v2 is rebuilt.
+            "charStart": int(unit["start"]) + int(first_span.start()),
+            "charEnd": int(unit["start"]) + int(last_span.end()),
+            "chunkType": str(unit["chunkType"]) if str(unit["chunkType"]) != "paragraph" else "sentence_window",
+        })
+        if end >= len(sentences):
+            break
+        index = max(index + 1, end - 1)  # one-sentence overlap
+    return output
+
+
+def pack_structured_block(
+    text: str,
+    target_tokens: int,
+    min_tokens: int,
+    max_tokens: int,
+) -> List[dict[str, object]]:
+    """Merge complete paragraphs until the soft target/max bound is reached."""
+    units = _paragraph_units(text)
+    packed: List[dict[str, object]] = []
+    current: List[dict[str, object]] = []
+    current_tokens = 0
+
+    def flush() -> None:
+        nonlocal current, current_tokens
+        if not current:
+            return
+        value = "\n\n".join(str(unit["text"]) for unit in current).strip()
+        tokens = _v2_token_count(value)
+        if tokens >= min_tokens:
+            packed.append({
+                "text": value,
+                "paragraphIndex": int(current[0]["paragraphIndex"]),
+                "paragraphEndIndex": int(current[-1]["paragraphIndex"]) + 1,
+                "sentenceStart": int(current[0]["sentenceStart"]),
+                "sentenceEnd": int(current[-1]["sentenceEnd"]),
+                "charStart": int(current[0]["start"]),
+                "charEnd": int(current[-1]["end"]),
+                "chunkType": (
+                    str(current[0]["chunkType"])
+                    if len({str(unit["chunkType"]) for unit in current}) == 1
+                    and str(current[0]["chunkType"]) != "paragraph"
+                    else "paragraph"
+                ),
+            })
+        elif packed and _v2_token_count(str(packed[-1]["text"])) + tokens <= max_tokens:
+            # A short tail is retained with the previous chunk.  This is
+            # preferable to dropping a final result sentence as v1 did.
+            packed[-1]["text"] = str(packed[-1]["text"]) + "\n\n" + value
+            packed[-1]["paragraphEndIndex"] = int(current[-1]["paragraphIndex"]) + 1
+            packed[-1]["sentenceEnd"] = int(current[-1]["sentenceEnd"])
+            packed[-1]["charEnd"] = int(current[-1]["end"])
+        elif str(current[0]["chunkType"]) in {"figure_caption", "table"}:
+            # Captions/tables are valuable standalone evidence even when
+            # shorter than the normal paragraph minimum.
+            packed.append({
+                "text": value,
+                "paragraphIndex": int(current[0]["paragraphIndex"]),
+                "paragraphEndIndex": int(current[-1]["paragraphIndex"]) + 1,
+                "sentenceStart": int(current[0]["sentenceStart"]),
+                "sentenceEnd": int(current[-1]["sentenceEnd"]),
+                "charStart": int(current[0]["start"]),
+                "charEnd": int(current[-1]["end"]),
+                "chunkType": str(current[0]["chunkType"]),
+            })
+        current = []
+        current_tokens = 0
+
+    for unit in units:
+        unit_tokens = _v2_token_count(str(unit["text"]))
+        if unit_tokens > max_tokens:
+            flush()
+            packed.extend(_sentence_windows(unit, target_tokens, min_tokens, max_tokens))
+            continue
+        if current and current_tokens + unit_tokens > max_tokens:
+            flush()
+        current.append(unit)
+        current_tokens += unit_tokens
+        # Target is a soft boundary: keep adding the next whole paragraph when
+        # it still fits, otherwise flush before that paragraph.
+        if current_tokens >= target_tokens:
+            continue
+    flush()
+    return packed
+
+
+def build_chunks_v2(
+    fulltext_dir: Path,
+    fulltext_index: Dict[str, Dict[str, str]],
+    variant: str,
+) -> Tuple[List[ChunkV2], Dict[str, int]]:
+    """Build a non-destructive structure-aware v2 variant."""
+    if variant not in V2_VARIANTS:
+        raise ValueError("unsupported chunk-v2 variant")
+    params = V2_VARIANTS[variant]
+    chunks: List[ChunkV2] = []
+    topic_counter: Counter[str] = Counter()
+    variant_code = variant[0].upper()
+
+    for md_file in sorted(fulltext_dir.glob("PMCID-*.md")):
+        pmcid = md_file.stem.replace("PMCID-", "")
+        index_rec = fulltext_index.get(pmcid) or {}
+        if index_rec.get("ingested") is False:
+            continue
+        title, meta, abstract_text, fulltext_text = parse_markdown_metadata(
+            md_file.read_text(encoding="utf-8", errors="ignore")
+        )
+        pmid = meta.get("pmid") or index_rec.get("pmid") or ""
+        topic = meta.get("topic") or index_rec.get("topic") or "unknown"
+        year = meta.get("year", "")
+        journal = meta.get("journal", "")
+        doi = meta.get("doi", "")
+        source_url = index_rec.get("source_url") or meta.get("europepmc", "")
+        topic_counter[topic] += 1
+        chunk_no = 0
+
+        blocks: List[Tuple[str, str, str]] = []
+        if abstract_text:
+            blocks.append(("Abstract", "", abstract_text))
+        blocks.extend(split_into_structured_blocks(fulltext_text))
+        for section, subsection, block_text in blocks:
+            # Abstracts are compact evidence units and must remain searchable
+            # even when a source has fewer tokens than the normal variant
+            # minimum.  The normal minimum still applies to body paragraphs.
+            effective_min_tokens = 1 if section == "Abstract" else int(params["minTokens"])
+            pieces = pack_structured_block(
+                block_text,
+                int(params["targetTokens"]),
+                effective_min_tokens,
+                int(params["maxTokens"]),
+            )
+            for piece in pieces:
+                text = str(piece["text"]).strip()
+                if not text:
+                    continue
+                chunk_no += 1
+                kind = "abstract" if section == "Abstract" else str(piece["chunkType"])
+                id_kind = "A" if section == "Abstract" else "F"
+                chunk_id = f"{pmcid}-V2{variant_code}-{id_kind}{chunk_no:04d}"
+                chunks.append(ChunkV2(
+                    chunk_id=chunk_id,
+                    pmcid=pmcid,
+                    pmid=pmid,
+                    topic=topic,
+                    title=title,
+                    year=year,
+                    journal=journal,
+                    doi=doi,
+                    section=section,
+                    subsection=subsection,
+                    source_url=source_url,
+                    text=text,
+                    chunk_type=kind,
+                    paragraph_index=int(piece["paragraphIndex"]),
+                    paragraph_end_index=int(piece.get("paragraphEndIndex", piece["paragraphIndex"] + 1)),
+                    sentence_start=int(piece["sentenceStart"]),
+                    sentence_end=int(piece["sentenceEnd"]),
+                    char_start=int(piece["charStart"]),
+                    char_end=int(piece["charEnd"]),
+                    offset_base="normalized_subsection",
+                ))
+    return chunks, dict(topic_counter)
 
 
 def load_fulltext_index(path: Path) -> Dict[str, Dict[str, str]]:
@@ -307,6 +698,93 @@ def build_bm25_stats(chunks: Iterable[Chunk]) -> Dict[str, object]:
     }
 
 
+def write_v2_variant(
+    out_dir: Path,
+    chunks: List[ChunkV2],
+    topic_counter: Dict[str, int],
+    variant: str,
+    fulltext_dir: Path,
+    fulltext_index_path: Path,
+) -> tuple[Path, Path]:
+    """Write chunk-v2 assets without touching any v1 file."""
+    code = variant[0]
+    chunk_out = out_dir / f"medical_chunks_v2_{variant}.jsonl"
+    with chunk_out.open("w", encoding="utf-8") as fp:
+        for chunk in chunks:
+            embedding_text = "\n".join([
+                f"Title: {chunk.title or 'none'}",
+                f"Topic: {chunk.topic or 'unknown'}",
+                f"Section: {chunk.section or '正文'}",
+                f"Subsection: {chunk.subsection or 'none'}",
+                chunk.text,
+            ])
+            fp.write(json.dumps({
+                "chunkVersion": "chunk-v2",
+                "variant": variant,
+                "chunkId": chunk.chunk_id,
+                "pmcid": chunk.pmcid,
+                "pmid": chunk.pmid,
+                "topic": chunk.topic,
+                "title": chunk.title,
+                "year": chunk.year,
+                "journal": chunk.journal,
+                "doi": chunk.doi,
+                "section": chunk.section,
+                "subsection": chunk.subsection,
+                "sourceUrl": chunk.source_url,
+                "chunkType": chunk.chunk_type,
+                "paragraphIndex": chunk.paragraph_index,
+                "paragraphEndIndex": chunk.paragraph_end_index,
+                "sentenceStart": chunk.sentence_start,
+                "sentenceEnd": chunk.sentence_end,
+                "charStart": chunk.char_start,
+                "charEnd": chunk.char_end,
+                "offsetBase": chunk.offset_base,
+                "charCount": len(chunk.text),
+                "tokenCount": _v2_token_count(chunk.text),
+                "text": chunk.text,
+                "embeddingText": embedding_text,
+            }, ensure_ascii=False) + "\n")
+
+    counts = Counter(chunk.chunk_type for chunk in chunks)
+    char_counts = [len(chunk.text) for chunk in chunks]
+    token_counts = [_v2_token_count(chunk.text) for chunk in chunks]
+    manifest = {
+        "chunkVersion": "chunk-v2",
+        "variant": variant,
+        "params": V2_VARIANTS[variant],
+        "input": {
+            "fulltextDir": str(fulltext_dir),
+            "fulltextIndex": str(fulltext_index_path),
+        },
+        "output": {"chunks": str(chunk_out)},
+        "summary": {
+            "chunkCount": len(chunks),
+            "paperCount": sum(topic_counter.values()),
+            "topicPaperCount": topic_counter,
+            "chunkTypeCounts": dict(sorted(counts.items())),
+            "sections": dict(sorted(Counter(chunk.section for chunk in chunks).items())),
+            "charStats": {
+                "min": min(char_counts) if char_counts else 0,
+                "mean": round(sum(char_counts) / len(char_counts), 3) if char_counts else 0,
+                "median": int(sorted(char_counts)[len(char_counts) // 2]) if char_counts else 0,
+                "max": max(char_counts) if char_counts else 0,
+            },
+            "tokenStats": {
+                "min": min(token_counts) if token_counts else 0,
+                "mean": round(sum(token_counts) / len(token_counts), 3) if token_counts else 0,
+                "median": int(sorted(token_counts)[len(token_counts) // 2]) if token_counts else 0,
+                "max": max(token_counts) if token_counts else 0,
+            },
+            "offsetBase": "normalized_subsection",
+            "embeddingText": "title + topic + section + subsection + chunk text",
+        },
+    }
+    manifest_out = out_dir / f"medical_rag_manifest_v2_{variant}.json"
+    manifest_out.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return chunk_out, manifest_out
+
+
 def main() -> None:
     args = parse_args()
     root = Path(__file__).resolve().parents[1]
@@ -317,6 +795,24 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     index_records = load_fulltext_index(fulltext_index_path)
+    if args.version == "v2":
+        variants = tuple(V2_VARIANTS) if args.all_v2_variants else (args.variant,)
+        for variant in variants:
+            chunks_v2, topic_counter_v2 = build_chunks_v2(
+                fulltext_dir, index_records, variant
+            )
+            chunk_out, manifest_out = write_v2_variant(
+                out_dir, chunks_v2, topic_counter_v2, variant,
+                fulltext_dir, fulltext_index_path,
+            )
+            print("RAG_CHUNK_V2_BUILD_DONE")
+            print(f"variant={variant}")
+            print(f"chunks={len(chunks_v2)}")
+            print(f"papers={sum(topic_counter_v2.values())}")
+            print(f"chunk_file={chunk_out}")
+            print(f"manifest_file={manifest_out}")
+        return
+
     chunks, topic_counter = build_chunks(
         fulltext_dir,
         index_records,

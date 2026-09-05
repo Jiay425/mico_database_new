@@ -1,5 +1,7 @@
 # Mico 高标准 Agent 升级计划
 
+> **当前状态校准（2026-08-27）**：本文保留 P0–P6 的历史路线和固定 Demo/数量目标。当前开放式科研主链以 `mico-agent-runtime/docs/agent-runtime/p2j-scientific-exploration-agent-plan-v1.md` 和 `mico-agent-runtime/docs/agent-runtime/p2j4-dynamic-materialization-calibration-v1.md` 为准。Decision SFT Freeze v2（865）与 Qwen3-8B Decision SFT v5 已完成；DPO v4 Controlled Preference Freeze r2（408 pairs）已完成正式训练并有 adapter，Test70 70/70、OOD30 29/30、generation smoke 10/10。当前工作不是重新训练，而是将已有 SFT/DPO adapter 接入新的 Dynamic Materialization Runtime，完成真实 DeepSeek Flash + Java/MySQL E2E。GRPO/RL 仍不在当前范围。
+
 ## 0. 项目北极星与不可突破的边界
 
 **目标产品**：一个面向微生态科研的、可复现且可审计的分析 Agent。它基于标准化宏基因组数据构建队列、运行物种差异分析、核验文献证据，并生成带数据来源与局限性的研究报告。
@@ -202,4 +204,4 @@ Mico 的差异化能力是：领域本体、物种级数据、可复现统计、
 
 严格按阶段推进。每阶段通过验收门槛后，才开始下一阶段。
 
-当前应执行：**阶段 1：领域语义与数据契约**。
+本文件保留 P0–P6 的历史阶段规划；当前主链以 `mico-agent-runtime/docs/agent-runtime/p2j-scientific-exploration-agent-plan-v1.md` 和 P2-J4.1A 校准矩阵为准。P0/P1 领域语义、Java 受控边界和 P2 Runtime 基座已完成相应契约与实现；P2-J3 的通用动态分析/GraphRAG 已有代码与本地回归，P2-J4.1 的 50 条任务集、逐条真实 Trace、自动评分、Bad Case 回流和 Gemini 基线已完成。当前执行阶段为 **P2-J4.1 收口**：先扩充任务/结果 oracle，再进入 Decision SFT 设计；不得根据本文件早期的固定 T2D/健康对照示例恢复固定业务分支。

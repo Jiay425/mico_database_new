@@ -1,5 +1,10 @@
 # Mico P1-C Internal Agent Tool HTTP API v1
 
+> **历史 API 快照**：本文描述 P1-C 时点的固定工具 HTTP 契约。当前内部
+> endpoint 仍是 Java 的受控边界，但 active Catalog 已由旧固定目录收敛为
+> `describe_read_schema` + `execute_read_query`；不要把下文固定工具清单或
+> `build_cohort` 示例当作当前 Scientific 路由。
+
 ## 1. Boundary
 
 `POST /internal/agent/tools/execute` is an internal machine-to-machine endpoint for a future Python + LangGraph Runtime. It is not a browser, public, legacy API, MCP, or Python database interface. Java remains the only business fact source:

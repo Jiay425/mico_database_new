@@ -32,7 +32,9 @@ Java BFF 只转发浏览器请求；Runtime 现在提供受同一内部 Token �
 
 当前首页通过 Java BFF 展示通用科研问题的受控结果：页面只提交自然语言问题，结果仅展示
 状态、汇总元数据、Python 生成分析的安全指标和固定局限性。页面不直连 Python，不展示审批人、
-locator、样本 accession、内部记录 ID、SQL、Token 或原始 payload。
+locator、样本 accession、内部记录 ID、SQL、Token 或原始 payload。当前页面验收是同步
+`POST /agent/research` 结果；Runtime 的 progress/events 内部接口尚未形成 Java BFF
+浏览器代理或 SSE 页面验收，不得写成前端进度链路已完成。
 
 ## 未完成项
 
