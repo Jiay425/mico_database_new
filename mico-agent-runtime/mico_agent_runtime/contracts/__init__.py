@@ -50,7 +50,9 @@ from .graph_rag import (
 )
 from .generated_analysis import (
     AnalysisPlannerContext,
+    GeneratedAnalysisInputBindings,
     GeneratedAnalysisPlan,
+    GeneratedAnalysisProgram,
     GeneratedAnalysisResult,
     TypedAnalysisPlannerResult,
 )
@@ -165,7 +167,7 @@ __all__ = [
     "ScientificAnalysisState", "ScientificDataState", "ScientificDecisionState",
     "ScientificEvidenceState", "ScientificObjective", "ScientificProgressState",
     "ScientificTaskConstraints", "ScientificTaskState", "StratifiedAnalysisState",
-    "EvidenceTaskRequest", "AnalysisPlannerContext", "GeneratedAnalysisPlan",
+    "EvidenceTaskRequest", "AnalysisPlannerContext", "GeneratedAnalysisPlan", "GeneratedAnalysisInputBindings", "GeneratedAnalysisProgram",
     "EvidenceSynthesisContext", "EvidenceSynthesisResult", "GraphEvidencePath", "GroundedClaim",
     "ModelReasoningStep", "ReasoningStep",
     "GeneratedAnalysisResult", "TypedAnalysisPlannerResult", "IntentHttpResponse", "IntentQueryReport", "IntentRunResult",

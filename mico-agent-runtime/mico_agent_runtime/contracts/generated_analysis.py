@@ -75,6 +75,75 @@ class GeneratedAnalysisPlan(ClosedModel):
         return value
 
 
+class GeneratedAnalysisInputBindings(ClosedModel):
+    """Runtime-owned identity semantics for one generated-code input.
+
+    Observation identifiers name Runtime objects.  They are deliberately
+    separate from opaque per-row sample keys and are never row values that a
+    generated program may use as a filter.
+    """
+
+    observation_ids: list[
+        Annotated[str, StringConstraints(pattern=r"^observation-[0-9a-f]{32}$", max_length=45)]
+    ] = Field(default_factory=list, max_length=8)
+    row_source: Literal["observation_rows"] = "observation_rows"
+    sample_key_column: Annotated[str, StringConstraints(
+        pattern=r"^[A-Za-z][A-Za-z0-9_]{0,63}$"
+    )] | None = None
+    group_column: Annotated[str, StringConstraints(
+        pattern=r"^[A-Za-z][A-Za-z0-9_]{0,63}$"
+    )] | None = None
+
+
+class GeneratedAnalysisProgram(ClosedModel):
+    """A Runtime-bound, model-authored program ready for the sandbox.
+
+    ``GeneratedAnalysisPlan`` is the legacy model response envelope.  This
+    contract is deliberately created by Runtime *after* Capability Registry
+    selected ``SUPPORTED_GENERATED``.  It prevents model code from choosing
+    its action, input rows, output limits, timeout, or execution mode.
+    """
+
+    allowed_control_character_fields: ClassVar[frozenset[str]] = frozenset({"code"})
+
+    action_name: Annotated[str, StringConstraints(pattern=r"^[a-z][a-z0-9_]{0,63}$")]
+    analysis_goal: SafeAnalysisText
+    input_observation_ids: list[
+        Annotated[str, StringConstraints(pattern=r"^observation-[0-9a-f]{32}$", max_length=45)]
+    ] = Field(min_length=1, max_length=8)
+    required_columns: list[Annotated[str, StringConstraints(
+        pattern=r"^[A-Za-z][A-Za-z0-9_]{0,63}$"
+    )]] = Field(min_length=1, max_length=64)
+    code: AnalysisCodeText
+    expected_outputs: list[Literal[
+        "metrics", "group_results", "stratum_results", "validation_results", "feature_results"
+    ]] = Field(min_length=1, max_length=5)
+    metrics_schema: list[Annotated[str, StringConstraints(
+        pattern=r"^[a-z][a-z0-9_]{0,63}$"
+    )]] = Field(default_factory=list, max_length=32)
+    timeout_seconds: int = Field(strict=True, ge=1, le=10, default=5)
+    max_rows: int = Field(strict=True, ge=1, le=1000, default=1000)
+    max_output_bytes: int = Field(strict=True, ge=1024, le=20000, default=20000)
+    max_memory_mb: int = Field(strict=True, ge=64, le=1024, default=256)
+    input_bindings: GeneratedAnalysisInputBindings = Field(
+        default_factory=GeneratedAnalysisInputBindings
+    )
+
+    @field_validator("input_observation_ids", "required_columns", "expected_outputs", "metrics_schema")
+    @classmethod
+    def reject_duplicate_values(cls, value: list[str]) -> list[str]:
+        if len(value) != len(set(value)):
+            raise ValueError("generated analysis program contains duplicate values")
+        return value
+
+    @field_validator("code")
+    @classmethod
+    def validate_program_code(cls, value: str) -> str:
+        # Keep the legacy model response and the runtime-bound program under
+        # the same source-code safety policy.
+        return GeneratedAnalysisPlan(language="python", analysisType="generated", code=value).code
+
+
 class GeneratedAnalysisPlannerResult(ClosedModel):
     plan: GeneratedAnalysisPlan
     mode: Literal["model", "deterministic"]
@@ -142,6 +211,14 @@ class GeneratedAnalysisResult(ClosedModel):
     used_row_count: int = Field(strict=True, ge=0, le=1000000, default=0)
     dropped_row_count: int = Field(strict=True, ge=0, le=1000000, default=0)
     topFeatures: list[GeneratedAnalysisFeature] = Field(default_factory=list, max_length=20)
+    # Runtime, never the model, determines whether a generated output is
+    # scientifically meaningful.  Successful sandbox execution alone is not
+    # a scientific result.
+    scientific_result_valid: bool = False
+    scientific_conclusion_eligible: bool = False
+    warnings: list[AnalysisFeedbackCode] = Field(default_factory=list, max_length=16)
+    program_hash: Annotated[str, StringConstraints(pattern=r"^sha256:[0-9a-f]{64}$")] | None = None
+    code_hash: Annotated[str, StringConstraints(pattern=r"^sha256:[0-9a-f]{64}$")] | None = None
     limitations: list[Literal[
         "generated_code_was_sandbox_validated",
         "typed_plan_executed_by_approved_operator",

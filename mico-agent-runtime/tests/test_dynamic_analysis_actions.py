@@ -22,6 +22,8 @@ from mico_agent_runtime.graph.scientific_workflow import (
     _payload_semantic_fields,
 )
 from mico_agent_runtime.contracts.research import (
+    AnalyzeProjectionAction,
+    AnalyzeProjectionArguments,
     CompareGroupsAction,
     FinishAction,
     FinishArguments,
@@ -44,6 +46,7 @@ from mico_agent_runtime.ports.research_planner import (
 )
 from mico_agent_runtime.ports.scientific_planner import ScientificPlannerResult
 from mico_agent_runtime.runtime.scientific_service import ScientificRuntime
+from mico_agent_runtime.contracts.trace_eval import TraceDecision
 from mico_agent_runtime.transport.app import create_app
 from tests.conftest import FakeJavaPort, completed_response
 from tests.test_analysis_capability_registry import _catalog as capability_catalog
@@ -806,7 +809,7 @@ def test_dynamic_typed_analysis_executes_inferential_metric_without_sandbox_fall
     assert "ANALYSIS_CODE_DETERMINISTIC_FALLBACK" not in result.fallbackCodes
 
 
-def test_dynamic_typed_failure_refeeds_sandbox_error_and_stops_on_success() -> None:
+def test_dynamic_typed_failure_does_not_fallback_to_generated() -> None:
     class ReplanningTypedPlanner:
         dynamic_action_materialization = True
 
@@ -914,12 +917,10 @@ def test_dynamic_typed_failure_refeeds_sandbox_error_and_stops_on_success() -> N
         schema_catalog=_semantic_catalog(),
     ).run(_task())
 
-    assert result.status == "COMPLETED"
+    assert result.status == "FAILED"
     assert planner.typed_calls == 1
-    assert len(planner.code_contexts) == 2
-    assert planner.code_contexts[0].executionFeedback == []
-    assert planner.code_contexts[1].executionFeedback == ["ANALYSIS_CODE_CALL_POLICY"]
-    assert result.report.analysisResults[0].codeVersion == "sandbox-python-v1"
+    assert planner.code_contexts == []
+    assert result.errorCode == "ANALYSIS_TYPED_EXECUTION_FAILED"
 
 
 def test_dynamic_typed_materializer_cannot_change_action_family() -> None:
@@ -1079,6 +1080,105 @@ def test_dynamic_typed_compare_plan_executes_typed_without_generated_fallback() 
     assert result["pendingPayload"].codeVersion == "typed-analysis-operator-v1"
     assert result["pendingPayload"].group_results
     assert result["pendingPayload"].metrics["effect"] == result["pendingPayload"].metrics["effect_size"]
+
+
+def test_registry_generated_projection_executes_program_before_typed_operator() -> None:
+    observation_id = "observation-" + "7" * 32
+    action = AnalyzeProjectionAction(
+        actionId="action-" + "7" * 32,
+        actionName="analyze_projection",
+        rationale="summarize the approved abundance projection",
+        arguments=AnalyzeProjectionArguments(
+            actionName="analyze_projection",
+            observationId=observation_id,
+            analysisGoal="summarize the approved abundance projection",
+        ),
+    )
+    observation = Observation(
+        observationId=observation_id,
+        actionId="action-" + "6" * 32,
+        actionName="execute_read_query",
+        status="VALIDATED",
+        source="java_controlled_read",
+        queryHash="sha256:" + "7" * 64,
+        rowCount=2,
+        generatedAt=NOW,
+        schemaVersion="schema-v1",
+        dataSnapshotId="transient-77777777-7777-4777-8777-777777777777",
+        snapshotPersistence="transient",
+        queryPlanFields=["abundance.value"],
+    )
+
+    class ProjectionGeneratedMaterializer:
+        dynamic_action_materialization = True
+        allow_deterministic_materializer_fallback = False
+
+        def __init__(self) -> None:
+            self.typed_calls = 0
+            self.code_calls = 0
+
+        def generate_typed_analysis(self, context: AnalysisPlannerContext):
+            self.typed_calls += 1
+            return TypedAnalysisPlannerResult(
+                plan=TypedAnalysisPlan(
+                    analysis_type="projection",
+                    source_observation_ids=context.sourceObservationIds,
+                    outcome="abundance.value",
+                    metrics=["count", "mean"],
+                    analysis_goal="summarize the approved abundance projection",
+                ),
+                mode="model",
+            )
+
+        def generate_analysis(self, _context: AnalysisPlannerContext):
+            self.code_calls += 1
+            return GeneratedAnalysisPlannerResult(
+                plan=GeneratedAnalysisPlan(
+                    language="python",
+                    analysisType="projection",
+                    code=(
+                        'values = [float(row["a_abundance_value"]) for row in rows]\n'
+                        'result = {"metrics": {"count": float(len(values)), '
+                        '"mean": sum(values) / len(values)}, "used_row_count": len(values)}'
+                    ),
+                ),
+                mode="model",
+            )
+
+    planner = ProjectionGeneratedMaterializer()
+    state = {
+        "request": _task().model_copy(update={"allowedActions": ["analyze_projection"]}),
+        "schemaCatalog": capability_catalog(),
+        "observations": [observation],
+        "rawObservationPayloads": {
+            observation_id: {
+                "columns": ["a_abundance_value", "raw_patient_id"],
+                "rows": [
+                    {"a_abundance_value": 0.2, "raw_patient_id": "not-bound"},
+                    {"a_abundance_value": 0.8, "raw_patient_id": "not-bound"},
+                ],
+            }
+        },
+        "analysisPlans": [], "analysisResults": [], "analysisEvidence": [],
+        "generatedAnalysisPrograms": [], "fallbackCodes": [],
+        "decisionRecords": [TraceDecision(
+            observationStateCode="OBSERVATION_READY",
+            allowedActions=["analyze_projection"],
+            chosenAction="analyze_projection",
+        )],
+        "currentAction": action,
+    }
+    result = _execute_analysis_action(state, action, planner)
+
+    assert result.get("errorCode") is None
+    assert planner.typed_calls == 1
+    assert planner.code_calls == 1
+    assert result["pendingPayload"].execution_mode == "generated"
+    assert result["pendingPayload"].scientific_result_valid is True
+    assert result["pendingPayload"].scientific_conclusion_eligible is False
+    assert result["generatedAnalysisPrograms"][0]["required_columns"] == ["a_abundance_value"]
+    assert result["decisionRecords"][-1].generated_code_hash
+    assert result["decisionRecords"][-1].generated_program_hash
 
 
 def test_dynamic_typed_materializer_deterministic_fallback_keeps_action() -> None:

@@ -63,9 +63,10 @@ from mico_agent_runtime.contracts.unified_evidence import merge_unified_evidence
 from mico_agent_runtime.contracts.tools import ExecuteReadQueryArguments, ExecuteReadQueryJavaToolCall
 from mico_agent_runtime.graph.generated_analysis import (
     GeneratedAnalysisError,
-    TYPED_ANALYSIS_SANDBOX_FALLBACK_CODES,
+    bind_generated_program,
     build_analysis_preview,
     execute_generated_analysis,
+    execute_generated_program,
     execute_typed_analysis,
 )
 from mico_agent_runtime.graph.scientific_state import ScientificState
@@ -2093,18 +2094,53 @@ def _execute_analysis_action(
                                 "ANALYSIS_CAPABILITY_UNSUPPORTED",
                             )
                         if capability_match.mode == "SUPPORTED_GENERATED":
-                            # A v2 typed AnalysisPlan is never silently
-                            # converted into a generated compatibility run.
-                            # If the registry cannot prove this concrete
-                            # shape is covered by an approved typed
-                            # operator, fail closed and preserve the selected
-                            # Action for Runtime/audit handling.
-                            return _fail(
-                                state,
-                                "execute_action",
-                                "REJECTED",
-                                "ANALYSIS_CAPABILITY_UNSUPPORTED",
+                            # Generated execution is a first-class Registry
+                            # decision, never a fallback after a typed
+                            # operator has run. The model still cannot choose
+                            # this mode: it only authors constrained code for
+                            # the already-approved AnalysisPlan.
+                            code_generator = getattr(planner, "generate_analysis", None)
+                            if not callable(code_generator) or not columns:
+                                return _fail(
+                                    state,
+                                    "execute_action",
+                                    "FAILED",
+                                    "ANALYSIS_GENERATED_EXECUTOR_NOT_CONFIGURED",
+                                )
+                            code_planned = code_generator(typed_context)
+                            if code_planned.mode != "model":
+                                return _fail(
+                                    state,
+                                    "execute_action",
+                                    "FAILED",
+                                    "ANALYSIS_CODE_MODEL_REQUIRED",
+                                )
+                            program = bind_generated_program(
+                                planned.plan,
+                                action_name=action.actionName,
+                                required_columns=columns,
+                                generated_plan=code_planned.plan,
                             )
+                            state.setdefault("generatedAnalysisPrograms", []).append(
+                                program.model_dump(mode="json")
+                            )
+                            generated = execute_generated_program(
+                                program,
+                                payload_rows,
+                                len(payload_rows),
+                                analysis_type=planned.plan.analysis_type,
+                                planner_mode=code_planned.mode,
+                            )
+                            _annotate_last_decision(
+                                state,
+                                analysis_plan_hash=_sha256_model(planned.plan),
+                                analysis_execution_status="passed",
+                                capability_mode=capability_match.mode,
+                                capability_code=capability_match.capability_code,
+                                generated_code_hash=generated.code_hash,
+                                generated_program_hash=generated.program_hash,
+                            )
+                            break
                     _annotate_last_decision(
                         state,
                         analysis_plan_hash=_sha256_model(planned.plan),
@@ -2132,75 +2168,15 @@ def _execute_analysis_action(
                         # feature pooling/pseudo-replication, so fail closed
                         # with the stable diagnostic code.
                         return _fail(state, "execute_action", "REJECTED", exc.code)
-                    if exc.code in TYPED_ANALYSIS_SANDBOX_FALLBACK_CODES:
-                        code_generator = getattr(planner, "generate_analysis", None)
-                        if not callable(code_generator):
-                            return _fail(
-                                state,
-                                "execute_action",
-                                "FAILED",
-                                "ANALYSIS_GENERATION_FAILED",
-                            )
-                        code_feedback: list[str] = []
-                        for code_attempt in range(_MAX_ANALYSIS_EXECUTION_ATTEMPTS):
-                            try:
-                                code_context = typed_context.model_copy(update={
-                                    "executionFeedback": code_feedback,
-                                })
-                                code_planned = code_generator(code_context)
-                                if code_planned.mode != "model":
-                                    raise GeneratedAnalysisError(
-                                        "ANALYSIS_CODE_MODEL_REQUIRED"
-                                    )
-                                generated = execute_generated_analysis(
-                                    code_planned.plan,
-                                    rows,
-                                    len(payload_rows),
-                                    planner_mode=code_planned.mode,
-                                )
-                                _annotate_last_decision(
-                                    state,
-                                    analysis_execution_status="passed",
-                                )
-                                break
-                            except GeneratedAnalysisError as code_exc:
-                                if code_attempt + 1 >= _MAX_ANALYSIS_EXECUTION_ATTEMPTS:
-                                    return _fail(
-                                        state,
-                                        "execute_action",
-                                        "FAILED",
-                                        "ANALYSIS_GENERATION_FAILED",
-                                    )
-                                code_feedback = [
-                                    getattr(code_exc, "reasonCode", None)
-                                    or code_exc.code
-                                ]
-                                state.setdefault("fallbackCodes", []).append(
-                                    "ANALYSIS_CODE_REPLAN"
-                                )
-                                _audit(
-                                    state,
-                                    "execute_action",
-                                    "COMPLETED",
-                                    error_code="ANALYSIS_CODE_REPLAN",
-                                )
-                            except Exception:
-                                if code_attempt + 1 >= _MAX_ANALYSIS_EXECUTION_ATTEMPTS:
-                                    return _fail(
-                                        state,
-                                        "execute_action",
-                                        "FAILED",
-                                        "ANALYSIS_GENERATION_FAILED",
-                                    )
-                                code_feedback = ["ANALYSIS_CODE_REJECTED"]
-                        if generated is None:
-                            return _fail(
-                                state,
-                                "execute_action",
-                                "FAILED",
-                                "ANALYSIS_GENERATION_FAILED",
-                            )
-                        break
+                    # A typed runtime error must remain a typed runtime
+                    # error.  It is never a signal to run arbitrary model
+                    # code after the fact.
+                    return _fail(
+                        state,
+                        "execute_action",
+                        "FAILED",
+                        "ANALYSIS_TYPED_EXECUTION_FAILED",
+                    )
                     if attempt + 1 >= _MAX_ANALYSIS_EXECUTION_ATTEMPTS:
                         return _fail(
                             state,
@@ -2361,6 +2337,11 @@ def _execute_analysis_action(
             adjusted_covariates=generated.adjusted_covariates,
             used_row_count=generated.used_row_count,
             dropped_row_count=generated.dropped_row_count,
+            scientific_result_valid=generated.scientific_result_valid,
+            scientific_conclusion_eligible=generated.scientific_conclusion_eligible,
+            warnings=generated.warnings,
+            generated_code_hash=generated.code_hash,
+            generated_program_hash=generated.program_hash,
             topFeatures=safe_features,
             evidence=analysis_evidence,
             limitations=[

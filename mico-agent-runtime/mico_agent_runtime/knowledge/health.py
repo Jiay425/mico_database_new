@@ -155,6 +155,11 @@ def _embedding_contract(
         "chunk_asset": None,
         "graph_asset": None,
         "asset_contract_status": "NOT_AUDITED",
+        "asset_configuration_consistent": False,
+        "document_dense_ready": False,
+        "chunk_v2_dense_ready": False,
+        "legacy_chunk_dense_ready": False,
+        "vector_capability": "NOT_AUDITED",
     }
     try:
         embedding = GeminiEmbeddingConfiguration.from_environment(source)
@@ -200,12 +205,22 @@ def _embedding_contract(
     chunk_ok = isinstance(chunk, dict) and chunk.get("model") == embedding.modelName and chunk.get("dimension") == configuration.vectorDimension
     graph_ok = bool(graph_model is None or graph_model == configuration.graphVersion)
     chunk_version_ok = isinstance(chunk, dict) and chunk.get("chunk_version") == configuration.chunkVersion and chunk.get("variant") == configuration.chunkVariant
+    result["document_dense_ready"] = paper_ok
+    result["chunk_v2_dense_ready"] = chunk_ok and isinstance(chunk, dict) and chunk.get("chunk_version") == "chunk-v2" and chunk.get("variant") == "medium"
+    # The legacy v1 asset is intentionally retained for sparse/provenance
+    # compatibility.  It is not a dense retrieval asset.
+    result["legacy_chunk_dense_ready"] = False
+    result["asset_configuration_consistent"] = bool(paper_ok and chunk_ok and graph_ok and chunk_version_ok)
     # A partial chunk asset is a real limitation, not a reason to claim that
     # document-level vectors provide complete chunk-level dense retrieval.
     if paper_ok and chunk_ok and graph_ok and chunk_version_ok:
         result["asset_contract_status"] = "PARTIAL_CHUNK_COVERAGE" if int(chunk.get("chunk_count") or 0) < int(paper.get("chunk_count") or 0) else "PASS"
     else:
         result["asset_contract_status"] = "MISMATCH"
+    if result["asset_configuration_consistent"]:
+        result["vector_capability"] = "PARTIAL" if not result["legacy_chunk_dense_ready"] else "FULL"
+    else:
+        result["vector_capability"] = "UNAVAILABLE"
     return result
 
 

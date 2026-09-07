@@ -34,9 +34,7 @@ from mico_agent_runtime.contracts.tools import (
 )
 from mico_agent_runtime.graph.generated_analysis import (
     GeneratedAnalysisError,
-    TYPED_ANALYSIS_SANDBOX_FALLBACK_CODES,
     execute_typed_analysis,
-    execute_generated_analysis,
 )
 from mico_agent_runtime.ports.java_agent import HttpJavaAgentToolPort
 from mico_agent_runtime.ports.research_planner import HttpResearchPlannerPort
@@ -641,43 +639,11 @@ def _evaluate_analysis_case(case: EvalCase, source: dict[str, Any], planner: Htt
             result["typedOperatorStatus"] = "failed"
             result["typedOperatorErrorCode"] = exc.code
             result["executionErrorCode"] = exc.code
-            # Match the production Dynamic Runtime boundary: only an
-            # explicitly unsupported typed shape may go to the sandboxed
-            # Python materializer. Cross-validation group coverage and missing
-            # numeric outcomes remain fail-closed.
-            if exc.code in TYPED_ANALYSIS_SANDBOX_FALLBACK_CODES:
-                code_feedback: list[str] = []
-                for code_attempt in range(3):
-                    code_context = analysis_context.model_copy(update={
-                        "executionFeedback": code_feedback,
-                    })
-                    code_planned = planner.generate_analysis(code_context)
-                    result["providerRequests"] = counter.count
-                    if code_planned.mode != "model":
-                        result["sandboxFallbackStatus"] = "failed_deterministic"
-                        break
-                    try:
-                        execute_generated_analysis(
-                            code_planned.plan,
-                            source["rows"],
-                            int(source["rowCount"] or len(source["rows"])),
-                            planner_mode=code_planned.mode,
-                        )
-                        result["sandboxFallbackStatus"] = "passed"
-                        result["executionStatus"] = "passed"
-                        result["executionErrorCode"] = None
-                        result["status"] = "PASS"
-                        break
-                    except GeneratedAnalysisError as code_exc:
-                        result["sandboxFallbackStatus"] = "failed"
-                        result["executionErrorCode"] = code_exc.code
-                        result["sandboxFailureReasonCode"] = getattr(
-                            code_exc, "reasonCode", None
-                        )
-                        code_feedback = [
-                            getattr(code_exc, "reasonCode", None)
-                            or code_exc.code
-                        ]
+            # Typed execution failures are never redirected to generated
+            # code. Generated execution is valid only when the capability
+            # registry selected it before the typed operator was invoked.
+            result["executionStatus"] = "failed"
+            result["status"] = "FAIL"
     except Exception as exc:
         result["executionErrorCode"] = type(exc).__name__
     finally:

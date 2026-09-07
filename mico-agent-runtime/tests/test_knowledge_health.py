@@ -66,6 +66,11 @@ def test_embedding_config_matches_index_manifest_without_provider_call(tmp_path:
     contract = report["embedding_contract"]
     assert contract["configuration_valid"] is True
     assert contract["asset_contract_status"] == "PASS"
+    assert contract["asset_configuration_consistent"] is True
+    assert contract["document_dense_ready"] is True
+    assert contract["chunk_v2_dense_ready"] is True
+    assert contract["legacy_chunk_dense_ready"] is False
+    assert contract["vector_capability"] == "PARTIAL"
     assert report["embedding_calls"] == 0
 
 
@@ -89,5 +94,7 @@ def test_embedding_config_audit_reports_stale_chunk_contract_without_provider_ca
     report = probe_knowledge_backend(env, probe_connectivity=False)
     contract = report["embedding_contract"]
     assert contract["configuration_valid"] is True
-    assert contract["asset_contract_status"] == "MISMATCH"
+    assert contract["asset_contract_status"] == "PARTIAL_CHUNK_COVERAGE"
+    assert contract["asset_configuration_consistent"] is True
+    assert contract["vector_capability"] == "PARTIAL"
     assert report["embedding_calls"] == 0

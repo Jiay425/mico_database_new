@@ -8,10 +8,13 @@ import os
 import re
 import subprocess
 import sys
+from hashlib import sha256
 from pydantic import ValidationError
 
 from mico_agent_runtime.contracts.generated_analysis import (
     GeneratedAnalysisPlan,
+    GeneratedAnalysisInputBindings,
+    GeneratedAnalysisProgram,
     GeneratedAnalysisResult,
 )
 from mico_agent_runtime.contracts.materialization import (
@@ -24,6 +27,7 @@ from mico_agent_runtime.contracts.materialization import (
 # compatibility path remains separately bounded to its historical preview
 # size; only approved typed operators consume the full sample-bounded read.
 MAX_TYPED_ANALYSIS_ROWS = 20_000
+GENERATED_CODE_CONTRACT_VERSION = "generated-code-contract-v1"
 
 
 class GeneratedAnalysisError(ValueError):
@@ -37,20 +41,6 @@ class GeneratedAnalysisError(ValueError):
         super().__init__(code)
         self.code = code
         self.reasonCode = reason_code
-
-
-# These are unsupported execution shapes, not evidence/data insufficiency.
-# They may be handed to the separately sandboxed Python materializer. Missing
-# numeric outcomes and cross-group coverage remain fail-closed.
-TYPED_ANALYSIS_SANDBOX_FALLBACK_CODES = frozenset({
-    "ANALYSIS_TYPED_OPERATOR_UNSUPPORTED",
-    "ANALYSIS_TYPED_OPERATOR_GROUP_REQUIRED",
-    # A typed plan may be structurally valid but refer to a semantic field
-    # absent from the returned projection.  Preserve the established
-    # typed-first/generated-fallback contract: the bounded generated path
-    # receives only the safe preview columns and may still produce a summary.
-    "ANALYSIS_TYPED_PLAN_FIELD_REJECTED",
-})
 
 
 _SENSITIVE_NAME = re.compile(
@@ -122,6 +112,67 @@ _SAFE_BUILTINS = {
 }
 
 
+def generated_code_contract(program: GeneratedAnalysisProgram) -> dict[str, object]:
+    """Expose the sandbox's *actual* small-language contract to a generator.
+
+    This is intentionally built next to the AST validator rather than copied
+    into a prompt.  Consumers can render it however their provider requires,
+    but must not invent a second safety or result-output specification.
+    """
+
+    required_output_keys: dict[str, object] = {
+        "metrics": {metric: "number" for metric in program.metrics_schema},
+        "used_row_count": "non_negative_integer",
+    }
+    for name in program.expected_outputs:
+        if name != "metrics":
+            required_output_keys[name] = []
+    return {
+        "version": GENERATED_CODE_CONTRACT_VERSION,
+        "input_api": {
+            "rows": "list of dictionary-like records containing only allowed_columns",
+            "allowed_columns": list(program.required_columns),
+            "allowed_access": ['row["column_name"]'],
+            "forbidden_access": ["row.get(\"column_name\")", "attribute access"],
+        },
+        "input_bindings": {
+            "observation_ids": list(program.input_bindings.observation_ids),
+            "row_source": program.input_bindings.row_source,
+            "sample_key_column": program.input_bindings.sample_key_column,
+            "group_column": program.input_bindings.group_column,
+            "observation_id_semantics": "Runtime provenance only; never a row or sample filter value.",
+            "sample_key_semantics": "An opaque per-row identity present only in sample_key_column; never derived from observation_id.",
+        },
+        "allowed_builtins": sorted(_SAFE_BUILTINS),
+        # These fields are calculated from the same AST allowlist used below,
+        # so a prompt cannot quietly drift from the executable small language.
+        "allowed_ast_nodes": sorted(node.__name__ for node in _CodePolicy._allowed_nodes),
+        "allowed_statement_forms": ["assignment", "for", "if", "expression", "pass"],
+        "forbidden_syntax": [
+            "function_definitions", "return_statements", "while_loops", "try_except",
+            "with_statements", "lambda", "class_definitions", "attribute_method_calls",
+        ],
+        "forbidden_method_calls": "all methods are forbidden, including row.get(...), list.append(...), dict.items(...), and list.sort(...)",
+        "forbidden_names": ["any name beginning with underscore"],
+        "forbidden_operations": [
+            "imports", "attribute access", "file_io", "network", "shell", "sql",
+            "eval", "exec", "private_names", "keyword_arguments",
+        ],
+        "output_contract": {
+            "result_variable": "result",
+            "required_top_level_keys": list(required_output_keys),
+            "metrics_schema": list(program.metrics_schema),
+            "expected_outputs": list(program.expected_outputs),
+            "skeleton": required_output_keys,
+        },
+        "limits": {
+            "max_rows": program.max_rows,
+            "timeout_seconds": program.timeout_seconds,
+            "max_output_bytes": program.max_output_bytes,
+        },
+    }
+
+
 def _sandbox_process_environment() -> dict[str, str]:
     """Return the smallest environment that can launch Python on this host.
 
@@ -136,6 +187,19 @@ def _sandbox_process_environment() -> dict[str, str]:
         return {}
     system_root = os.environ.get("SystemRoot") or os.environ.get("SYSTEMROOT")
     return {"SystemRoot": system_root} if system_root else {}
+
+
+def _posix_resource_limiter(memory_mb: int, timeout_seconds: int):
+    """Return a child-only CPU/address-space cap for Linux/macOS sandboxes."""
+
+    def limit() -> None:
+        import resource  # POSIX-only module; never exposed to generated code.
+
+        memory_bytes = memory_mb * 1024 * 1024
+        resource.setrlimit(resource.RLIMIT_AS, (memory_bytes, memory_bytes))
+        resource.setrlimit(resource.RLIMIT_CPU, (timeout_seconds + 1, timeout_seconds + 1))
+
+    return limit
 
 
 class _CodePolicy(ast.NodeVisitor):
@@ -169,6 +233,12 @@ class _CodePolicy(ast.NodeVisitor):
             self.assigned.add(node.id)
 
     def visit_Call(self, node: ast.Call) -> None:
+        if isinstance(node.func, ast.Attribute):
+            # Preserve the concrete forbidden method for a mechanical repair
+            # prompt. Runtime still rejects the whole program unchanged.
+            raise GeneratedAnalysisError(
+                reason_code=f"ANALYSIS_CODE_FORBIDDEN_METHOD_{node.func.attr.upper()}"
+            )
         if not isinstance(node.func, ast.Name) or node.func.id not in _SAFE_BUILTINS:
             raise GeneratedAnalysisError(reason_code="ANALYSIS_CODE_CALL_POLICY")
         if node.keywords:
@@ -176,7 +246,27 @@ class _CodePolicy(ast.NodeVisitor):
         self.generic_visit(node)
 
 
-def _validate_code(code: str) -> None:
+def _subscript_string(node: ast.AST) -> str | None:
+    if not isinstance(node, ast.Subscript) or not isinstance(node.value, ast.Name) or node.value.id != "row":
+        return None
+    return node.slice.value if isinstance(node.slice, ast.Constant) and isinstance(node.slice.value, str) else None
+
+
+def _reject_observation_as_sample_filter(tree: ast.AST, program: GeneratedAnalysisProgram | None) -> None:
+    if program is None or not program.input_bindings.sample_key_column:
+        return
+    observation_ids = set(program.input_bindings.observation_ids)
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Compare) or len(node.ops) != 1 or len(node.comparators) != 1:
+            continue
+        left_column = _subscript_string(node.left)
+        right = node.comparators[0]
+        right_value = right.value if isinstance(right, ast.Constant) and isinstance(right.value, str) else None
+        if left_column == program.input_bindings.sample_key_column and right_value in observation_ids:
+            raise GeneratedAnalysisError("INVALID_IDENTITY_BINDING")
+
+
+def _validate_code(code: str, program: GeneratedAnalysisProgram | None = None) -> None:
     if len(code) > 12000:
         raise GeneratedAnalysisError(reason_code="ANALYSIS_CODE_LENGTH_POLICY")
     try:
@@ -187,8 +277,180 @@ def _validate_code(code: str) -> None:
         raise GeneratedAnalysisError(reason_code="ANALYSIS_CODE_AST_SIZE_POLICY")
     policy = _CodePolicy()
     policy.visit(tree)
+    _reject_observation_as_sample_filter(tree, program)
     if "result" not in policy.assigned:
         raise GeneratedAnalysisError(reason_code="ANALYSIS_CODE_RESULT_ASSIGNMENT")
+
+
+def _sha256(value: object) -> str:
+    payload = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return "sha256:" + sha256(payload.encode("utf-8")).hexdigest()
+
+
+def validate_generated_result(
+    program: GeneratedAnalysisProgram,
+    result: GeneratedAnalysisResult,
+) -> GeneratedAnalysisResult:
+    """Validate generated output independently of the code generator.
+
+    The model cannot promote an arbitrary mapping to a scientific result.  A
+    successful subprocess only becomes ``scientific_result_valid`` after this
+    deterministic contract check.
+    """
+
+    expected = set(program.expected_outputs)
+    if "metrics" in expected and not result.metrics:
+        raise GeneratedAnalysisError("ANALYSIS_GENERATED_REQUIRED_METRICS_MISSING")
+    collections = {
+        "group_results": result.group_results,
+        "stratum_results": result.stratum_results,
+        "validation_results": result.validation_results,
+        "feature_results": result.feature_results,
+    }
+    for name, value in collections.items():
+        if name in expected and not value:
+            raise GeneratedAnalysisError("ANALYSIS_GENERATED_EXPECTED_OUTPUT_MISSING")
+    if program.metrics_schema and not set(program.metrics_schema).issubset(result.metrics):
+        raise GeneratedAnalysisError("ANALYSIS_GENERATED_METRIC_SCHEMA_MISMATCH")
+    numeric_values: list[float] = [*result.metrics.values()]
+    for item in result.feature_results:
+        numeric_values.extend(item.metrics.values())
+    for item in result.stratum_results:
+        numeric_values.extend([item.mean_difference, item.p_value])
+        if item.raw_p_value is not None:
+            numeric_values.append(item.raw_p_value)
+        if item.adjusted_p_value is not None:
+            numeric_values.append(item.adjusted_p_value)
+        if item.q_value is not None:
+            numeric_values.append(item.q_value)
+    if any(not math.isfinite(float(value)) for value in numeric_values):
+        raise GeneratedAnalysisError("ANALYSIS_GENERATED_NONFINITE_METRIC")
+    if result.rowCount > 0 and result.used_row_count == 0:
+        raise GeneratedAnalysisError("ZERO_ROW_SELECTION_SUSPECTED_IDENTITY_MISMATCH")
+    if result.rowCount <= 0 or result.used_row_count <= 0 or result.used_row_count > result.rowCount:
+        raise GeneratedAnalysisError("ANALYSIS_GENERATED_SAMPLE_COUNT_INVALID")
+    return result.model_copy(update={
+        "scientific_result_valid": True,
+        # v1 generated programs are exploratory unless a future, action-
+        # specific validator explicitly proves conclusion eligibility.
+        "scientific_conclusion_eligible": False,
+        "warnings": list(dict.fromkeys([*result.warnings, "GENERATED_EXPLORATORY_ONLY"])),
+        "program_hash": _sha256(program.model_dump(mode="json", exclude={"code"})),
+        "code_hash": "sha256:" + sha256(program.code.encode("utf-8")).hexdigest(),
+    })
+
+
+def bind_generated_program(
+    plan: TypedAnalysisPlan,
+    *,
+    action_name: str,
+    required_columns: list[str],
+    generated_plan: GeneratedAnalysisPlan,
+) -> GeneratedAnalysisProgram:
+    """Bind untrusted code to a Registry-approved analysis plan.
+
+    This is intentionally Runtime-owned: the code generator receives neither
+    a choice of execution mode nor the authority to broaden input fields.
+    """
+
+    bound_columns = list(dict.fromkeys(required_columns))
+    group_alias = (
+        f"a_{plan.group_field.replace('.', '_')}" if plan.group_field is not None else None
+    )
+    return GeneratedAnalysisProgram(
+        action_name=action_name,
+        analysis_goal=plan.analysis_goal,
+        input_observation_ids=list(plan.source_observation_ids),
+        required_columns=bound_columns,
+        code=generated_plan.code,
+        expected_outputs=["metrics"],
+        # A generated route is exploratory by default.  It must not claim
+        # typed metric completeness merely because the materializer named
+        # standard metrics in the AnalysisPlan.
+        # The analysis plan's requested metrics are Runtime-bound output
+        # requirements.  The generator cannot silently return an arbitrary
+        # non-empty metrics dictionary and call it a valid result.
+        metrics_schema=list(plan.metrics),
+        input_bindings=GeneratedAnalysisInputBindings(
+            observation_ids=list(plan.source_observation_ids),
+            sample_key_column=(
+                "a_analysis_sample_key" if "a_analysis_sample_key" in bound_columns else None
+            ),
+            group_column=group_alias if group_alias in bound_columns else None,
+        ),
+    )
+
+
+def execute_generated_program(
+    program: GeneratedAnalysisProgram,
+    rows: list[dict[str, object]],
+    row_count: int,
+    *,
+    analysis_type: str,
+    planner_mode: str = "model",
+) -> GeneratedAnalysisResult:
+    """Execute one Runtime-bound program against a bounded column projection."""
+
+    _validate_code(program.code, program)
+    projected_rows = [
+        {column: row.get(column) for column in program.required_columns}
+        for row in rows[:program.max_rows]
+        if isinstance(row, dict)
+    ]
+    payload = json.dumps(projected_rows, ensure_ascii=False, allow_nan=False)
+    encoded_code = base64.urlsafe_b64encode(program.code.encode("utf-8")).decode("ascii")
+    wrapper = (
+        "import base64,json,sys\n"
+        "rows=json.loads(sys.stdin.read())\n"
+        f"code=base64.urlsafe_b64decode({encoded_code!r}).decode('utf-8')\n"
+        "safe={'abs':abs,'float':float,'int':int,'len':len,'max':max,'min':min,"
+        "'round':round,'sorted':sorted,'sum':sum,'enumerate':enumerate,'range':range,'str':str}\n"
+        "scope={'__builtins__': safe, 'rows': rows}\n"
+        "exec(compile(code,'<generated-analysis>','exec'),scope,scope)\n"
+        "print(json.dumps(scope.get('result'),ensure_ascii=False,allow_nan=False))\n"
+    )
+    try:
+        completed = subprocess.run(
+            [sys.executable, "-I", "-S", "-c", wrapper], input=payload, text=True,
+            capture_output=True, timeout=program.timeout_seconds, check=False,
+            env=_sandbox_process_environment(),
+            # Linux production receives an OS-enforced memory/CPU bound.
+            # Windows test hosts retain timeout/row/output bounds; they do
+            # not inherit any credentials or user environment.
+            preexec_fn=(
+                _posix_resource_limiter(program.max_memory_mb, program.timeout_seconds)
+                if os.name != "nt" else None
+            ),
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise GeneratedAnalysisError("ANALYSIS_GENERATED_TIMEOUT") from exc
+    if completed.returncode != 0 or len(completed.stdout.encode("utf-8")) > program.max_output_bytes:
+        raise GeneratedAnalysisError("ANALYSIS_CODE_EXECUTION_FAILED", "ANALYSIS_CODE_SUBPROCESS")
+    try:
+        value = json.loads(completed.stdout)
+        if not isinstance(value, dict):
+            raise GeneratedAnalysisError(reason_code="ANALYSIS_CODE_RESULT_SHAPE")
+        result = GeneratedAnalysisResult.model_validate({
+            "status": "COMPLETED", "analysisType": analysis_type,
+            "execution_mode": "generated", "method_used": "generated_python",
+            "plannerMode": planner_mode, "codeVersion": "sandbox-python-v1",
+            "rowCount": row_count, "metrics": value.get("metrics", {}),
+            "group_results": value.get("group_results", []),
+            "stratum_results": value.get("stratum_results", []),
+            "validation_results": value.get("validation_results", []),
+            "feature_results": value.get("feature_results", []),
+            "ranking_method": value.get("ranking_method"),
+            "adjusted_covariates": value.get("adjusted_covariates", []),
+            "used_row_count": value.get("used_row_count", len(projected_rows)),
+            "dropped_row_count": value.get("dropped_row_count", 0),
+            "topFeatures": value.get("topFeatures", []),
+            "limitations": ["generated_code_was_sandbox_validated", "preview_was_redacted_before_model_access", "snapshot_is_transient_and_not_replayable", "analysis_is_not_a_clinical_conclusion"],
+        })
+        return validate_generated_result(program, result)
+    except (GeneratedAnalysisError, ValidationError, ValueError, TypeError, json.JSONDecodeError) as exc:
+        if isinstance(exc, GeneratedAnalysisError):
+            raise
+        raise GeneratedAnalysisError("ANALYSIS_CODE_EXECUTION_FAILED", "ANALYSIS_CODE_RESULT_VALIDATION") from exc
 
 
 def execute_generated_analysis(plan: GeneratedAnalysisPlan, rows: list[dict[str, object]],
@@ -1385,6 +1647,8 @@ def execute_typed_analysis(
             "adjusted_covariates": adjusted_covariates,
             "used_row_count": used_row_count,
             "dropped_row_count": dropped_row_count,
+            "scientific_result_valid": True,
+            "scientific_conclusion_eligible": True,
             "topFeatures": top_features,
             "limitations": [
                 "typed_plan_executed_by_approved_operator",

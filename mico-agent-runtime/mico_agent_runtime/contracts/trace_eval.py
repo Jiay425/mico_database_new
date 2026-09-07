@@ -221,6 +221,13 @@ class TraceDecision(ClosedModel):
     query_plan_validation_status: Literal["passed", "failed", "legacy", "not_applicable"] | None = None
     analysis_plan_hash: Annotated[str, StringConstraints(pattern=r"^sha256:[0-9a-f]{64}$")] | None = None
     analysis_execution_status: Literal["passed", "failed", "legacy", "not_applicable"] | None = None
+    # Generated-analysis provenance is auditable without persisting raw rows
+    # or model code in policy-facing state.  The program copy remains in the
+    # Runtime-only trace payload.
+    capability_mode: Literal["SUPPORTED_TYPED", "SUPPORTED_GENERATED", "UNSUPPORTED"] | None = None
+    capability_code: Annotated[str, StringConstraints(pattern=r"^[A-Z][A-Z0-9_]{2,127}$")] | None = None
+    generated_code_hash: Annotated[str, StringConstraints(pattern=r"^sha256:[0-9a-f]{64}$")] | None = None
+    generated_program_hash: Annotated[str, StringConstraints(pattern=r"^sha256:[0-9a-f]{64}$")] | None = None
     catalog_hash: Annotated[str, StringConstraints(pattern=r"^sha256:[0-9a-f]{64}$")] | None = None
     # New Decision State policy provenance.  The legacy fields above remain
     # readable for historical traces, but new-state decisions populate these

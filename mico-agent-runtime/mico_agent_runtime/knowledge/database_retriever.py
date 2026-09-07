@@ -884,7 +884,16 @@ class DatabaseKnowledgeSearchPort:
         ]
         if not chunk_ids:
             return []
-        chunks = self._load_chunks(chunk_ids, scope or RetrievalScope())
+        # Graph paths are versioned provenance records.  Their referenced
+        # source chunks can legitimately be legacy sparse-only chunks while
+        # the canonical dense candidate asset is chunk-v2/medium.  Do not
+        # discard a valid, source-bound graph path merely because its source
+        # is not part of the active dense asset.
+        chunks = self._load_chunks(
+            chunk_ids,
+            scope or RetrievalScope(),
+            allow_any_asset=True,
+        )
         results: list[LiteratureEvidenceItem] = []
         for chunk_id, paths in paths_by_chunk.items():
             row = chunks.get(chunk_id)
@@ -911,7 +920,13 @@ class DatabaseKnowledgeSearchPort:
             ))
         return sorted(results, key=lambda item: (-item.rerankScore, item.externalId))[:candidate_limit]
 
-    def _load_chunks(self, chunk_ids: list[str], scope: RetrievalScope) -> dict[str, dict[str, Any]]:
+    def _load_chunks(
+        self,
+        chunk_ids: list[str],
+        scope: RetrievalScope,
+        *,
+        allow_any_asset: bool = False,
+    ) -> dict[str, dict[str, Any]]:
         import psycopg
 
         with psycopg.connect(self._configuration.vectorDatabaseUrl) as connection:
@@ -925,11 +940,12 @@ class DatabaseKnowledgeSearchPort:
                     FROM knowledge_chunk c
                     JOIN knowledge_document d ON d.document_id = c.document_id
                     WHERE c.chunk_id = ANY(%s)
-                      AND c.chunk_version = %s AND c.chunk_variant = %s
+                      AND (%s OR (c.chunk_version = %s AND c.chunk_variant = %s))
                       AND (%s::text[] IS NULL OR d.pmcid = ANY(%s::text[]))
                     """,
                     (
                         chunk_ids,
+                        allow_any_asset,
                         self._configuration.chunkVersion,
                         self._configuration.chunkVariant,
                         _scope_document_ids(scope),

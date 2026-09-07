@@ -51,8 +51,11 @@ class KnowledgeStoreConfiguration:
     graphTopK: int = 50
     sparseTopK: int = 50
     graphVersion: str = "fulltext-provenance-graphrag-v3"
-    chunkVersion: str = "chunk-v1"
-    chunkVariant: str = "legacy"
+    # v1/legacy remains queryable for backwards compatibility, but it has no
+    # dense vectors.  The default must identify the canonical dense asset used
+    # by the database retriever.
+    chunkVersion: str = "chunk-v2"
+    chunkVariant: str = "medium"
 
     @classmethod
     def from_environment(
@@ -90,8 +93,8 @@ class KnowledgeStoreConfiguration:
         ).strip()
         if not _GRAPH_VERSION_RE.fullmatch(graph_version):
             raise KnowledgeStoreConfigurationError("KNOWLEDGE_GRAPH_VERSION_INVALID")
-        chunk_version = source.get("MICO_KNOWLEDGE_CHUNK_VERSION", "chunk-v1").strip()
-        chunk_variant = source.get("MICO_KNOWLEDGE_CHUNK_VARIANT", "legacy").strip()
+        chunk_version = source.get("MICO_KNOWLEDGE_CHUNK_VERSION", "chunk-v2").strip()
+        chunk_variant = source.get("MICO_KNOWLEDGE_CHUNK_VARIANT", "medium").strip()
         if not _ASSET_VERSION_RE.fullmatch(chunk_version):
             raise KnowledgeStoreConfigurationError("KNOWLEDGE_CHUNK_VERSION_INVALID")
         if not _ASSET_VERSION_RE.fullmatch(chunk_variant):

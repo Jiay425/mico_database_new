@@ -28,8 +28,8 @@ def test_independent_knowledge_store_configuration_is_closed() -> None:
     configuration = KnowledgeStoreConfiguration.from_environment(_env())
     assert configuration.vectorDimension == 3072
     assert configuration.vectorDatabaseUrl.endswith("/mico_knowledge")
-    assert configuration.chunkVersion == "chunk-v1"
-    assert configuration.chunkVariant == "legacy"
+    assert configuration.chunkVersion == "chunk-v2"
+    assert configuration.chunkVariant == "medium"
 
 
 @pytest.mark.parametrize(

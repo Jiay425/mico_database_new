@@ -159,12 +159,11 @@ The successful result identifies the execution path as either
 `typed-analysis-operator-v1` or `sandbox-python-v1`; the latter is never a
 Runtime-owned deterministic template.
 
-The typed-operator-to-sandbox handoff is closed by the shared
-`TYPED_ANALYSIS_SANDBOX_FALLBACK_CODES` set. It includes an unsupported typed
-shape and a missing grouping shape; both are execution-shape failures that
-may be repaired by the sandboxed Python Materializer. Missing numeric
-outcomes and insufficient cross-group coverage are not in that set and remain
-fail-closed.
+Generated execution is selected by Capability Registry before either executor
+runs. A typed-operator error never triggers a sandbox handoff. Unsupported
+shapes that are intentionally eligible for generated analysis receive a
+`SUPPORTED_GENERATED` decision and a Runtime-bound program before execution;
+all other unsupported or insufficient shapes fail closed.
 
 `inspect_cohort` is a Runtime-owned metadata probe and is not counted as the
 tabular observation required by a Dynamic AnalysisPlan. A policy proposal for

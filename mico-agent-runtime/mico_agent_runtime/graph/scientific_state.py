@@ -24,6 +24,9 @@ class ScientificState(TypedDict, total=False):
     analysisPlans: list[AnalysisPlan]
     analysisResults: list[AnalysisResult]
     analysisEvidence: list[AnalysisEvidence]
+    # Runtime-only audit copies of Registry-approved generated programs. They
+    # never enter ScientificDecisionState or policy input.
+    generatedAnalysisPrograms: list[dict[str, object]]
     actionHistory: list[str]
     actionSignatures: list[str]
     # Runtime-only diagnostics for Hard Action Availability.  This map is

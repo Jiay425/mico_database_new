@@ -218,6 +218,16 @@ class AnalysisResult(ClosedModel):
     adjusted_covariates: list[AnalysisFieldName] = Field(default_factory=list, max_length=16)
     used_row_count: int = Field(strict=True, ge=0, le=1000000, default=0)
     dropped_row_count: int = Field(strict=True, ge=0, le=1000000, default=0)
+    # Execution success and conclusion eligibility are separate. Generated
+    # analyses begin exploratory until Runtime's independent validator can
+    # establish a stronger action-specific scientific claim.
+    scientific_result_valid: bool = False
+    scientific_conclusion_eligible: bool = False
+    warnings: list[Annotated[str, StringConstraints(
+        pattern=r"^[A-Z][A-Z0-9_]{2,95}$"
+    )]] = Field(default_factory=list, max_length=16)
+    generated_code_hash: AnalysisHash | None = None
+    generated_program_hash: AnalysisHash | None = None
     topFeatures: list[AnalysisFeatureResult] = Field(default_factory=list, max_length=20)
     evidence: list[AnalysisEvidence] = Field(min_length=1, max_length=8)
     limitations: list[Literal[

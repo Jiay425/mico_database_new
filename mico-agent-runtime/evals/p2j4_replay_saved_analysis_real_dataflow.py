@@ -17,7 +17,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from mico_agent_runtime.contracts.generated_analysis import GeneratedAnalysisPlan
 from mico_agent_runtime.contracts.materialization import (
     AnalysisPlan as TypedAnalysisPlan,
     QueryPlan,
@@ -27,8 +26,6 @@ from mico_agent_runtime.contracts.research import Observation
 from mico_agent_runtime.contracts.tools import ExecuteReadQueryArguments, ExecuteReadQueryJavaToolCall
 from mico_agent_runtime.graph.generated_analysis import (
     GeneratedAnalysisError,
-    TYPED_ANALYSIS_SANDBOX_FALLBACK_CODES,
-    execute_generated_analysis,
     execute_typed_analysis,
 )
 from mico_agent_runtime.ports.java_agent import HttpJavaAgentToolPort
@@ -127,24 +124,6 @@ def _analysis_plan(item: dict[str, Any], observation_id: str) -> TypedAnalysisPl
         stratify_by=list(summary.get("stratifyFields") or []),
         metrics=list(summary.get("metrics") or []),
     )
-
-
-def _sandbox_fixture(rows: list[dict[str, object]], analysis_type: str) -> Any:
-    aliases = ("a_abundance_value", "abundance_value", "abundance.value", "value")
-    alias = next((name for name in aliases if any(name in row for row in rows)), None)
-    if alias is None:
-        raise GeneratedAnalysisError("ANALYSIS_TYPED_OPERATOR_NO_NUMERIC_OUTCOME")
-    # This is an explicit integration fixture, not a model response.  It only
-    # checks that real Java rows can cross the sandbox boundary safely.
-    code = (
-        "values = [float(row[" + repr(alias) + "]) for row in rows "
-        "if row[" + repr(alias) + "] is not None]\n"
-        "result = {\"metrics\": {\"row_count\": len(values), "
-        "\"mean\": sum(values) / len(values) if values else 0.0}}\n"
-    )
-    plan = GeneratedAnalysisPlan(language="python", analysisType=analysis_type, code=code)
-    result = execute_generated_analysis(plan, rows, len(rows), planner_mode="model")
-    return result
 
 
 def _select_items(summary_path: Path, only_actions: set[str] | None = None) -> list[dict[str, Any]]:
@@ -310,19 +289,12 @@ def run(summary_path: Path, output_path: Path, only_actions: set[str] | None = N
                     result["analysisExecution"] = "passed"
                 except GeneratedAnalysisError as exc:
                     result["typedOperator"] = exc.code
-                    if exc.code not in TYPED_ANALYSIS_SANDBOX_FALLBACK_CODES:
-                        result["errorCode"] = exc.code
-                        results.append(result)
-                        continue
-                    generated_result = _sandbox_fixture(rows, plan.analysis_type)
-                    result["sandboxFixture"] = generated_result.codeVersion
-                    result["analysisExecution"] = (
-                        "passed"
-                        if generated_result.status == "COMPLETED"
-                        else "failed"
-                    )
-                    if result["analysisExecution"] != "passed":
-                        result["errorCode"] = "ANALYSIS_SANDBOX_FIXTURE_FAILED"
+                    # A typed execution error is not a generated-executor
+                    # trigger. Replay preserves the same pre-execution
+                    # capability boundary as the live runtime.
+                    result["errorCode"] = exc.code
+                    results.append(result)
+                    continue
                 if result["analysisExecution"] == "passed":
                     analysis_observation = Observation(
                         observationId="observation-" + _hash(
