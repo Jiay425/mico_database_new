@@ -1,0 +1,42 @@
+{
+  "registry_version": "mico-v1-real-trace-registry-v1",
+  "source_run": "frozen-certification-20260907",
+  "training_eligible": false,
+  "real_traces": [
+    {
+      "trace_id": "trace-decision-sft-v1-e2e-a-t2d-age",
+      "task_id": "decision-sft-v1-e2e-a-t2d-age",
+      "result": "PASS_WITH_LIMITATION",
+      "trace_sha256": "103761b999ad89217f2915be201bb45f7e5ed5ff640e76f5656cf47784ac8400",
+      "limitation_code": "objective_unavailable_due_to_data"
+    },
+    {
+      "trace_id": "trace-decision-sft-v1-e2e-b-stratified",
+      "task_id": "decision-sft-v1-e2e-b-stratified",
+      "result": "PASS",
+      "trace_sha256": "55ed5b12167f832bf867cc6baeaccf693c4d7b93c5cedbdc1b3b7998d868e03d"
+    },
+    {
+      "trace_id": "trace-decision-sft-v1-e2e-c-evidence",
+      "task_id": "decision-sft-v1-e2e-c-evidence",
+      "result": "PASS_WITH_LIMITATION",
+      "trace_sha256": "6e069cf4608a86c730d5ae719fd1df9b265627bd4b01472018c1e8aadd2bfd72",
+      "limitation_code": "objective_unavailable_due_to_data"
+    },
+    {
+      "trace_id": "trace-decision-sft-v1-e2e-d-availability-boundary",
+      "task_id": "decision-sft-v1-e2e-d-availability-boundary",
+      "result": "PASS_WITH_LIMITATION",
+      "trace_sha256": "c0dc1615b4a34988ebafef956c6ad580bcf24628c8e2787b3f54a568bd6109d8",
+      "limitation_code": "objective_unavailable_due_to_data"
+    }
+  ],
+  "controlled_boundary_tests": [
+    {
+      "task_id": "decision-sft-v1-e2e-e-finish-boundary",
+      "result": "NOT_APPLICABLE_REAL_TRACE",
+      "controlled_boundary_test": "PASS",
+      "reason": "No fabricated observation is registered as a real trace."
+    }
+  ]
+}

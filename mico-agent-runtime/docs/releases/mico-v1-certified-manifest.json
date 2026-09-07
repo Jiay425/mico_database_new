@@ -1,0 +1,43 @@
+{
+  "release": "mico-v1-certified",
+  "release_kind": "frozen_certification_snapshot",
+  "runtime_commit": "907c3f2808607a9c4824534955a79e804aa35616",
+  "runtime_source_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "runtime_source_patch_scope": "git diff --binary HEAD excluding local generated knowledge manifests",
+  "policy": {
+    "base_model": "Qwen3-8B",
+    "adapter_id": "decision-sft-v1-checkpoint-epoch2",
+    "adapter_model_safetensors_sha256": "c1935825a3099c7633585088e1afd7e015e9c1b18806755bca502ca505b07577",
+    "adapter_config_json_sha256": "0d698ccca7ff1f1d28c27d5bad20e55d3466133b88b02b4f809741fd0166f07e",
+    "policy_prompt_sha256": "c5ab7dbc7ff2ee99f5720f0b99dc2d0fb7d71150a00ffd7a5f6bf5858dcb1db4"
+  },
+  "contracts": {
+    "decision_state_version": "scientific-decision-state-v1",
+    "action_set_version": "scientific-actions-v1-fixed-10",
+    "action_count": 10,
+    "generated_code_contract_version": "generated-code-contract-v1"
+  },
+  "knowledge_assets": {
+    "retrieval_backend": "database",
+    "dense_chunk_asset": "chunk-v2/medium",
+    "document_vector_asset": "gemini-embedding-2/3072",
+    "graph_asset": "fulltext-provenance-graphrag-v3",
+    "vector_capability": "PARTIAL"
+  },
+  "certification": {
+    "final_system_certification": "PASS",
+    "v1_freeze_recommendation": "FREEZE",
+    "real_trace_count": 4,
+    "controlled_boundary_test_count": 1,
+    "training_eligible_trace_count": 0,
+    "final_report_sha256": "7b000933267746c98c2d891d34a8ff8b722090fc75432142a3ba91cb2643c967",
+    "report_artifact": "artifacts/frozen-certification-20260907/final-certification-report-v1.json"
+  },
+  "freeze_rules": {
+    "no_runtime_logic_change_under_v1": true,
+    "no_prompt_change_under_v1": true,
+    "no_action_set_change_under_v1": true,
+    "no_state_schema_change_under_v1": true,
+    "future_changes_require_new_version": true
+  }
+}
